@@ -33,6 +33,16 @@ export function Moments({ moments }: { moments: Moment[] }) {
         return `${game ?? "A co-op game"} got the better of you both. Rematch?`;
       case "game_completed":
         return `You finished a round of ${game ?? "a game"}.`;
+      case "note_sent":
+        return `${nameOf(m.actor_id)} sent a love note.`;
+      case "note_sealed":
+        return `${nameOf(m.actor_id)} sealed a love note for later.`;
+      case "note_opened":
+        return `${nameOf(m.actor_id)} opened a love note.`;
+      case "memory_answered":
+        return `${nameOf(m.actor_id)} answered a Memory Lane prompt.`;
+      case "bucket_done":
+        return `Ticked off the bucket list: ${typeof m.payload.title === "string" ? m.payload.title : "something big"}.`;
       case "daily_both":
         return "You both answered today's question.";
       default:

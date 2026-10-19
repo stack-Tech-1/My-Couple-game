@@ -39,7 +39,7 @@ export function Toaster() {
             )}
           >
             <span className="mt-0.5" style={{ color: toneColor[t.tone] }}>
-              <Icon name={toneIcon[t.tone]} size={20} />
+              <Icon name={t.icon ?? toneIcon[t.tone]} size={20} />
             </span>
             <div className="min-w-0 flex-1">
               <p className="font-semibold leading-snug">{t.title}</p>

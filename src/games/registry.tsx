@@ -19,6 +19,7 @@ import { HowWellBoard } from "./how-well/Board";
 import { ThisOrThatBoard } from "./this-or-that/Board";
 import { StoryChainBoard } from "./story-chain/Board";
 import { DeepQuestionsBoard } from "./deep-questions/Board";
+import { ComplimentBattleBoard } from "./compliment-battle/Board";
 
 /**
  * Client registry: game id -> component. Logic comes from the server-safe
@@ -42,6 +43,7 @@ const components: Record<string, ComponentType<GameProps<any, any>>> = {
   "this-or-that": ThisOrThatBoard,
   "story-chain": StoryChainBoard,
   "deep-questions": DeepQuestionsBoard,
+  "compliment-battle": ComplimentBattleBoard,
 };
 
 export function gameComponent(id: string) {

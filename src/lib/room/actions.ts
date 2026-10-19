@@ -123,6 +123,10 @@ export async function deleteAccount(confirmation: unknown): Promise<ActionResult
   const user = await getUser();
   if (!user) return fail("not signed in");
   const supabase = await supabaseServer();
+  // Photos live in storage, which doesn't cascade with the database: remove them explicitly.
+  const admin = supabaseAdmin();
+  const { data: photos } = await admin.from("memories").select("path").eq("author_id", user.id);
+  if (photos?.length) await admin.storage.from("memories").remove(photos.map((p) => p.path as string));
   const { error: leaveErr } = await supabase.rpc("leave_room");
   if (leaveErr) return fail(leaveErr);
   // Clear this browser's session while the user still exists, then remove them.

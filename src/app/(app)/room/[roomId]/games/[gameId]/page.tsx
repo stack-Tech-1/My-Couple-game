@@ -10,8 +10,7 @@ import { GAME_LOGIC } from "@/games/logic";
 import { activeSessions } from "@/lib/games/server";
 import { Rules } from "@/components/game/Rules";
 import { StartGame } from "@/components/game/StartGame";
-import { getDaily } from "@/lib/daily/server";
-import { DailyQuestion } from "@/components/room/DailyQuestion";
+import { FeaturePage, FEATURES } from "@/components/romantic/FeaturePage";
 
 export async function generateMetadata({ params }: { params: Promise<{ gameId: string }> }): Promise<Metadata> {
   const { gameId } = await params;
@@ -26,18 +25,7 @@ export default async function GamePage({ params }: { params: Promise<{ roomId: s
   if (!bundle) redirect("/room");
   if (game.category === "spicy" && !afterDarkOpen(bundle)) redirect(`/room/${roomId}`);
   const cat = CATEGORIES[game.category];
-  if (game.id === "daily-question") {
-    return (
-      <div className="mx-auto max-w-2xl pt-8">
-        <Link href={`/room/${roomId}`} className="inline-flex items-center gap-1.5 text-[0.9rem] font-semibold text-muted hover:text-fg">
-          <Icon name="arrowLeft" size={16} /> Library
-        </Link>
-        <div className="mt-8">
-          {bundle.partner ? <DailyQuestion daily={await getDaily(roomId, bundle.me.profile.id)} full /> : <p className="text-muted">The daily question needs two. Invite your person first.</p>}
-        </div>
-      </div>
-    );
-  }
+  if (FEATURES.has(game.id)) return <FeaturePage gameId={game.id} roomId={roomId} bundle={bundle} />;
   const logic = GAME_LOGIC[game.id];
   const active = logic ? (await activeSessions(roomId)).find((s) => s.game_id === game.id) : undefined;
 

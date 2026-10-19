@@ -1,6 +1,7 @@
 "use client";
 
 import { create } from "zustand";
+import type { IconName } from "./icons";
 
 export type ToastTone = "info" | "success" | "error" | "invite";
 
@@ -10,6 +11,8 @@ export type Toast = {
   title: string;
   body?: string;
   action?: { label: string; onClick: () => void };
+  /** Overrides the tone's default icon. */
+  icon?: IconName;
   /** ms; 0 keeps it until dismissed */
   duration: number;
 };

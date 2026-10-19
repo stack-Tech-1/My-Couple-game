@@ -15,12 +15,13 @@ import { howWell } from "./how-well/logic";
 import { thisOrThat } from "./this-or-that/logic";
 import { storyChain } from "./story-chain/logic";
 import { deepQuestions } from "./deep-questions/logic";
+import { complimentBattle } from "./compliment-battle/logic";
 
 /**
  * Server-safe registry of game logic (no React). The move API and tests use this.
  * Adding a game = one line here + one line in registry.tsx.
  */
-const all: AnyGameLogic[] = [connectFour, whot, ludo, ayo, wordDuel, reflexDuel, drawGuess, knowMeTrivia, splitClues, inSync, memoryMatch, beatTheClock, howWell, thisOrThat, storyChain, deepQuestions];
+const all: AnyGameLogic[] = [connectFour, whot, ludo, ayo, wordDuel, reflexDuel, drawGuess, knowMeTrivia, splitClues, inSync, memoryMatch, beatTheClock, howWell, thisOrThat, storyChain, deepQuestions, complimentBattle];
 
 export const GAME_LOGIC: Record<string, AnyGameLogic> = Object.fromEntries(all.map((g) => [g.id, g]));
 

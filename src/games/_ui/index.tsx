@@ -18,16 +18,16 @@ export function Scoreline({
 }) {
   return (
     <div className={cn("grid grid-cols-[1fr_auto_1fr] items-end gap-3", className)}>
-      <Side {...left} on={active === "left"} />
+      <Side {...left} on={active === "left"} dim={!!active && active !== "left"} />
       <span className="display pb-1 text-[1rem] text-muted">vs</span>
-      <Side {...right} on={active === "right"} align="right" />
+      <Side {...right} on={active === "right"} dim={!!active && active !== "right"} align="right" />
     </div>
   );
 }
 
-function Side({ name, score, sub, on, align }: { name: string; score?: ReactNode; sub?: ReactNode; on: boolean; align?: "right" }) {
+function Side({ name, score, sub, on, dim, align }: { name: string; score?: ReactNode; sub?: ReactNode; on: boolean; dim: boolean; align?: "right" }) {
   return (
-    <div className={cn("min-w-0 transition-opacity", align === "right" && "text-right", !on && "opacity-60")}>
+    <div className={cn("min-w-0 transition-opacity", align === "right" && "text-right", dim && "opacity-60")}>
       <p className={cn("flex items-center gap-1.5 text-[0.85rem] font-semibold", align === "right" && "justify-end")}>
         {on ? <span className="h-2 w-2 rounded-full bg-accent" aria-hidden /> : null}
         <span className="truncate">{name}</span>
