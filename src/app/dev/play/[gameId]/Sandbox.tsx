@@ -25,12 +25,15 @@ export function Sandbox({ gameId }: { gameId: string }) {
   };
 
   const sendFor = useCallback(
-    (by: string) => async (move: unknown) => {
-      try {
-        setState((cur: unknown) => runMove(logic, cur, move, by, { now: Date.now() }).next);
-      } catch (e) {
-        toast.error(e instanceof Error ? e.message : "rejected");
-      }
+    (by: string) => async (move: unknown, opts?: { silent?: boolean }) => {
+      setState((cur: unknown) => {
+        try {
+          return runMove(logic, cur, move, by, { now: Date.now() }).next;
+        } catch (e) {
+          if (!opts?.silent) toast.error(e instanceof Error ? e.message : "rejected");
+          return cur;
+        }
+      });
     },
     [logic],
   );
@@ -69,6 +72,7 @@ export function Sandbox({ gameId }: { gameId: string }) {
               pending={false}
               broadcast={broadcast}
               sound={() => {}}
+              clock={Date.now}
             />
           </section>
         ))}

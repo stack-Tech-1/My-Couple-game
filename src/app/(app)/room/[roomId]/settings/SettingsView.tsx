@@ -12,6 +12,7 @@ import { cn } from "@/lib/cn";
 import { useRoom } from "@/lib/realtime/RoomProvider";
 import { deleteAccount, leaveRoom, renameRoom, signOut, updateMyPrefs } from "@/lib/room/actions";
 import { applyTheme, resolveTheme, saveThemePref, type ThemePref } from "@/lib/theme/theme";
+import { HouseRules } from "@/components/room/HouseRules";
 
 export function SettingsView() {
   const { bundle } = useRoom();
@@ -92,6 +93,11 @@ export function SettingsView() {
         <div className="mt-4 border-t border-line">
           <Toggle checked={sound} onChange={toggleSound} label="Sounds" description="Soft clicks, card snaps and a little fanfare when you win. Off by default." />
         </div>
+      </Section>
+
+      <Section title="House rules" id="house-rules">
+        <p className="mb-6 text-muted">Shared by both of you. Every family plays these differently; argue it out here, not mid-game.</p>
+        <HouseRules />
       </Section>
 
       <Section title="After dark" id="after-dark">

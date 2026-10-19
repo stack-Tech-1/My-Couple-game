@@ -41,6 +41,22 @@ export async function clientAs(email: string): Promise<SupabaseClient> {
   return c;
 }
 
+/** Two onboarded users already paired in a room, without clicking through onboarding. */
+export async function pairedRoom(names: [string, string]) {
+  const a = await makeUser(names[0].toLowerCase());
+  const b = await makeUser(names[1].toLowerCase());
+  const ca = await clientAs(a.email);
+  const cb = await clientAs(b.email);
+  const now = new Date().toISOString();
+  await ca.from("profiles").update({ display_name: names[0], avatar_key: "fig", avatar_hue: 12, onboarded_at: now }).eq("id", a.id);
+  await cb.from("profiles").update({ display_name: names[1], avatar_key: "moon", avatar_hue: 200, onboarded_at: now }).eq("id", b.id);
+  const { data: room, error } = await ca.rpc("create_room", { room_name: "E2E" });
+  if (error) throw error;
+  const { error: joinErr } = await cb.rpc("join_room", { code: room.invite_code });
+  if (joinErr) throw joinErr;
+  return { a, b, roomId: room.id as string };
+}
+
 export async function cleanup(userIds: string[]) {
   const { data: rooms } = await admin.from("room_members").select("room_id").in("user_id", userIds);
   const roomIds = [...new Set((rooms ?? []).map((r) => r.room_id as string))];

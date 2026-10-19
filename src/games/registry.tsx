@@ -4,6 +4,13 @@ import type { ComponentType } from "react";
 import type { GameProps } from "./_engine/types";
 import { GAME_LOGIC } from "./logic";
 import { ConnectFourBoard } from "./connect-four/Board";
+import { WhotTable } from "./whot/Table";
+import { LudoBoard } from "./ludo/Board";
+import { AyoBoard } from "./ayo/Board";
+import { WordDuelBoard } from "./word-duel/Board";
+import { ReflexBoard } from "./reflex-duel/Board";
+import { DrawGuessBoard } from "./draw-guess/Board";
+import { KnowMeTriviaBoard } from "./know-me-trivia/Board";
 
 /**
  * Client registry: game id -> component. Logic comes from the server-safe
@@ -12,6 +19,13 @@ import { ConnectFourBoard } from "./connect-four/Board";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- heterogeneous registry, each component is typed at its definition
 const components: Record<string, ComponentType<GameProps<any, any>>> = {
   "connect-four": ConnectFourBoard,
+  whot: WhotTable,
+  ludo: LudoBoard,
+  ayo: AyoBoard,
+  "word-duel": WordDuelBoard,
+  "reflex-duel": ReflexBoard,
+  "draw-guess": DrawGuessBoard,
+  "know-me-trivia": KnowMeTriviaBoard,
 };
 
 export function gameComponent(id: string) {

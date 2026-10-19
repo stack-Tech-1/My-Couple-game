@@ -16,7 +16,8 @@ export type SessionRow = {
   finished_at: string | null;
 };
 
-export type SessionSnapshot = { session: SessionRow; view: unknown; version: number };
+/** serverNow lets clients estimate clock offset for timed games. */
+export type SessionSnapshot = { session: SessionRow; view: unknown; version: number; serverNow?: number };
 
 export const createSessionBody = z.object({
   gameId: z.string().min(1).max(40),
@@ -26,7 +27,7 @@ export const createSessionBody = z.object({
 
 export const moveBody = z.object({
   move: z.unknown(),
-  expectedVersion: z.number().int().min(0),
+  expectedVersion: z.number().int().min(0).optional(),
 });
 
 /** Broadcast on the room channel to invite the partner into a session. */

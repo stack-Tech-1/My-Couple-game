@@ -37,13 +37,30 @@ export function GameHost({ initial }: { initial: SessionSnapshot }) {
 
   const sound = useCallback((n: SoundName) => soundOn && playSound(n), [soundOn]);
 
+  // Clock offset to the server, from the lowest-latency sample seen so far.
+  const clockRef = useRef({ offset: 0, rtt: Infinity });
+  const sample = useCallback((t0: number, serverNow: number | undefined) => {
+    if (typeof serverNow !== "number") return;
+    const t1 = Date.now();
+    const rtt = t1 - t0;
+    if (rtt <= clockRef.current.rtt) clockRef.current = { offset: serverNow - (t0 + t1) / 2, rtt };
+  }, []);
+  const clock = useCallback(() => Date.now() + clockRef.current.offset, []);
+
   const resync = useCallback(async () => {
     try {
-      store.getState().accept(await gameApi.snapshot(sessionId));
+      const t0 = Date.now();
+      const snap = await gameApi.snapshot(sessionId);
+      sample(t0, snap.serverNow);
+      store.getState().accept(snap);
     } catch {
       // stay on what we have; the banner already explains connectivity issues
     }
-  }, [sessionId, store]);
+  }, [sessionId, store, sample]);
+
+  useEffect(() => {
+    void resync(); // also takes a first clock sample
+  }, [resync]);
 
   // Presence: tell the partner what we're playing.
   useEffect(() => {
@@ -99,15 +116,21 @@ export function GameHost({ initial }: { initial: SessionSnapshot }) {
   }, [session.status, session.winner, me, sound]);
 
   const sendMove = useCallback(
-    async (move: unknown) => {
+    async (move: unknown, opts?: { silent?: boolean }) => {
       const s = store.getState();
-      if (s.pending || s.session.status !== "active") return;
+      if (s.session.status !== "active") return;
       s.setPending(true);
       try {
+        const t0 = Date.now();
         const snap = await gameApi.move(sessionId, move, s.version);
+        sample(t0, snap.serverNow);
         s.accept(snap);
         send(`s:${sessionId}:moved`, { version: snap.version });
       } catch (e) {
+        if (opts?.silent) {
+          void resync();
+          return;
+        }
         if (e instanceof GameApiError && e.status === 409) {
           await resync();
           if (e.message === "stale") toast.info("They beat you to it.", "The board just changed. Take another look.");
@@ -120,7 +143,7 @@ export function GameHost({ initial }: { initial: SessionSnapshot }) {
         store.getState().setPending(false);
       }
     },
-    [sessionId, store, resync, send],
+    [sessionId, store, resync, send, sample],
   );
 
   // Belt and braces: the partner's "moved" ping triggers a refetch if Postgres Changes lagged.
@@ -184,7 +207,7 @@ export function GameHost({ initial }: { initial: SessionSnapshot }) {
         )}
       </div>
 
-      <Component view={view} me={me} partner={partner} names={names} sendMove={sendMove} pending={pending} broadcast={broadcast} sound={sound} />
+      <Component view={view} me={me} partner={partner} names={names} sendMove={sendMove} pending={pending} broadcast={broadcast} sound={sound} clock={clock} />
 
       {session.status !== "active" ? <ResultSheet session={session} me={me} names={names} /> : null}
 

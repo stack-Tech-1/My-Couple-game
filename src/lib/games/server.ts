@@ -38,7 +38,7 @@ export async function getSnapshot(sessionId: string): Promise<SessionSnapshot> {
   const { supabase, user, session } = await loadOwnSession(sessionId);
   const { data } = await supabase.from("game_views").select("view, version").eq("session_id", sessionId).eq("user_id", user.id).single();
   if (!data) throw new ApiError(404, "That game has wandered off.");
-  return { session, view: data.view, version: data.version as number };
+  return { session, view: data.view, version: data.version as number, serverNow: Date.now() };
 }
 
 export async function createSession(gameId: string, rawConfig: unknown, rematchOf?: string): Promise<SessionRow> {
@@ -58,9 +58,12 @@ export async function createSession(gameId: string, rawConfig: unknown, rematchO
     if (!ok) throw new ApiError(403, "That one's locked.");
   }
 
+  // Room house rules first, then anything the caller passed explicitly.
+  const { data: roomRow } = await supabase.from("rooms").select("settings").eq("id", mine.room_id).single();
+  const houseRules = ((roomRow?.settings as { houseRules?: Record<string, Record<string, unknown>> } | null)?.houseRules ?? {})[gameId] ?? {};
   let config: Record<string, unknown> = {};
   if (logic.configSchema) {
-    const parsed = logic.configSchema.safeParse(rawConfig ?? {});
+    const parsed = logic.configSchema.safeParse({ ...houseRules, ...((rawConfig as Record<string, unknown> | undefined) ?? {}) });
     if (!parsed.success) throw new ApiError(400, "Those game settings didn't add up.");
     config = parsed.data as Record<string, unknown>;
   }
@@ -105,45 +108,52 @@ export async function createSession(gameId: string, rawConfig: unknown, rematchO
   return data as SessionRow;
 }
 
-export async function submitMove(sessionId: string, rawMove: unknown, expectedVersion: number): Promise<SessionSnapshot> {
-  const { user, session } = await loadOwnSession(sessionId);
-  await rateLimit(user.id, "move", 240, 60);
-  if (session.status !== "active") throw new ApiError(409, "This game is already over.");
-  if (session.version !== expectedVersion) throw new ApiError(409, "stale");
-
-  const logic = GAME_LOGIC[session.game_id];
+export async function submitMove(sessionId: string, rawMove: unknown): Promise<SessionSnapshot> {
+  const { user, session: initial } = await loadOwnSession(sessionId);
+  await rateLimit(user.id, "move", 300, 60);
+  const logic = GAME_LOGIC[initial.game_id];
   if (!logic) throw new ApiError(404, "We don't have that game (yet).");
-
   const admin = supabaseAdmin();
-  const { data: secret } = await admin.from("game_secrets").select("state").eq("session_id", sessionId).single();
-  if (!secret) throw new ApiError(404, "That game has wandered off.");
 
-  let result;
-  try {
-    result = runMove(logic, secret.state, rawMove, user.id, { now: Date.now() });
-  } catch (e) {
-    if (e instanceof MoveRejected) throw new ApiError(422, e.message);
-    throw e;
+  // Every move is judged against the latest state. If another move commits between our
+  // read and our write, the version check in commit_game_move fails and we simply retry.
+  for (let attempt = 0; attempt < 5; attempt++) {
+    // Order matters: version first, then state. A newer state with an older version can
+    // only cause a harmless conflict; the reverse could never happen.
+    const { data: row } = await admin.from("game_sessions").select("version, status, players").eq("id", sessionId).single();
+    if (!row) throw new ApiError(404, "That game has wandered off.");
+    if (row.status !== "active") throw new ApiError(409, "This game is already over.");
+    const { data: secret } = await admin.from("game_secrets").select("state").eq("session_id", sessionId).single();
+    if (!secret) throw new ApiError(404, "That game has wandered off.");
+
+    let result;
+    try {
+      result = runMove(logic, secret.state, rawMove, user.id, { now: Date.now() });
+    } catch (e) {
+      if (e instanceof MoveRejected) throw new ApiError(422, e.message);
+      throw e;
+    }
+
+    const db = toDb(result.outcome);
+    const { data, error } = await admin.rpc("commit_game_move", {
+      p_session: sessionId,
+      p_expected_version: row.version,
+      p_by: user.id,
+      p_move: result.move,
+      p_state: result.next,
+      p_views: viewsFor(logic, result.next, row.players as Players),
+      p_status: db.status,
+      p_outcome: db.outcome,
+      p_winner: db.winner,
+    });
+    if (error) throw new ApiError(500, "Couldn't save that move. Try again?");
+    if (data) {
+      const s = data as SessionRow;
+      return { session: s, view: logic.viewFor(result.next, user.id), version: s.version, serverNow: Date.now() };
+    }
   }
-
-  const db = toDb(result.outcome);
-  const { data, error } = await admin.rpc("commit_game_move", {
-    p_session: sessionId,
-    p_expected_version: expectedVersion,
-    p_by: user.id,
-    p_move: result.move,
-    p_state: result.next,
-    p_views: viewsFor(logic, result.next, session.players),
-    p_status: db.status,
-    p_outcome: db.outcome,
-    p_winner: db.winner,
-  });
-  if (error) throw new ApiError(500, "Couldn't save that move. Try again?");
-  if (!data) throw new ApiError(409, "stale");
-
-  return { session: data as SessionRow, view: logic.viewFor(result.next, user.id), version: (data as SessionRow).version };
+  throw new ApiError(409, "stale");
 }
-
 /** Resigning hands the win to your partner. Co-op games just end as a loss for the team. */
 export async function resign(sessionId: string): Promise<SessionRow> {
   const { user, session } = await loadOwnSession(sessionId);

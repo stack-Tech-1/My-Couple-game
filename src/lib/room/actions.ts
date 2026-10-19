@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { supabaseAdmin, supabaseServer } from "@/lib/supabase/server";
 import { friendlyError } from "@/lib/errors";
 import { getUser } from "./server";
+import { HOUSE_RULES } from "@/games/houseRules";
 import {
   inviteCodeInput,
   prefsInput,
@@ -72,6 +73,22 @@ export async function renameRoom(roomId: string, name: unknown): Promise<ActionR
   if (!parsed.success) return { ok: false, error: firstIssue(parsed.error) };
   const supabase = await supabaseServer();
   const { error } = await supabase.from("rooms").update({ name: parsed.data }).eq("id", roomId);
+  if (error) return fail(error);
+  revalidatePath(`/room/${roomId}`, "layout");
+  return { ok: true, data: null };
+}
+
+export async function updateHouseRules(roomId: string, gameId: string, input: unknown): Promise<ActionResult> {
+  const def = HOUSE_RULES[gameId];
+  if (!def) return { ok: false, error: "That game doesn't have house rules." };
+  const parsed = def.schema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Those rules didn't add up." };
+  const supabase = await supabaseServer();
+  const { data: room, error: readErr } = await supabase.from("rooms").select("settings").eq("id", roomId).single();
+  if (readErr || !room) return fail(readErr ?? "not found");
+  const settings = (room.settings ?? {}) as { houseRules?: Record<string, unknown> };
+  const next = { ...settings, houseRules: { ...(settings.houseRules ?? {}), [gameId]: parsed.data } };
+  const { error } = await supabase.from("rooms").update({ settings: next }).eq("id", roomId);
   if (error) return fail(error);
   revalidatePath(`/room/${roomId}`, "layout");
   return { ok: true, data: null };

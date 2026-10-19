@@ -49,8 +49,13 @@ export type GameProps<View, Move> = {
   me: PlayerId;
   partner: PlayerId;
   names: Record<PlayerId, string>;
-  /** Sends a move to the server. Resolves once it is committed (or rejects with a friendly message). */
-  sendMove: (move: Move) => Promise<void>;
+  /**
+   * Sends a move to the server. Resolves once it is committed (or rejects with a friendly message).
+   * `silent` suppresses error toasts: use it for timer ticks both players may send.
+   */
+  sendMove: (move: Move, opts?: { silent?: boolean }) => Promise<void>;
+  /** Best estimate of the server clock (ms since epoch). Use for deadlines stored in state. */
+  clock: () => number;
   /** True while a move is in flight. */
   pending: boolean;
   /** Low-latency side channel scoped to this session (strokes, typing, etc). */
