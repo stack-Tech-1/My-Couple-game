@@ -4,6 +4,7 @@ import { getMyRoom } from "@/lib/room/server";
 import { RoomProvider } from "@/lib/realtime/RoomProvider";
 import { RoomHeader } from "@/components/room/RoomHeader";
 import { ConnectionBanner } from "@/components/room/ConnectionBanner";
+import { InviteListener } from "@/components/game/InviteListener";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +19,7 @@ export default async function RoomLayout({ children, params }: { children: React
     <RoomProvider bundle={bundle}>
       <RoomHeader />
       <ConnectionBanner />
+      <InviteListener />
       <main className="mx-auto max-w-6xl px-4 pb-24 sm:px-8">{children}</main>
     </RoomProvider>
   );

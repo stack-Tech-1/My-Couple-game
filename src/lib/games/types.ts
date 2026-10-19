@@ -1,0 +1,34 @@
+import { z } from "zod";
+
+export type SessionRow = {
+  id: string;
+  room_id: string;
+  game_id: string;
+  status: "active" | "finished" | "abandoned";
+  players: [string, string];
+  created_by: string | null;
+  config: Record<string, unknown>;
+  version: number;
+  winner: string | null;
+  outcome: "win" | "tie" | "coop_win" | "coop_loss" | "abandoned" | null;
+  rematch_of: string | null;
+  created_at: string;
+  finished_at: string | null;
+};
+
+export type SessionSnapshot = { session: SessionRow; view: unknown; version: number };
+
+export const createSessionBody = z.object({
+  gameId: z.string().min(1).max(40),
+  config: z.record(z.string(), z.unknown()).optional(),
+  rematchOf: z.uuid().optional(),
+});
+
+export const moveBody = z.object({
+  move: z.unknown(),
+  expectedVersion: z.number().int().min(0),
+});
+
+/** Broadcast on the room channel to invite the partner into a session. */
+export const inviteEvent = z.object({ sessionId: z.uuid(), gameId: z.string().max(40), rematch: z.boolean().optional() });
+export type InviteEvent = z.infer<typeof inviteEvent>;

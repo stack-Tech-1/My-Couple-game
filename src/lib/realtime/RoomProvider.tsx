@@ -94,7 +94,11 @@ export function RoomProvider({ bundle, children }: { bundle: RoomBundle; childre
 
       ch.on("presence", { event: "sync" }, () => readPresence(ch))
         .on("broadcast", { event: "*" }, ({ event, payload }) => dispatch(event, payload))
-        .on("postgres_changes", { event: "*", schema: "public", table: "room_members", filter: `room_id=eq.${roomId}` }, () => router.refresh())
+        .on("postgres_changes", { event: "*", schema: "public", table: "room_members", filter: `room_id=eq.${roomId}` }, (p) => {
+          // My own removal comes from leave/delete flows, which navigate on their own.
+          if (p.eventType === "DELETE" && (p.old as { user_id?: string }).user_id === myId) return;
+          router.refresh();
+        })
         .on("postgres_changes", { event: "UPDATE", schema: "public", table: "rooms", filter: `id=eq.${roomId}` }, () => router.refresh())
         .on("postgres_changes", { event: "INSERT", schema: "public", table: "moments", filter: `room_id=eq.${roomId}` }, () => router.refresh())
         .subscribe(async (status) => {

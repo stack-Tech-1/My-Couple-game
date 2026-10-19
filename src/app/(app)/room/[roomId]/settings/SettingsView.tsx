@@ -120,8 +120,8 @@ export function SettingsView() {
             onClick={() => start(async () => {
               const res = await leaveRoom();
               if (!res.ok) return void toast.error(res.error);
-              router.push("/onboarding?step=room");
-              router.refresh();
+              // Hard navigation: the room's live listeners are about to see us leave.
+              window.location.assign("/onboarding?step=room");
             })}
           >
             Leave
@@ -136,8 +136,7 @@ export function SettingsView() {
             start(async () => {
               const res = await deleteAccount(confirmText.trim().toLowerCase());
               if (!res.ok) return void toast.error(res.error);
-              router.push("/?deleted=1");
-              router.refresh();
+              window.location.assign("/?deleted=1");
             });
           }}
           className="flex flex-col gap-4"

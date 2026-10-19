@@ -108,9 +108,10 @@ export async function deleteAccount(confirmation: unknown): Promise<ActionResult
   const supabase = await supabaseServer();
   const { error: leaveErr } = await supabase.rpc("leave_room");
   if (leaveErr) return fail(leaveErr);
+  // Clear this browser's session while the user still exists, then remove them.
+  await supabase.auth.signOut({ scope: "local" });
   const { error } = await supabaseAdmin().auth.admin.deleteUser(user.id);
   if (error) return fail(error);
-  await supabase.auth.signOut();
   return { ok: true, data: null };
 }
 
