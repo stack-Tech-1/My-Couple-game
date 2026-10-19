@@ -1,0 +1,270 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------
+   Twain design tokens
+   Raw palette lives on :root; semantic tokens are what components use.
+   Themes: day (default), night, afterdark (spicy section).
+------------------------------------------------------------------- */
+
+:root {
+  /* raw palette */
+  --c-paper: #f6efe6;
+  --c-paper-deep: #ece2d4;
+  --c-paper-edge: #dfd2c1;
+  --c-ink: #1c1416;
+  --c-ink-soft: #57474a;
+  --c-wine: #5b1a2b;
+  --c-ember: #e8563a;
+  --c-brass: #b8893b;
+  --c-sage: #8a9a7b;
+  --c-night: #120c0e;
+  --c-night-raised: #1d1417;
+  --c-night-edge: #3a2a2e;
+  --c-cream: #f3e7dd;
+
+  /* semantic: day */
+  --bg: var(--c-paper);
+  --bg-raised: #fbf7f1;
+  --bg-sunk: var(--c-paper-deep);
+  --line: var(--c-paper-edge);
+  --line-strong: var(--c-ink);
+  --fg: var(--c-ink);
+  --fg-muted: var(--c-ink-soft);
+  --fg-on-accent: #fff8f1;
+  --accent: var(--c-ember);
+  --accent-ink: #b5371d; /* AA-safe ember for text on paper */
+  --wine: var(--c-wine);
+  --brass: var(--c-brass);
+  --brass-ink: #82601f;
+  --sage: var(--c-sage);
+  --sage-ink: #4f5e43;
+  --focus: var(--c-ember);
+  --glow: transparent;
+  --grain-opacity: 0.08;
+
+  /* category accents: [fill, text-safe ink] */
+  --cat-competitive: var(--c-ember);
+  --cat-competitive-ink: #b5371d;
+  --cat-coop: var(--c-sage);
+  --cat-coop-ink: #4f5e43;
+  --cat-personal: var(--c-brass);
+  --cat-personal-ink: #82601f;
+  --cat-romantic: var(--c-wine);
+  --cat-romantic-ink: var(--c-wine);
+  --cat-spicy: #c2361f;
+  --cat-spicy-ink: #a32a15;
+
+  /* shape + motion */
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 18px;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-weight: cubic-bezier(0.34, 1.3, 0.64, 1);
+  --theme-fade: 700ms;
+
+  color-scheme: light;
+}
+
+:root[data-theme="night"] {
+  --bg: var(--c-night);
+  --bg-raised: var(--c-night-raised);
+  --bg-sunk: #0c0809;
+  --line: var(--c-night-edge);
+  --line-strong: var(--c-cream);
+  --fg: var(--c-cream);
+  --fg-muted: #b8a59e;
+  --accent-ink: #ff8a6e;
+  --brass-ink: #d9b06a;
+  --sage-ink: #aebd9f;
+  --cat-competitive-ink: #ff8a6e;
+  --cat-coop-ink: #aebd9f;
+  --cat-personal-ink: #d9b06a;
+  --cat-romantic-ink: #e28aa0;
+  --cat-spicy-ink: #ff7a5c;
+  --grain-opacity: 0.06;
+  color-scheme: dark;
+}
+
+/* After dark: the lights dim. Ember and wine glows on near-black. */
+:root[data-theme="afterdark"] {
+  --bg: var(--c-night);
+  --bg-raised: #1b1013;
+  --bg-sunk: #0a0607;
+  --line: #3d2127;
+  --line-strong: #f0d9cc;
+  --fg: #f4e4da;
+  --fg-muted: #b99a92;
+  --accent: #f0603f;
+  --accent-ink: #ff8a6e;
+  --brass-ink: #d9b06a;
+  --sage-ink: #aebd9f;
+  --cat-competitive-ink: #ff8a6e;
+  --cat-coop-ink: #aebd9f;
+  --cat-personal-ink: #d9b06a;
+  --cat-romantic-ink: #e28aa0;
+  --cat-spicy-ink: #ff7a5c;
+  --glow: rgba(232, 86, 58, 0.22);
+  --grain-opacity: 0.07;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-raised: var(--bg-raised);
+  --color-sunk: var(--bg-sunk);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-fg: var(--fg);
+  --color-muted: var(--fg-muted);
+  --color-on-accent: var(--fg-on-accent);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-wine: var(--wine);
+  --color-brass: var(--brass);
+  --color-brass-ink: var(--brass-ink);
+  --color-sage: var(--sage);
+  --color-sage-ink: var(--sage-ink);
+  --color-ink: var(--c-ink);
+  --color-paper: var(--c-paper);
+  --color-night: var(--c-night);
+
+  --font-display: var(--font-fraunces), "Iowan Old Style", Georgia, serif;
+  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius);
+  --radius-lg: var(--radius-lg);
+
+  --ease-out: var(--ease-out);
+  --ease-weight: var(--ease-weight);
+}
+
+/* ------------------------------------------------------------------ */
+
+html {
+  background: var(--bg);
+  color: var(--fg);
+  -webkit-text-size-adjust: 100%;
+  text-rendering: optimizeLegibility;
+  transition:
+    background-color var(--theme-fade) var(--ease-out),
+    color var(--theme-fade) var(--ease-out);
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "cv11";
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Paper grain. One fixed layer, never intercepts input. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+  opacity: var(--grain-opacity);
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.11 0 0 0 0 0.08 0 0 0 0 0.09 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  transition: opacity var(--theme-fade) var(--ease-out);
+}
+:root[data-theme="night"] body::before,
+:root[data-theme="afterdark"] body::before {
+  mix-blend-mode: screen;
+}
+
+/* After-dark ambient glow */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(60% 45% at 85% 0%, var(--glow), transparent 70%),
+    radial-gradient(50% 40% at 0% 100%, color-mix(in srgb, var(--glow) 70%, #5b1a2b 30%), transparent 70%);
+  opacity: 0;
+  transition: opacity 1200ms var(--ease-out);
+}
+:root[data-theme="afterdark"] body::after {
+  opacity: 1;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--fg-on-accent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* Typography helpers */
+.display {
+  font-family: var(--font-display);
+  font-variation-settings: "SOFT" 50, "WONK" 0;
+  letter-spacing: -0.035em;
+  line-height: 0.95;
+  font-weight: 420;
+}
+.display-wonk {
+  font-variation-settings: "SOFT" 100, "WONK" 1;
+}
+.eyebrow {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.tabular {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* Hand-drawn underline accent */
+.scribble {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 12' preserveAspectRatio='none'%3E%3Cpath d='M2 8.5C30 4 62 3.2 98 5.6s70 3.4 100-1.8' fill='none' stroke='%23E8563A' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: 100% 0.32em;
+  background-position: 0 92%;
+  padding-bottom: 0.06em;
+}
+
+/* Discreet blur (used by spicy section) */
+.discreet-blur {
+  filter: blur(18px) saturate(0.4);
+  transition: filter 120ms linear;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Modal entrance: rises like a sheet on phones, settles in place on desktop */
+.twain-modal[open] {
+  animation: modal-rise 420ms var(--ease-out);
+}
+.twain-modal[open]::backdrop {
+  animation: modal-fade 300ms ease-out;
+}
+@keyframes modal-rise {
+  from { transform: translateY(40px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+@keyframes modal-fade {
+  from { opacity: 0; }
+}
