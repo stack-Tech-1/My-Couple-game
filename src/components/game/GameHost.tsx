@@ -207,7 +207,9 @@ export function GameHost({ initial }: { initial: SessionSnapshot }) {
         )}
       </div>
 
+      <div className="@container">
       <Component view={view} me={me} partner={partner} names={names} sendMove={sendMove} pending={pending} broadcast={broadcast} sound={sound} clock={clock} />
+      </div>
 
       {session.status !== "active" ? <ResultSheet session={session} me={me} names={names} /> : null}
 

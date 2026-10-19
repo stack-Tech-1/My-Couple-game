@@ -10,7 +10,7 @@ export type SessionRow = {
   config: Record<string, unknown>;
   version: number;
   winner: string | null;
-  outcome: "win" | "tie" | "coop_win" | "coop_loss" | "abandoned" | null;
+  outcome: "win" | "tie" | "coop_win" | "coop_loss" | "complete" | "abandoned" | null;
   rematch_of: string | null;
   created_at: string;
   finished_at: string | null;

@@ -8,6 +8,8 @@ import { Library } from "@/components/room/Library";
 import { Greeting } from "@/components/room/Greeting";
 import { ActiveGames } from "@/components/room/ActiveGames";
 import { activeSessions, scoreboard } from "@/lib/games/server";
+import { getDaily } from "@/lib/daily/server";
+import { DailyQuestion } from "@/components/room/DailyQuestion";
 
 export const metadata: Metadata = { title: "Your room" };
 
@@ -15,7 +17,12 @@ export default async function RoomHome({ params }: { params: Promise<{ roomId: s
   const { roomId } = await params;
   const bundle = await getMyRoom();
   if (!bundle) return null;
-  const [moments, board, active] = await Promise.all([getRecentMoments(roomId), scoreboard(roomId), activeSessions(roomId)]);
+  const [moments, board, active, daily] = await Promise.all([
+    getRecentMoments(roomId),
+    scoreboard(roomId),
+    activeSessions(roomId),
+    bundle.partner ? getDaily(roomId, bundle.me.profile.id) : Promise.resolve(null),
+  ]);
   const mine = board.totals[bundle.me.profile.id] ?? 0;
   const theirs = bundle.partner ? (board.totals[bundle.partner.profile.id] ?? 0) : 0;
   const paired = !!bundle.partner;
@@ -27,7 +34,10 @@ export default async function RoomHome({ params }: { params: Promise<{ roomId: s
       <ActiveGames sessions={active} />
 
       <div className="mt-10 grid gap-x-12 gap-y-10 lg:grid-cols-[1.25fr_1fr]">
-        <HeadToHead mine={mine} theirs={theirs} />
+        <div className="flex flex-col gap-10">
+          <HeadToHead mine={mine} theirs={theirs} />
+          {daily ? <DailyQuestion daily={daily} /> : null}
+        </div>
         <PlayNext />
       </div>
 

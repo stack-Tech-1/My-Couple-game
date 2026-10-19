@@ -22,7 +22,9 @@ export function Greeting() {
   const { bundle } = useRoom();
   // Rendered on the client so it matches the viewer's clock, not the server's.
   const [part, setPart] = useState<keyof typeof lines | null>(null);
-  useEffect(() => setPart(partOfDay(new Date().getHours())), []);
+  useEffect(() => {
+    setPart(partOfDay(new Date().getHours()));
+  }, []);
   const [a, b] = lines[part ?? "evening"];
   return (
     <div className="min-h-[5.5rem]" style={{ opacity: part ? 1 : 0, transition: "opacity 300ms" }}>

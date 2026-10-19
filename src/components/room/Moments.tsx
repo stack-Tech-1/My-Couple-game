@@ -29,6 +29,12 @@ export function Moments({ moments }: { moments: Moment[] }) {
         return `${game ?? "A game"} ended in a tie. Nobody's happy.`;
       case "coop_cleared":
         return `You cleared ${game ?? "a co-op game"} together.`;
+      case "coop_missed":
+        return `${game ?? "A co-op game"} got the better of you both. Rematch?`;
+      case "game_completed":
+        return `You finished a round of ${game ?? "a game"}.`;
+      case "daily_both":
+        return "You both answered today's question.";
       default:
         return `${nameOf(m.actor_id)} did a thing.`;
     }

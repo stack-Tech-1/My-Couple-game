@@ -175,7 +175,8 @@ export async function resign(sessionId: string): Promise<SessionRow> {
     p_state: secret.state,
     p_views: viewsFor(logic, secret.state, session.players),
     p_status: "finished",
-    p_outcome: coop ? "coop_loss" : logic.category === "competitive" ? "win" : "abandoned",
+    // Competitive: the partner wins. Co-op: the team falls short. Everything else simply ends.
+    p_outcome: coop ? "coop_loss" : logic.category === "competitive" ? "win" : "complete",
     p_winner: coop || logic.category !== "competitive" ? null : partner,
   });
   if (error) throw new ApiError(500, "Couldn't end the game. Try again?");

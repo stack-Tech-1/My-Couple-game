@@ -120,7 +120,7 @@ export function DrawGuessBoard({ view, me, names, sendMove, broadcast, clock, pe
             autoComplete="off"
             autoCapitalize="none"
             placeholder="Your guess"
-            className="h-12 flex-1 rounded-full border-[1.5px] border-line bg-raised px-5 text-[1rem] focus:border-line-strong focus:outline-none"
+            className="h-12 min-w-0 flex-1 rounded-full border-[1.5px] border-line bg-raised px-5 text-[1rem] focus:border-line-strong focus:outline-none"
           />
           <Button type="submit" variant="accent">
             Guess

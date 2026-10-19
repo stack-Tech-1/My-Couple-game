@@ -11,6 +11,14 @@ import { WordDuelBoard } from "./word-duel/Board";
 import { ReflexBoard } from "./reflex-duel/Board";
 import { DrawGuessBoard } from "./draw-guess/Board";
 import { KnowMeTriviaBoard } from "./know-me-trivia/Board";
+import { SplitCluesBoard } from "./split-clues/Board";
+import { InSyncBoard } from "./in-sync/Board";
+import { MemoryMatchBoard } from "./memory-match/Board";
+import { BeatTheClockBoard } from "./beat-the-clock/Board";
+import { HowWellBoard } from "./how-well/Board";
+import { ThisOrThatBoard } from "./this-or-that/Board";
+import { StoryChainBoard } from "./story-chain/Board";
+import { DeepQuestionsBoard } from "./deep-questions/Board";
 
 /**
  * Client registry: game id -> component. Logic comes from the server-safe
@@ -26,6 +34,14 @@ const components: Record<string, ComponentType<GameProps<any, any>>> = {
   "reflex-duel": ReflexBoard,
   "draw-guess": DrawGuessBoard,
   "know-me-trivia": KnowMeTriviaBoard,
+  "split-clues": SplitCluesBoard,
+  "in-sync": InSyncBoard,
+  "memory-match": MemoryMatchBoard,
+  "beat-the-clock": BeatTheClockBoard,
+  "how-well": HowWellBoard,
+  "this-or-that": ThisOrThatBoard,
+  "story-chain": StoryChainBoard,
+  "deep-questions": DeepQuestionsBoard,
 };
 
 export function gameComponent(id: string) {

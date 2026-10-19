@@ -23,5 +23,6 @@ describe("toDb", () => {
     expect(toDb({ over: true, winner: "u1" })).toEqual({ status: "finished", outcome: "win", winner: "u1" });
     expect(toDb({ over: true, winner: "tie" })).toEqual({ status: "finished", outcome: "tie", winner: null });
     expect(toDb({ over: true, coop: "win" })).toEqual({ status: "finished", outcome: "coop_win", winner: null });
+    expect(toDb({ over: true, complete: true })).toEqual({ status: "finished", outcome: "complete", winner: null });
   });
 });

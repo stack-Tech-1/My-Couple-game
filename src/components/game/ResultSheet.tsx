@@ -42,6 +42,11 @@ export function ResultSheet({ session, me, names }: { session: SessionRow; me: s
       title = "You did it. Together.";
       sub = "Teamwork, apparently, does make the dream work.";
       break;
+    case "complete":
+      eyebrow = "Finished";
+      title = "That was a good one.";
+      sub = "Saved to your moments.";
+      break;
     case "coop_loss":
       title = "Not this time.";
       sub = "Regroup, hydrate, try again.";

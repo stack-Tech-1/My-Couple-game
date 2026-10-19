@@ -15,7 +15,13 @@ export function Sandbox({ gameId }: { gameId: string }) {
   const logic = GAME_LOGIC[gameId]!;
   const Component = gameComponent(gameId)!;
   const [seed, setSeed] = useState("sandbox");
-  const [state, setState] = useState<unknown>(() => logic.initialState("sandbox", PLAYERS, {}, { now: Date.now() }));
+  const [state, setStateRaw] = useState<unknown>(() => logic.initialState("sandbox", PLAYERS, {}, { now: Date.now() }));
+  // Mirror of the latest state so moves are judged outside React's render cycle.
+  const live = useRef(state);
+  const setState = useCallback((s: unknown) => {
+    live.current = s;
+    setStateRaw(s);
+  }, []);
   const listeners = useRef(new Map<string, Set<(p: unknown) => void>>());
 
   const reset = () => {
@@ -26,16 +32,15 @@ export function Sandbox({ gameId }: { gameId: string }) {
 
   const sendFor = useCallback(
     (by: string) => async (move: unknown, opts?: { silent?: boolean }) => {
-      setState((cur: unknown) => {
-        try {
-          return runMove(logic, cur, move, by, { now: Date.now() }).next;
-        } catch (e) {
-          if (!opts?.silent) toast.error(e instanceof Error ? e.message : "rejected");
-          return cur;
-        }
-      });
+      try {
+        setState(runMove(logic, live.current, move, by, { now: Date.now() }).next);
+      } catch (e) {
+        console.warn(`[sandbox] ${by} move rejected:`, JSON.stringify(move), e instanceof Error ? e.message : e);
+        if (!opts?.silent) toast.error(e instanceof Error ? e.message : "rejected");
+        throw e;
+      }
     },
-    [logic],
+    [logic, setState],
   );
 
   const broadcast = useMemo(
@@ -61,7 +66,7 @@ export function Sandbox({ gameId }: { gameId: string }) {
       </div>
       <div className="grid gap-10 lg:grid-cols-2">
         {PLAYERS.map((p) => (
-          <section key={p} data-seat={NAMES[p]} className="rounded-[18px] border border-line p-4">
+          <section key={p} data-seat={NAMES[p]} className="@container rounded-[18px] border border-line p-4">
             <p className="eyebrow mb-4 text-muted">Seat: {NAMES[p]}</p>
             <Component
               view={logic.viewFor(state, p)}

@@ -178,7 +178,7 @@ function Answerer({ view, sendMove, pending, sound, partnerName, me }: GameProps
         {partnerName} has {view.partnerOnMine.length ? `got ${rightOnMine} of ${view.partnerOnMine.length}` : "not answered any"} of yours so far.
       </p>
       <AnimatePresence mode="wait">
-        <motion.div key={current} initial={{ opacity: 0, x: 30, rotate: 1 }} animate={{ opacity: 1, x: 0, rotate: 0 }} exit={{ opacity: 0, x: -30, rotate: -1 }} className="rounded-[22px] border-[1.5px] border-line-strong bg-raised p-6">
+        <motion.div key={current} initial={{ opacity: 0, x: 30, rotate: 1 }} animate={{ opacity: 1, x: 0, rotate: 0 }} exit={{ opacity: 0, x: -30, rotate: -1, pointerEvents: "none" }} className="rounded-[22px] border-[1.5px] border-line-strong bg-raised p-6">
           <p className="eyebrow text-accent-ink">
             About {partnerName} · {current + 1} of {view.count}
           </p>

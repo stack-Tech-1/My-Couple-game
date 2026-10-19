@@ -8,7 +8,9 @@ export type Players = readonly [PlayerId, PlayerId];
 export type Outcome =
   | { over: false }
   | { over: true; winner: PlayerId | "tie" }
-  | { over: true; coop: "win" | "loss" };
+  | { over: true; coop: "win" | "loss" }
+  /** Finished with no winner or loser: story chains, conversation decks. */
+  | { over: true; complete: true };
 
 /** Facts the server supplies to keep logic pure: the clock is an input, never read inside. */
 export type MoveContext = { now: number };

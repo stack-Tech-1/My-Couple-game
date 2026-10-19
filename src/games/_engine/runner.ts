@@ -1,9 +1,10 @@
 import type { AnyGameLogic, MoveContext, Outcome, PlayerId, Players } from "./types";
 
-export type DbOutcome = { status: "active" | "finished"; outcome: "win" | "tie" | "coop_win" | "coop_loss" | null; winner: PlayerId | null };
+export type DbOutcome = { status: "active" | "finished"; outcome: "win" | "tie" | "coop_win" | "coop_loss" | "complete" | null; winner: PlayerId | null };
 
 export function toDb(o: Outcome): DbOutcome {
   if (!o.over) return { status: "active", outcome: null, winner: null };
+  if ("complete" in o) return { status: "finished", outcome: "complete", winner: null };
   if ("coop" in o) return { status: "finished", outcome: o.coop === "win" ? "coop_win" : "coop_loss", winner: null };
   if (o.winner === "tie") return { status: "finished", outcome: "tie", winner: null };
   return { status: "finished", outcome: "win", winner: o.winner };
