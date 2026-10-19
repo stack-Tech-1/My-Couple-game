@@ -6,17 +6,28 @@ import { MoveRejected, runMove, toDb, viewsFor } from "@/games/_engine/runner";
 import type { Players } from "@/games/_engine/types";
 import type { SessionRow, SessionSnapshot } from "./types";
 
+/**
+ * A plpgsql function declared to return a row type that does `return null` comes back from
+ * PostgREST as an object with every column null, not as null. Only a real id means success.
+ */
+const isRow = (d: unknown): d is SessionRow => !!d && typeof d === "object" && typeof (d as { id?: unknown }).id === "string";
+
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
     super(message);
   }
 }
 
+/**
+ * Game API auth. getClaims() verifies the session JWT's signature locally (asymmetric signing
+ * keys), so a burst of moves doesn't become a burst of round-trips to the Auth server.
+ */
 async function requireUser() {
   const supabase = await supabaseServer();
-  const { data } = await supabase.auth.getUser();
-  if (!data.user) throw new ApiError(401, "You've been signed out. Sign back in to keep playing.");
-  return { supabase, user: data.user };
+  const { data, error } = await supabase.auth.getClaims();
+  const id = data?.claims?.sub;
+  if (error || !id) throw new ApiError(401, "You've been signed out. Sign back in to keep playing.");
+  return { supabase, user: { id } };
 }
 
 async function rateLimit(uid: string, action: string, max: number, windowSeconds: number) {
@@ -104,7 +115,7 @@ export async function createSession(gameId: string, rawConfig: unknown, rematchO
     p_views: viewsFor(logic, state, players),
     p_rematch_of: rematchId ?? null,
   });
-  if (error || !data) throw new ApiError(500, "Couldn't set up the table. Try again?");
+  if (error || !isRow(data)) throw new ApiError(500, "Couldn't set up the table. Try again?");
   return data as SessionRow;
 }
 
@@ -147,8 +158,8 @@ export async function submitMove(sessionId: string, rawMove: unknown): Promise<S
       p_winner: db.winner,
     });
     if (error) throw new ApiError(500, "Couldn't save that move. Try again?");
-    if (data) {
-      const s = data as SessionRow;
+    if (isRow(data)) {
+      const s = data;
       return { session: s, view: logic.viewFor(result.next, user.id), version: s.version, serverNow: Date.now() };
     }
   }
@@ -180,7 +191,7 @@ export async function resign(sessionId: string): Promise<SessionRow> {
     p_winner: coop || logic.category !== "competitive" ? null : partner,
   });
   if (error) throw new ApiError(500, "Couldn't end the game. Try again?");
-  if (!data) throw new ApiError(409, "stale");
+  if (!isRow(data)) throw new ApiError(409, "stale");
   return data as SessionRow;
 }
 

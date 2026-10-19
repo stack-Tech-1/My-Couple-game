@@ -11,7 +11,7 @@ import { gameMeta, CATEGORIES } from "@/games/catalog";
 import { gameComponent } from "@/games/registry";
 import type { SoundName } from "@/games/_engine/types";
 import { createGameStore, gameApi, GameApiError } from "@/lib/games/client";
-import type { SessionRow, SessionSnapshot } from "@/lib/games/types";
+import type { SessionSnapshot } from "@/lib/games/types";
 import { useRoom } from "@/lib/realtime/RoomProvider";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import { playSound } from "@/lib/sound";
@@ -47,14 +47,29 @@ export function GameHost({ initial }: { initial: SessionSnapshot }) {
   }, []);
   const clock = useCallback(() => Date.now() + clockRef.current.offset, []);
 
+  // Coalesced: realtime events, pings and polls can all ask at once; at most one request is in
+  // flight, and anything that arrives meanwhile triggers exactly one follow-up.
+  const sync = useRef({ inFlight: false, again: false });
   const resync = useCallback(async () => {
+    if (sync.current.inFlight) {
+      sync.current.again = true;
+      return;
+    }
+    sync.current.inFlight = true;
     try {
-      const t0 = Date.now();
-      const snap = await gameApi.snapshot(sessionId);
-      sample(t0, snap.serverNow);
-      store.getState().accept(snap);
-    } catch {
-      // stay on what we have; the banner already explains connectivity issues
+      do {
+        sync.current.again = false;
+        const t0 = Date.now();
+        try {
+          const snap = await gameApi.snapshot(sessionId);
+          sample(t0, snap.serverNow);
+          store.getState().accept(snap);
+        } catch {
+          // stay on what we have; the banner already explains connectivity issues
+        }
+      } while (sync.current.again);
+    } finally {
+      sync.current.inFlight = false;
     }
   }, [sessionId, store, sample]);
 
@@ -74,11 +89,15 @@ export function GameHost({ initial }: { initial: SessionSnapshot }) {
     const ch = supabase
       .channel(`room:${session.room_id}:game:${sessionId}`, { config: { private: true } })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "game_views", filter: `session_id=eq.${sessionId}` }, (p) => {
+        // Realtime payloads can omit columns (large or array values), so only trust a complete one.
         const row = p.new as { user_id?: string; version?: number; view?: unknown };
-        if (row.user_id === me && typeof row.version === "number") store.getState().accept({ version: row.version, view: row.view });
+        if (row.user_id !== me) return;
+        if (typeof row.version === "number" && row.view !== undefined && row.view !== null) store.getState().accept({ version: row.version, view: row.view });
+        else void resync();
       })
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "game_sessions", filter: `id=eq.${sessionId}` }, (p) => {
-        store.getState().setSession(p.new as SessionRow);
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "game_sessions", filter: `id=eq.${sessionId}` }, () => {
+        // Treat it as a signal and refetch: the payload isn't guaranteed to carry every column (e.g. players).
+        void resync();
       })
       .subscribe((status) => {
         if (status === "SUBSCRIBED") void resync(); // catch anything missed while connecting

@@ -48,6 +48,8 @@ export function createGameStore(initial: SessionSnapshot) {
     version: initial.version,
     pending: false,
     accept: (s) => {
+      // Never adopt a malformed snapshot (no session id / version), whatever the server sent.
+      if (typeof s.version !== "number" || (s.session && typeof s.session.id !== "string")) return;
       if (s.version < get().version) return;
       set({
         version: s.version,

@@ -37,6 +37,11 @@ test("simultaneous Word Duel guesses all land and there is exactly one winner", 
     const target = (secret!.state as { target: string }).target;
     const wrong = target === "crane" ? "slate" : "crane";
 
+    // Typing before the board has hydrated would drop keystrokes; wait until both are interactive.
+    for (const p of [pa, pb]) {
+      await p.waitForLoadState("networkidle");
+      await expect(p.getByRole("button", { name: "Enter" })).toBeEnabled();
+    }
     const typeWord = async (page: typeof pa, w: string) => {
       for (const ch of w) await page.keyboard.press(ch);
     };
