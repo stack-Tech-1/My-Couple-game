@@ -61,7 +61,7 @@ export const truthOrDare: GameLogic<TodState, TodMove, TodView, SpicyConfig> = {
       { title: "Heat", body: ["Warm, Hot or Fire. Either of you can turn it down at any time."] },
     ],
   },
-  initialState(seed, players, config) {
+  initialState(seed, players, config, ctx) {
     const cfg = spicyConfigSchema.parse(config);
     const max = cfg.maxHeat as Heat;
     return {
@@ -69,8 +69,8 @@ export const truthOrDare: GameLogic<TodState, TodMove, TodView, SpicyConfig> = {
       turn: makeRng(seed).int(2) as 0 | 1,
       maxHeat: max,
       heat: 1,
-      truths: makeDeck(withCustom(TRUTHS, cfg.custom, "truth", max), seed, "t"),
-      dares: makeDeck(withCustom(DARES, cfg.custom, "dare", max), seed, "d"),
+      truths: makeDeck(withCustom(ctx?.content?.truth?.length ? ctx.content.truth : TRUTHS, cfg.custom, "truth", max), seed, "t"),
+      dares: makeDeck(withCustom(ctx?.content?.dare?.length ? ctx.content.dare : DARES, cfg.custom, "dare", max), seed, "d"),
       current: null,
       ended: false,
     };
@@ -188,10 +188,10 @@ export const hotSeat: GameLogic<SeatState, SeatMove, SeatView, SpicyConfig> = {
       { title: "Skip anything", body: ["Either of you can skip a question, no explanation needed."] },
     ],
   },
-  initialState(seed, players, config) {
+  initialState(seed, players, config, ctx) {
     const cfg = spicyConfigSchema.parse(config);
     const max = cfg.maxHeat as Heat;
-    const deck = makeDeck(withCustom(HOT_SEAT, cfg.custom, "hotseat", max), seed, "h");
+    const deck = makeDeck(withCustom(ctx?.content?.hot_seat?.length ? ctx.content.hot_seat : HOT_SEAT, cfg.custom, "hotseat", max), seed, "h");
     const first = draw(deck, 1);
     return { players, seat: makeRng(seed).int(2) as 0 | 1, maxHeat: max, heat: 1, deck: first.deck, current: first.card, answered: 0, ended: false };
   },
@@ -246,10 +246,10 @@ export const neverHaveI: GameLogic<NeverState, NeverMove, NeverView, SpicyConfig
       { title: "Skip anything", body: ["Either of you can skip a card. No one sees why."] },
     ],
   },
-  initialState(seed, players, config) {
+  initialState(seed, players, config, ctx) {
     const cfg = spicyConfigSchema.parse(config);
     const max = cfg.maxHeat as Heat;
-    const deck = makeDeck(withCustom(NEVER, cfg.custom, "never", max), seed, "n");
+    const deck = makeDeck(withCustom(ctx?.content?.never?.length ? ctx.content.never : NEVER, cfg.custom, "never", max), seed, "n");
     const first = draw(deck, 1);
     return { players, maxHeat: max, heat: 1, deck: first.deck, current: first.card, answers: { [players[0]]: null, [players[1]]: null }, tally: { [players[0]]: 0, [players[1]]: 0 }, ended: false };
   },

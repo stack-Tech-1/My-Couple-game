@@ -55,9 +55,9 @@ export async function getStats(days: number): Promise<Stats | null> {
   return data as Stats;
 }
 
-export type AdminAnnouncement = Announcement & { starts_at: string; ends_at: string | null; created_at: string };
+export type AdminAnnouncement = Announcement & { starts_at: string; ends_at: string | null; created_at: string; emailed_at: string | null; emailed_count: number };
 
 export async function listAnnouncements(): Promise<AdminAnnouncement[]> {
-  const { data } = await supabaseAdmin().from("announcements").select("id, title, body, tone, link_url, link_label, starts_at, ends_at, created_at").order("created_at", { ascending: false }).limit(50);
+  const { data } = await supabaseAdmin().from("announcements").select("id, title, body, tone, link_url, link_label, starts_at, ends_at, created_at, emailed_at, emailed_count").order("created_at", { ascending: false }).limit(50);
   return (data ?? []) as AdminAnnouncement[];
 }

@@ -16,6 +16,11 @@ const moveSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("end"), title: z.string().trim().max(60).optional() }),
 ]);
 
+const pickOpener = (rng: { int: (n: number) => number }, pool?: string[]) => {
+  const bank = pool?.length ? pool : STORY_OPENERS;
+  return bank[rng.int(bank.length)]!;
+};
+
 export const storyChain: GameLogic<StoryState, StoryMove, StoryView> = {
   id: "story-chain",
   category: "personal",
@@ -31,9 +36,9 @@ export const storyChain: GameLogic<StoryState, StoryMove, StoryView> = {
     ],
   },
 
-  initialState(seed, players) {
+  initialState(seed, players, _config, ctx) {
     const rng = makeRng(seed);
-    return { players, opener: STORY_OPENERS[rng.int(STORY_OPENERS.length)]!, lines: [], turn: rng.int(2) as 0 | 1, ended: false, title: null };
+    return { players, opener: pickOpener(rng, ctx?.content?.story_opener?.map((o) => o.text)), lines: [], turn: rng.int(2) as 0 | 1, ended: false, title: null };
   },
 
   validateMove(s, move, by) {

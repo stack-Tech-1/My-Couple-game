@@ -10,18 +10,19 @@ import { Icon } from "@/design/icons";
 import { toast } from "@/design/toast";
 import { cn } from "@/lib/cn";
 import { useRoom } from "@/lib/realtime/RoomProvider";
-import { deleteAccount, leaveRoom, renameRoom, signOut, updateMyPrefs } from "@/lib/room/actions";
+import { deleteAccount, leaveRoom, renameRoom, setAnnouncementEmails, signOut, updateMyPrefs } from "@/lib/room/actions";
 import { applyTheme, resolveTheme, saveThemePref, type ThemePref } from "@/lib/theme/theme";
 import { HouseRules } from "@/components/room/HouseRules";
 import { setOptIn } from "@/lib/afterdark/actions";
 
-export function SettingsView() {
+export function SettingsView({ announcementEmails }: { announcementEmails: boolean }) {
   const { bundle } = useRoom();
   const router = useRouter();
   const { room, me, partner } = bundle;
   const [name, setName] = useState(room.name);
   const [theme, setTheme] = useState<ThemePref>(me.member.theme);
   const [sound, setSound] = useState(me.member.sound_enabled);
+  const [emails, setEmails] = useState(announcementEmails);
   const [pending, start] = useTransition();
   const [leaveOpen, setLeaveOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -43,6 +44,16 @@ export function SettingsView() {
     void updateMyPrefs({ theme: t }).then((r) => {
       if (!r.ok) toast.error(r.error);
       else router.refresh();
+    });
+  }
+
+  function toggleEmails(v: boolean) {
+    setEmails(v);
+    void setAnnouncementEmails(v).then((r) => {
+      if (!r.ok) {
+        setEmails(!v);
+        toast.error(r.error);
+      }
     });
   }
 
@@ -93,6 +104,7 @@ export function SettingsView() {
         </div>
         <div className="mt-4 border-t border-line">
           <Toggle checked={sound} onChange={toggleSound} label="Sounds" description="Soft clicks, card snaps and a little fanfare when you win. Off by default." />
+          <Toggle checked={emails} onChange={toggleEmails} label="Announcement emails" description="Now and then: new games and important news. Sign-in emails always arrive." />
         </div>
       </Section>
 

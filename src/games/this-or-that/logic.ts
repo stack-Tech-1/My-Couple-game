@@ -4,8 +4,11 @@ import { makeRng, shuffle } from "@/games/_engine/rng";
 import { THIS_OR_THAT } from "@/content/personal";
 
 export const COUNT = 12;
+/** Cards in this session: COUNT, or fewer if the deck is smaller. */
+const total = (s: { pairs: number[] }) => s.pairs.length;
 export type ToTPick = 0 | 1 | null;
-export type ToTState = { players: Players; pairs: number[]; picks: Record<PlayerId, ToTPick[]>; done: boolean };
+/** `items` holds the drawn pairs; older sessions index into THIS_OR_THAT via `pairs`. */
+export type ToTState = { players: Players; pairs: number[]; items?: [string, string][]; picks: Record<PlayerId, ToTPick[]>; done: boolean };
 export type ToTMove = { index: number; pick: ToTPick };
 export type ToTView = {
   players: Players;
@@ -35,18 +38,19 @@ export const thisOrThat: GameLogic<ToTState, ToTMove, ToTView> = {
     ],
   },
 
-  initialState(seed, players) {
-    const pairs = shuffle(THIS_OR_THAT.map((_, i) => i), makeRng(seed)).slice(0, COUNT);
-    return { players, pairs, picks: { [players[0]]: [], [players[1]]: [] }, done: false };
+  initialState(seed, players, _config, ctx) {
+    const bank: [string, string][] = ctx?.content?.this_or_that?.length ? ctx.content.this_or_that.map((p) => [p.a, p.b]) : THIS_OR_THAT;
+    const items = shuffle(bank, makeRng(seed)).slice(0, COUNT);
+    return { players, pairs: items.map((_, i) => i), items, picks: { [players[0]]: [], [players[1]]: [] }, done: false };
   },
 
   validateMove(s, move, by) {
-    return !s.done && move.index === s.picks[by]!.length;
+    return !s.done && move.index === s.picks[by]!.length && move.index < total(s);
   },
 
   applyMove(s, move, by) {
     const picks = { ...s.picks, [by]: [...s.picks[by]!, move.pick] };
-    return { ...s, picks, done: s.players.every((p) => picks[p]!.length === COUNT) };
+    return { ...s, picks, done: s.players.every((p) => picks[p]!.length === total(s)) };
   },
 
   isOver(s): Outcome {
@@ -60,7 +64,7 @@ export const thisOrThat: GameLogic<ToTState, ToTMove, ToTView> = {
     return {
       players: s.players,
       me: player,
-      pairs: s.pairs.map((i) => THIS_OR_THAT[i]!),
+      pairs: s.items ?? s.pairs.map((i) => THIS_OR_THAT[i]!),
       mine,
       partnerProgress: theirs.length,
       theirs: s.done ? theirs : null,

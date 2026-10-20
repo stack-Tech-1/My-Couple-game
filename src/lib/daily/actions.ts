@@ -7,6 +7,7 @@ import { friendlyError } from "@/lib/errors";
 import { getUser } from "@/lib/room/server";
 import type { ActionResult } from "@/lib/room/types";
 import { questionFor, utcDay } from "./question";
+import { dailyQuestions } from "@/lib/content/server";
 
 const answerSchema = z.string().trim().min(1, "Say something! Anything.").max(500, "Keep it under 500 characters.");
 
@@ -17,7 +18,10 @@ export async function answerDaily(roomId: string, raw: unknown): Promise<ActionR
   if (!user) return { ok: false, error: friendlyError("not signed in") };
   const supabase = await supabaseServer();
   const day = utcDay();
-  const { error } = await supabase.from("daily_answers").insert({ room_id: roomId, day, user_id: user.id, question: questionFor(roomId, day), answer: parsed.data });
+  // If the partner already answered, keep their exact question even if the deck changed since.
+  const { data: theirs } = await supabase.from("daily_answers").select("question").eq("room_id", roomId).eq("day", day).limit(1).maybeSingle();
+  const question = (theirs?.question as string | undefined) ?? questionFor(roomId, day, await dailyQuestions());
+  const { error } = await supabase.from("daily_answers").insert({ room_id: roomId, day, user_id: user.id, question, answer: parsed.data });
   if (error) return { ok: false, error: error.code === "23505" ? "You've already answered today. No take-backs." : friendlyError(error) };
   revalidatePath(`/room/${roomId}`, "layout");
   return { ok: true, data: null };

@@ -7,7 +7,8 @@ export const howWellConfigSchema = z.object({ count: z.number().int().min(4).max
 export type HowWellConfig = z.input<typeof howWellConfigSchema>;
 
 export type Pick = { self: number; guess: number };
-export type HowWellState = { players: Players; qs: number[]; picks: Record<PlayerId, Pick[]>; winner: PlayerId | "tie" | null };
+/** `items` holds the drawn questions; sessions from before it existed index into HOW_WELL via `qs`. */
+export type HowWellState = { players: Players; qs: number[]; items?: { q: string; options: string[] }[]; picks: Record<PlayerId, Pick[]>; winner: PlayerId | "tie" | null };
 export type HowWellMove = { index: number; self: number; guess: number };
 export type HowWellView = {
   players: Players;
@@ -42,10 +43,11 @@ export const howWell: GameLogic<HowWellState, HowWellMove, HowWellView, HowWellC
     ],
   },
 
-  initialState(seed, players, config) {
+  initialState(seed, players, config, ctx) {
     const { count } = howWellConfigSchema.parse(config);
-    const qs = shuffle(HOW_WELL.map((_, i) => i), makeRng(seed)).slice(0, count);
-    return { players, qs, picks: { [players[0]]: [], [players[1]]: [] }, winner: null };
+    const bank = ctx?.content?.how_well?.length ? ctx.content.how_well : HOW_WELL;
+    const items = shuffle(bank, makeRng(seed)).slice(0, Math.min(count, bank.length)).map((i) => ({ q: i.q, options: [...i.options] }));
+    return { players, qs: items.map((_, i) => i), items, picks: { [players[0]]: [], [players[1]]: [] }, winner: null };
   },
 
   validateMove(s, move, by) {
@@ -71,7 +73,7 @@ export const howWell: GameLogic<HowWellState, HowWellMove, HowWellView, HowWellC
     return {
       players: s.players,
       me: player,
-      questions: s.qs.map((i) => ({ q: HOW_WELL[i]!.q, options: [...HOW_WELL[i]!.options] })),
+      questions: s.items ?? s.qs.map((i) => ({ q: HOW_WELL[i]!.q, options: [...HOW_WELL[i]!.options] })),
       mine: s.picks[player] ?? [],
       partnerProgress: s.picks[partner]?.length ?? 0,
       theirs: done ? s.picks[partner]! : null,

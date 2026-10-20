@@ -114,6 +114,9 @@ migrations.
 | `NEXT_PUBLIC_ANALYTICS_PROVIDER` | optional | Empty (off), `console` (logs events) or `plausible`. |
 | `NEXT_PUBLIC_ANALYTICS_DOMAIN` | optional | Your Plausible site domain, when the provider is `plausible`. |
 | `AMAH_SANDBOX` | optional | `1` enables `/dev/play/<game>` in a production build (used by tests). Leave unset in production. |
+| `SMTP_USER`, `SMTP_PASS` | optional, **server only** | Turn on announcement emails. With Gmail: the address and a 16-character App Password. |
+| `SMTP_HOST`, `SMTP_PORT`, `EMAIL_FROM` | optional | Another SMTP provider (defaults `smtp.gmail.com`, `465`) and the From line. |
+| `EMAIL_LINK_SECRET` | optional, server only | Signs unsubscribe links. Defaults to the service role key; set it if you ever rotate that key and want old links to keep working. |
 
 `.env.local` is git-ignored. **Never put real keys in `.env.example`**: it is committed.
 
@@ -135,6 +138,7 @@ All schema lives in `supabase/migrations/`, applied in filename order:
 | `0008_chat.sql` | Room chat: `chat_messages`, `chat_reads` (unread and "Seen") and `mark_chat_read`. |
 | `0009_chat_media.sql` | Voice notes and stickers: message kinds, `stickers`, the public `stickers` bucket (starter pack) and the private `chat-media` bucket. |
 | `0010_admin.sql` | Admin: `app_admins`, `is_admin()`, `app_config` (game switches), `announcements`, and the service-role-only `admin_stats`, `admin_find_user`, `admin_remove_from_room`. |
+| `0011_content_email.sql` | Editable content (`content_items`, `content_hidden`), announcement email opt-out and send log, `admin_email_recipients`, admin uploads to the starter-sticker bucket. |
 
 `npm run db:migrate` records what it has applied in `public._twain_migrations` (the original project name; kept so existing databases stay in sync) and only runs new
 files, each in its own transaction. To change the schema, **add a new numbered file**; never edit
@@ -309,7 +313,15 @@ npm run admin:grant -- you@example.com --revoke   # remove
 - **Users:** look up one account by exact email, then suspend, restore or delete it.
   Deleting works like self-deletion: the partner keeps the room.
 - **Games:** switch a game off (hidden everywhere, and new sessions are refused) or tag it "New".
-- **Announcements:** a dismissible banner in every room, for a set number of days.
+- **Announcements:** a dismissible banner in every room, for a set number of days. It can also
+  be emailed once to everyone who hasn't opted out (needs `SMTP_USER`/`SMTP_PASS`). Each email
+  has a signed unsubscribe link and one-click unsubscribe headers, and people can switch emails
+  off or on in their room settings.
+- **Content:** add Daily Questions, date ideas, This or That pairs, Story openers, How Well
+  questions, Deep Questions and After Dark cards, or hide built-in ones. New games pick up changes
+  immediately; a game in progress keeps the cards it drew. Daily Question changes start the next
+  UTC day, so nobody's question changes mid-day.
+- **Stickers:** upload or remove starter-pack stickers (same as `npm run stickers:import`).
 
 All admin reads go through `SECURITY DEFINER` functions that only the service role can execute,
 and every admin action re-checks `is_admin()` on the server.

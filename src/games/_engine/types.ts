@@ -1,3 +1,4 @@
+import type { ContentPack } from "@/lib/content/catalog";
 import type { ComponentType } from "react";
 import type { z } from "zod";
 import type { GameCategory } from "@/games/catalog";
@@ -13,7 +14,12 @@ export type Outcome =
   | { over: true; complete: true };
 
 /** Facts the server supplies to keep logic pure: the clock is an input, never read inside. */
-export type MoveContext = { now: number };
+/**
+ * `content` is only passed to initialState: the live decks (built-ins plus admin additions),
+ * assembled by the server. Games copy what they draw into their state, so a session never
+ * depends on the decks changing later. Absent (tests, sandbox) means the built-in content.
+ */
+export type MoveContext = { now: number; content?: ContentPack };
 
 export type Rules = {
   summary: string;

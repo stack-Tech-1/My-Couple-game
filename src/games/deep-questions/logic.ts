@@ -5,6 +5,8 @@ import { DEEP_QUESTIONS } from "@/content/personal";
 
 export type DeepState = {
   players: Players;
+  /** Question texts per level, copied in at the start (absent in sessions from before it existed). */
+  bank?: string[][];
   /** Shuffled question order per level. */
   decks: number[][];
   level: number;
@@ -29,6 +31,8 @@ export type DeepView = {
 
 const moveSchema = z.object({ type: z.enum(["next", "skip", "deeper", "end"]) });
 
+const textOf = (s: DeepState, level: number, q: number) => s.bank?.[level]?.[q] ?? DEEP_QUESTIONS[level]!.questions[q]!;
+
 function draw(s: DeepState): DeepState {
   const deck = s.decks[s.level]!;
   const p = s.pos[s.level]!;
@@ -51,10 +55,16 @@ export const deepQuestions: GameLogic<DeepState, DeepMove, DeepView> = {
     ],
   },
 
-  initialState(seed, players) {
+  initialState(seed, players, _config, ctx) {
     const rng = makeRng(seed);
-    const decks = DEEP_QUESTIONS.map((l) => shuffle(l.questions.map((_, i) => i), rng));
-    return draw({ players, decks, level: 0, pos: decks.map(() => 0), answerer: rng.int(2) as 0 | 1, current: null, asked: [], ended: false });
+    const pool = ctx?.content?.deep_question;
+    // A level with nothing left in the pool falls back to its built-in questions.
+    const bank = DEEP_QUESTIONS.map((l, level) => {
+      const mine = pool?.filter((p) => p.level === level).map((p) => p.text) ?? [];
+      return mine.length ? mine : l.questions;
+    });
+    const decks = bank.map((qs) => shuffle(qs.map((_, i) => i), rng));
+    return draw({ players, bank, decks, level: 0, pos: decks.map(() => 0), answerer: rng.int(2) as 0 | 1, current: null, asked: [], ended: false });
   },
 
   validateMove(s, move) {
@@ -81,9 +91,9 @@ export const deepQuestions: GameLogic<DeepState, DeepMove, DeepView> = {
       me: player,
       level: s.level,
       levels: DEEP_QUESTIONS.map(({ level, blurb }) => ({ level, blurb })),
-      card: s.current ? DEEP_QUESTIONS[s.current.level]!.questions[s.current.q]! : null,
+      card: s.current ? textOf(s, s.current.level, s.current.q) : null,
       answerer: s.players[s.answerer],
-      asked: s.asked.map((a) => ({ level: DEEP_QUESTIONS[a.level]!.level, question: DEEP_QUESTIONS[a.level]!.questions[a.q]!, answerer: a.answerer })),
+      asked: s.asked.map((a) => ({ level: DEEP_QUESTIONS[a.level]!.level, question: textOf(s, a.level, a.q), answerer: a.answerer })),
       remainingAtLevel: s.decks[s.level]!.length - s.pos[s.level]!,
       ended: s.ended,
     };

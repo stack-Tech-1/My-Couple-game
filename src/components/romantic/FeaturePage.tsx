@@ -9,6 +9,7 @@ import { LoveNotes } from "./LoveNotes";
 import { MemoryLane } from "./MemoryLane";
 import { DateNight } from "./DateNight";
 import { BucketList } from "./BucketList";
+import { dateIdeas } from "@/lib/content/server";
 
 /** Library entries that are ongoing room features rather than turn-based sessions. */
 export const FEATURES = new Set(["daily-question", "love-notes", "memory-lane", "date-night", "bucket-list"]);
@@ -23,7 +24,7 @@ export async function FeaturePage({ gameId, roomId, bundle }: { gameId: string; 
   else if (gameId === "daily-question") body = <DailyQuestion daily={await getDaily(roomId, me)} full />;
   else if (gameId === "love-notes") body = <LoveNotes notes={await getNotes(roomId, me)} />;
   else if (gameId === "memory-lane") body = <MemoryLane memories={await getMemories(roomId)} />;
-  else if (gameId === "date-night") body = <DateNight />;
+  else if (gameId === "date-night") body = <DateNight ideas={await dateIdeas()} />;
   else body = <BucketList items={await getBucket(roomId)} />;
 
   return (

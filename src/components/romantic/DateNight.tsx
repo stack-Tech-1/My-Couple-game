@@ -6,7 +6,7 @@ import { z } from "zod";
 import { Button } from "@/design/Button";
 import { toast } from "@/design/toast";
 import { makeRng } from "@/games/_engine/rng";
-import { DATE_IDEAS, type DateIdea } from "@/content/date-ideas";
+import type { DateIdea } from "@/content/date-ideas";
 import { useRoom } from "@/lib/realtime/RoomProvider";
 import { addBucketItem } from "@/lib/romantic/actions";
 import { playSound } from "@/lib/sound";
@@ -22,7 +22,8 @@ const WHERE: { key: Where; label: string }[] = [
 const BUDGET = ["Free", "Under £20", "Treat yourselves"];
 const spinEvent = z.object({ seed: z.string().max(40), where: z.enum(["any", "home", "out", "distance"]), budget: z.number().int().min(0).max(2) });
 
-export function DateNight() {
+/** `ideas` comes from the server (built-ins plus admin additions), identical on both phones. */
+export function DateNight({ ideas }: { ideas: DateIdea[] }) {
   const { bundle, send, on } = useRoom();
   const reduce = useReducedMotion();
   const [where, setWhere] = useState<Where>("any");
@@ -32,12 +33,12 @@ export function DateNight() {
   const [spinning, setSpinning] = useState(false);
   const [saving, startSave] = useTransition();
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
-  const pool = useMemo(() => DATE_IDEAS.filter((d) => (where === "any" || d.where === where) && d.budget <= budget), [where, budget]);
+  const pool = useMemo(() => ideas.filter((d) => (where === "any" || d.where === where) && d.budget <= budget), [ideas, where, budget]);
 
   // Deterministic from the seed, so both phones run the same spin and land on the same idea.
   const run = useCallback(
     (seed: string, w: Where, b: number, fromPartner: boolean) => {
-      const candidates = DATE_IDEAS.filter((d) => (w === "any" || d.where === w) && d.budget <= b);
+      const candidates = ideas.filter((d) => (w === "any" || d.where === w) && d.budget <= b);
       if (!candidates.length) return;
       timers.current.forEach(clearTimeout);
       const rng = makeRng(seed);
@@ -65,7 +66,7 @@ export function DateNight() {
         }, steps ? 40 * steps + steps * steps * 5 + 150 : 0),
       );
     },
-    [reduce, bundle.me.member.sound_enabled, bundle.partner?.profile.display_name],
+    [ideas, reduce, bundle.me.member.sound_enabled, bundle.partner?.profile.display_name],
   );
 
   useEffect(

@@ -114,6 +114,15 @@ async function myRoomId(): Promise<string | null> {
   return (data?.room_id as string | undefined) ?? null;
 }
 
+export async function setAnnouncementEmails(on: unknown): Promise<ActionResult> {
+  if (typeof on !== "boolean") return { ok: false, error: "That didn't look right." };
+  const user = await getUser();
+  if (!user) return fail("not signed in");
+  const { error } = await (await supabaseServer()).from("profiles").update({ announcement_emails: on }).eq("id", user.id);
+  if (error) return fail(error);
+  return { ok: true, data: null };
+}
+
 export async function leaveRoom(): Promise<ActionResult> {
   const supabase = await supabaseServer();
   const roomId = await myRoomId();

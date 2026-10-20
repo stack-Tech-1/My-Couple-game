@@ -1,6 +1,7 @@
 import "server-only";
 import { supabaseServer } from "@/lib/supabase/server";
 import { questionFor, utcDay } from "./question";
+import { dailyQuestions } from "@/lib/content/server";
 
 export type DailyRow = { day: string; user_id: string; question: string; answer: string };
 export type DailyState = {
@@ -33,7 +34,7 @@ export async function getDaily(roomId: string, me: string): Promise<DailyState> 
 
   return {
     day,
-    question: today[0]?.question ?? questionFor(roomId, day),
+    question: today[0]?.question ?? questionFor(roomId, day, await dailyQuestions()),
     mine: today.find((r) => r.user_id === me)?.answer ?? null,
     partnerAnswered: st?.partner ?? false,
     theirs: today.find((r) => r.user_id !== me)?.answer ?? null,

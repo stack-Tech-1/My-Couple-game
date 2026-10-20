@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 import type { GameProps } from "@/games/_engine/types";
 import { Status } from "@/games/_ui";
 import { cn } from "@/lib/cn";
-import { COUNT, type ToTMove, type ToTView } from "./logic";
+import type { ToTMove, ToTView } from "./logic";
 
 const SECONDS = 5;
 
@@ -36,7 +36,7 @@ export function ThisOrThatBoard({ view, me, names, sendMove, sound }: GameProps<
     return (
       <div className="mx-auto flex w-full max-w-[600px] flex-col gap-5">
         <Status>
-          {view.matches} of {COUNT} in common.
+          {view.matches} of {view.pairs.length} in common.
         </Status>
         <p className="text-center text-muted">{view.matches! >= 9 ? "Practically the same person." : view.matches! >= 6 ? "Plenty in common, plenty to argue about." : "Opposites attract. Allegedly."}</p>
         <ul className="flex flex-col gap-2">
@@ -58,13 +58,13 @@ export function ThisOrThatBoard({ view, me, names, sendMove, sound }: GameProps<
     );
   }
 
-  if (!pair) return <Status>Done! Waiting for {partnerName} ({view.partnerProgress}/{COUNT})…</Status>;
+  if (!pair) return <Status>Done! Waiting for {partnerName} ({view.partnerProgress}/{view.pairs.length})…</Status>;
 
   return (
     <div className="mx-auto flex w-full max-w-[640px] flex-col gap-4">
       <div className="flex items-center justify-between text-[0.85rem] text-muted">
-        <span className="tabular">{index + 1} / {COUNT}</span>
-        <span>{partnerName}: {view.partnerProgress}/{COUNT}</span>
+        <span className="tabular">{index + 1} / {view.pairs.length}</span>
+        <span>{partnerName}: {view.partnerProgress}/{view.pairs.length}</span>
       </div>
       <div className="h-1.5 overflow-hidden rounded-full bg-sunk">
         <motion.div key={index} className="h-full bg-accent" initial={{ width: "100%" }} animate={{ width: "0%" }} transition={{ duration: reduce ? 0 : SECONDS, ease: "linear" }} />

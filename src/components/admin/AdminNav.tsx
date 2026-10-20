@@ -10,6 +10,8 @@ const LINKS = [
   { href: "/admin", label: "Overview" },
   { href: "/admin/users", label: "Users" },
   { href: "/admin/games", label: "Games" },
+  { href: "/admin/content", label: "Content" },
+  { href: "/admin/stickers", label: "Stickers" },
   { href: "/admin/announcements", label: "Announcements" },
 ];
 

@@ -9,6 +9,7 @@ import { purgeRoomMedia } from "@/lib/media/purge";
 import type { ActionResult } from "@/lib/room/types";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { currentAdmin } from "./server";
+import { emailConfigured, emailEveryone, sendTestEmail } from "@/lib/email/send";
 
 // Every action re-checks admin rights itself: a server action is a public endpoint.
 async function guard() {
@@ -126,19 +127,21 @@ const announcementInput = z
   })
   .refine((v) => !v.link_label || v.link_url, { message: "Add the link itself, or clear the link text.", path: ["link_url"] });
 
-export async function createAnnouncement(input: unknown): Promise<ActionResult> {
+export async function createAnnouncement(input: unknown): Promise<ActionResult<{ id: string }>> {
   try {
     const me = await guard();
     const parsed = announcementInput.safeParse(input);
     if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the form." };
     const { days, ...rest } = parsed.data;
     const now = Date.now();
-    const { error } = await supabaseAdmin()
+    const { data, error } = await supabaseAdmin()
       .from("announcements")
-      .insert({ ...rest, starts_at: new Date(now).toISOString(), ends_at: days ? new Date(now + days * 86_400_000).toISOString() : null, created_by: me.id });
-    if (error) return fail(error);
+      .insert({ ...rest, starts_at: new Date(now).toISOString(), ends_at: days ? new Date(now + days * 86_400_000).toISOString() : null, created_by: me.id })
+      .select("id")
+      .single();
+    if (error || !data) return fail(error);
     revalidatePath("/", "layout");
-    return { ok: true, data: null };
+    return { ok: true, data: { id: data.id as string } };
   } catch (e) {
     return fail(e);
   }
@@ -159,6 +162,54 @@ export async function endAnnouncement(id: unknown): Promise<ActionResult> {
     if (error) return fail(error);
     revalidatePath("/", "layout");
     return { ok: true, data: null };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+// ---- announcement emails ---------------------------------------------------------------------------
+
+const NOT_SET_UP = "Email isn't set up yet: add SMTP_USER and SMTP_PASS to the server's environment.";
+
+/** One copy to the admin's own inbox, to see it before everyone does. */
+export async function sendAnnouncementTest(id: unknown): Promise<ActionResult<{ to: string }>> {
+  try {
+    const me = await guard();
+    if (!emailConfigured()) return { ok: false, error: NOT_SET_UP };
+    const aid = z.uuid().parse(id);
+    const { data: p } = await supabaseAdmin().from("profiles").select("display_name").eq("id", me.id).maybeSingle();
+    await sendTestEmail(aid, { id: me.id, email: me.email!, display_name: (p?.display_name as string) || "there" });
+    return { ok: true, data: { to: me.email! } };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+/** Email an announcement to everyone who hasn't opted out. Once per announcement. */
+export async function emailAnnouncement(id: unknown): Promise<ActionResult<{ sent: number; failed: number }>> {
+  try {
+    await guard();
+    if (!emailConfigured()) return { ok: false, error: NOT_SET_UP };
+    const aid = z.uuid().parse(id);
+    const admin = supabaseAdmin();
+    // Claim it first, so a double click can't send twice.
+    const { data: claimed } = await admin.from("announcements").update({ emailed_at: new Date().toISOString() }).eq("id", aid).is("emailed_at", null).select("id");
+    if (!claimed?.length) return { ok: false, error: "That one has already been emailed." };
+    // If nothing went out (bad password, server down), release the claim so it can be retried.
+    const release = () => admin.from("announcements").update({ emailed_at: null, emailed_count: 0 }).eq("id", aid);
+    let result: { sent: number; failed: number };
+    try {
+      result = await emailEveryone(aid);
+    } catch (e) {
+      await release();
+      throw e;
+    }
+    if (!result.sent && result.failed) {
+      await release();
+      return { ok: false, error: "No emails could be sent. Check SMTP_USER and SMTP_PASS (a Gmail app password, not your normal password)." };
+    }
+    revalidatePath("/admin/announcements");
+    return { ok: true, data: result };
   } catch (e) {
     return fail(e);
   }

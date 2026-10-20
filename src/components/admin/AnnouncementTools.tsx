@@ -6,7 +6,8 @@ import { Button } from "@/design/Button";
 import { TextArea, TextField } from "@/design/Field";
 import { toast } from "@/design/toast";
 import { cn } from "@/lib/cn";
-import { createAnnouncement, endAnnouncement } from "@/lib/admin/actions";
+import { createAnnouncement, emailAnnouncement, endAnnouncement, sendAnnouncementTest } from "@/lib/admin/actions";
+import { Modal } from "@/design/Modal";
 import type { AdminAnnouncement } from "@/lib/admin/server";
 import { AnnouncementBar, type Announcement } from "@/components/room/AnnouncementBar";
 
@@ -31,7 +32,7 @@ function status(a: AdminAnnouncement): { label: string; live: boolean } {
   return { label: a.ends_at ? `Live until ${new Date(a.ends_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}` : "Live", live: true };
 }
 
-export function AnnouncementTools({ items }: { items: AdminAnnouncement[] }) {
+export function AnnouncementTools({ items, emailReady, recipients }: { items: AdminAnnouncement[]; emailReady: boolean; recipients: number }) {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
@@ -40,6 +41,28 @@ export function AnnouncementTools({ items }: { items: AdminAnnouncement[] }) {
   const [linkLabel, setLinkLabel] = useState("");
   const [days, setDays] = useState<number | null>(7);
   const [pending, start] = useTransition();
+  const [alsoEmail, setAlsoEmail] = useState(false);
+  const [confirmEmail, setConfirmEmail] = useState<AdminAnnouncement | null>(null);
+  const [sending, setSending] = useState(false);
+  const people = `${recipients.toLocaleString()} ${recipients === 1 ? "person" : "people"}`;
+
+  async function emailAll(id: string) {
+    setSending(true);
+    const res = await emailAnnouncement(id);
+    setSending(false);
+    setConfirmEmail(null);
+    if (!res.ok) return void toast.error(res.error);
+    toast.success(`Emailed to ${res.data.sent.toLocaleString()}.`, res.data.failed ? `${res.data.failed} couldn't be delivered.` : undefined);
+    router.refresh();
+  }
+
+  function test(id: string) {
+    start(async () => {
+      const res = await sendAnnouncementTest(id);
+      if (!res.ok) return void toast.error(res.error);
+      toast.success("Test sent.", `Check ${res.data.to}.`);
+    });
+  }
 
   function publish(e: FormEvent) {
     e.preventDefault();
@@ -47,6 +70,11 @@ export function AnnouncementTools({ items }: { items: AdminAnnouncement[] }) {
       const res = await createAnnouncement({ title, body, tone, link_url: linkUrl, link_label: linkLabel, days });
       if (!res.ok) return void toast.error(res.error);
       toast.success("Announcement is live.", "It shows on everyone's next page load.");
+      if (alsoEmail) {
+        const item = { id: res.data.id, title } as AdminAnnouncement;
+        setConfirmEmail(item);
+      }
+      setAlsoEmail(false);
       setTitle("");
       setBody("");
       setLinkUrl("");
@@ -102,6 +130,15 @@ export function AnnouncementTools({ items }: { items: AdminAnnouncement[] }) {
             </select>
           </label>
         </div>
+        <label className={cn("mt-5 flex items-start gap-3", !emailReady && "opacity-60")}>
+          <input type="checkbox" className="mt-1 h-5 w-5 accent-[var(--accent)]" checked={alsoEmail} disabled={!emailReady} onChange={(e) => setAlsoEmail(e.target.checked)} />
+          <span>
+            <span className="block font-semibold">Also email it to everyone</span>
+            <span className="block text-[0.82rem] text-muted">
+              {emailReady ? `${people} will get it (everyone who hasn't opted out). You'll confirm before it sends.` : "Email isn't set up yet. Add SMTP_USER and SMTP_PASS in Vercel to turn this on."}
+            </span>
+          </span>
+        </label>
         <p className="mt-6 text-[0.82rem] font-semibold">Preview</p>
         <div className="-mx-4 sm:-mx-8">
           <AnnouncementBar items={[preview]} />
@@ -128,7 +165,18 @@ export function AnnouncementTools({ items }: { items: AdminAnnouncement[] }) {
                     <p className="mt-0.5 line-clamp-2 text-[0.88rem] text-muted">{a.body}</p>
                     <p className={cn("mt-1.5 text-[0.75rem] font-semibold", s.live ? "text-accent-ink" : "text-muted")}>
                       {s.label} · posted {new Date(a.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                      {a.emailed_at ? ` · emailed to ${a.emailed_count.toLocaleString()}` : ""}
                     </p>
+                    {emailReady && !a.emailed_at ? (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <Button variant="ghost" size="sm" icon="envelope" onClick={() => test(a.id)} disabled={pending}>
+                          Send me a test
+                        </Button>
+                        <Button variant="ghost" size="sm" icon="mail" onClick={() => setConfirmEmail(a)} disabled={pending}>
+                          Email everyone
+                        </Button>
+                      </div>
+                    ) : null}
                   </div>
                   {s.live || s.label === "Scheduled" ? (
                     <Button variant="outline" size="sm" onClick={() => end(a.id)} disabled={pending}>
@@ -143,6 +191,22 @@ export function AnnouncementTools({ items }: { items: AdminAnnouncement[] }) {
           <p className="mt-4 text-muted">Nothing posted yet.</p>
         )}
       </section>
+
+      <Modal
+        open={!!confirmEmail}
+        onClose={() => !sending && setConfirmEmail(null)}
+        title="Email everyone?"
+        description={`"${confirmEmail?.title ?? ""}" goes to ${people}. Each email has an unsubscribe link. This can't be undone, and each announcement can only be emailed once.`}
+      >
+        <div className="flex flex-wrap justify-end gap-3">
+          <Button variant="ghost" onClick={() => confirmEmail && test(confirmEmail.id)} disabled={sending || pending}>
+            Send me a test first
+          </Button>
+          <Button onClick={() => confirmEmail && void emailAll(confirmEmail.id)} loading={sending}>
+            {sending ? "Sending…" : `Send to ${people}`}
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }

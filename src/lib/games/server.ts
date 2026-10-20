@@ -7,6 +7,7 @@ import type { Players } from "@/games/_engine/types";
 import type { SessionRow, SessionSnapshot } from "./types";
 import { isSpicy } from "@/games/after-dark/logic";
 import { getGameFlags } from "./flags.server";
+import { getContentPack } from "@/lib/content/server";
 
 /** Both current members confirmed 18+ and opted in. The same gate the database uses. */
 async function spicyUnlocked(roomId: string): Promise<boolean> {
@@ -122,7 +123,7 @@ export async function createSession(gameId: string, rawConfig: unknown, rematchO
 
   const players: Players = [user.id, partner.user_id];
   const seed = randomBytes(16).toString("hex");
-  const state = logic.initialState(seed, players, config as never, { now: Date.now() });
+  const state = logic.initialState(seed, players, config as never, { now: Date.now(), content: await getContentPack() });
   const firstTurn = (state as { turn?: unknown }).turn;
   if (!("firstPlayer" in config) && (firstTurn === 0 || firstTurn === 1)) config = { ...config, firstPlayer: firstTurn };
 
