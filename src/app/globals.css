@@ -92,6 +92,7 @@
   --fg-on-accent: #1c1416;
   --accent: var(--c-ember);
   --accent-ink: #b5371d; /* AA-safe ember for text on paper */
+  --series: #c2452a; /* chart marks: validated for CVD band and 3:1 on paper */
   --wine: var(--c-wine);
   --brass: var(--c-brass);
   --brass-ink: #82601f;
@@ -125,6 +126,7 @@
 }
 
 :root[data-theme="night"] {
+  --series: #e8563a;
   --bg: var(--c-night);
   --bg-raised: var(--c-night-raised);
   --bg-sunk: #0c0809;

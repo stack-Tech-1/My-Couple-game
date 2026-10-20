@@ -7,10 +7,12 @@ import { CATEGORIES, CATEGORY_ORDER, gamesIn, type GameMeta } from "@/games/cata
 import { GameArt } from "@/games/GameArt";
 import { cn } from "@/lib/cn";
 import { afterDarkOpen } from "@/lib/room/afterDark";
+import { useGameFlags } from "@/lib/games/FlagsProvider";
 
 export function Library() {
   const { bundle } = useRoom();
   const spicyOpen = afterDarkOpen(bundle);
+  const { isOff, isNew } = useGameFlags();
 
   return (
     <section aria-labelledby="library-h">
@@ -18,8 +20,9 @@ export function Library() {
       <div className="mt-6 space-y-14">
         {CATEGORY_ORDER.map((c) => {
           const cat = CATEGORIES[c];
-          const games = gamesIn(c);
+          const games = gamesIn(c).filter((g) => !isOff(g.id));
           // Discretion: After Dark is one panel on the shared home screen, never a list of its games.
+          if (!games.length && c !== "spicy") return null;
           if (c === "spicy") return <AfterDarkEntry key={c} roomId={bundle.room.id} open={spicyOpen} />;
           return (
             <div key={c}>
@@ -31,7 +34,7 @@ export function Library() {
               <ul className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {games.map((g, i) => (
                   <li key={g.id} className={cn(i === 0 && "col-span-2 sm:col-span-1 sm:row-span-2")}>
-                    <Tile game={g} roomId={bundle.room.id} accent={cat.color} large={i === 0} />
+                    <Tile game={g} roomId={bundle.room.id} accent={cat.color} large={i === 0} fresh={isNew(g.id)} />
                   </li>
                 ))}
               </ul>
@@ -43,12 +46,13 @@ export function Library() {
   );
 }
 
-function Tile({ game, roomId, accent, large }: { game: GameMeta; roomId: string; accent: string; large: boolean }) {
+function Tile({ game, roomId, accent, large, fresh }: { game: GameMeta; roomId: string; accent: string; large: boolean; fresh: boolean }) {
   return (
     <Link
       href={`/room/${roomId}/games/${game.id}`}
-      className="group flex h-full flex-col rounded-[16px] border border-line bg-raised p-4 transition-[border-color,transform] duration-200 hover:-translate-y-0.5 hover:border-line-strong"
+      className="group relative flex h-full flex-col rounded-[16px] border border-line bg-raised p-4 transition-[border-color,transform] duration-200 hover:-translate-y-0.5 hover:border-line-strong"
     >
+      {fresh ? <span className="absolute right-3 top-3 rounded-full bg-accent px-2 py-0.5 text-[0.68rem] font-bold uppercase tracking-wide text-on-accent">New</span> : null}
       <div className={cn("text-fg", large ? "py-4" : "py-1")}>
         <GameArt id={game.id} accent={accent} className={cn("mx-auto w-auto transition-transform duration-300 group-hover:scale-[1.04]", large ? "h-32" : "h-20")} />
       </div>

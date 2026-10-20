@@ -9,6 +9,7 @@ import { Icon } from "@/design/icons";
 import { toast } from "@/design/toast";
 import { cn } from "@/lib/cn";
 import { useRoom } from "@/lib/realtime/RoomProvider";
+import { useGameFlags } from "@/lib/games/FlagsProvider";
 import { addCustomCard, deleteCustomCard, setAgeConfirmed, setMatchMode, setMaxHeat, setOptIn } from "@/lib/afterdark/actions";
 import type { AfterDarkState } from "@/lib/afterdark/server";
 import { gamesIn } from "@/games/catalog";
@@ -26,6 +27,7 @@ const DECKS = [
 
 export function AfterDarkHub({ state: server }: { state: AfterDarkState }) {
   const { bundle } = useRoom();
+  const { isOff } = useGameFlags();
   const router = useRouter();
   const [, start] = useTransition();
   const partnerName = bundle.partner?.profile.display_name ?? "your partner";
@@ -61,7 +63,7 @@ export function AfterDarkHub({ state: server }: { state: AfterDarkState }) {
 
       {state.unlocked ? (
         <section aria-label="Games" className="mt-10 grid grid-cols-2 gap-3 @2xl:grid-cols-3">
-          {gamesIn("spicy").map((g) => (
+          {gamesIn("spicy").filter((g) => !isOff(g.id)).map((g) => (
             <Link key={g.id} href={`/room/${bundle.room.id}/games/${g.id}`} className="group flex flex-col rounded-[18px] border border-line bg-raised p-4 transition-colors hover:border-line-strong">
               <GameArt id={g.id} accent="var(--accent)" className="mx-auto h-20 w-auto text-fg" />
               <p className="mt-3 font-bold leading-tight">{g.name}</p>

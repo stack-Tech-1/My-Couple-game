@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { supabaseAdmin, supabaseServer } from "@/lib/supabase/server";
 import { friendlyError } from "@/lib/errors";
 import { getUser } from "./server";
+import { purgeRoomMedia } from "@/lib/media/purge";
 import { HOUSE_RULES } from "@/games/houseRules";
 import {
   inviteCodeInput,
@@ -105,10 +106,20 @@ export async function updateMyPrefs(input: unknown): Promise<ActionResult> {
   return { ok: true, data: null };
 }
 
+/** The caller's room id, read before leaving so its files can be tidied up afterwards. */
+async function myRoomId(): Promise<string | null> {
+  const user = await getUser();
+  if (!user) return null;
+  const { data } = await (await supabaseServer()).from("room_members").select("room_id").eq("user_id", user.id).maybeSingle();
+  return (data?.room_id as string | undefined) ?? null;
+}
+
 export async function leaveRoom(): Promise<ActionResult> {
   const supabase = await supabaseServer();
+  const roomId = await myRoomId();
   const { error } = await supabase.rpc("leave_room");
   if (error) return fail(error);
+  if (roomId) await purgeRoomMedia(roomId);
   revalidatePath("/room", "layout");
   return { ok: true, data: null };
 }
@@ -127,12 +138,15 @@ export async function deleteAccount(confirmation: unknown): Promise<ActionResult
   const admin = supabaseAdmin();
   const { data: photos } = await admin.from("memories").select("path").eq("author_id", user.id);
   if (photos?.length) await admin.storage.from("memories").remove(photos.map((p) => p.path as string));
+  const roomId = await myRoomId();
   const { error: leaveErr } = await supabase.rpc("leave_room");
   if (leaveErr) return fail(leaveErr);
   // Clear this browser's session while the user still exists, then remove them.
   await supabase.auth.signOut({ scope: "local" });
   const { error } = await supabaseAdmin().auth.admin.deleteUser(user.id);
   if (error) return fail(error);
+  // Their messages are gone now (cascade), so their voice notes and stickers can go too.
+  if (roomId) await purgeRoomMedia(roomId);
   return { ok: true, data: null };
 }
 

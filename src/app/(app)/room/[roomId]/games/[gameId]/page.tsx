@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { CATEGORIES, gameMeta } from "@/games/catalog";
+import { getGameFlags } from "@/lib/games/flags.server";
 import { GameArt } from "@/games/GameArt";
 import { Icon } from "@/design/icons";
 import { getMyRoom } from "@/lib/room/server";
@@ -27,6 +28,18 @@ export default async function GamePage({ params }: { params: Promise<{ roomId: s
   const bundle = await getMyRoom();
   if (!bundle) redirect("/room");
   if (game.category === "spicy" && !afterDarkOpen(bundle)) redirect(`/room/${roomId}`);
+  if ((await getGameFlags()).off.includes(game.id)) {
+    return (
+      <div className="mx-auto max-w-xl pt-16 text-center">
+        <Icon name="moon" size={30} className="mx-auto text-muted" />
+        <h1 className="display mt-4 text-[2.4rem]">{game.name} is taking a break.</h1>
+        <p className="mt-3 text-muted">We&apos;re giving it some attention behind the scenes. Everything else is open.</p>
+        <Link href={game.category === "spicy" ? `/room/${roomId}/after-dark` : `/room/${roomId}`} className="mt-8 inline-flex h-11 items-center gap-2 rounded-full border-[1.5px] border-line-strong px-5 font-semibold hover:bg-fg hover:text-bg">
+          <Icon name="arrowLeft" size={18} /> Back
+        </Link>
+      </div>
+    );
+  }
   const cat = CATEGORIES[game.category];
   if (FEATURES.has(game.id)) return <FeaturePage gameId={game.id} roomId={roomId} bundle={bundle} />;
   if (game.category === "spicy") {

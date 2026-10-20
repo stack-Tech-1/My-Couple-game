@@ -6,6 +6,7 @@ import { MoveRejected, runMove, toDb, viewsFor } from "@/games/_engine/runner";
 import type { Players } from "@/games/_engine/types";
 import type { SessionRow, SessionSnapshot } from "./types";
 import { isSpicy } from "@/games/after-dark/logic";
+import { getGameFlags } from "./flags.server";
 
 /** Both current members confirmed 18+ and opted in. The same gate the database uses. */
 async function spicyUnlocked(roomId: string): Promise<boolean> {
@@ -70,6 +71,7 @@ export async function createSession(gameId: string, rawConfig: unknown, rematchO
   const { supabase, user } = await requireUser();
   const logic = GAME_LOGIC[gameId];
   if (!logic) throw new ApiError(404, "We don't have that game (yet).");
+  if ((await getGameFlags()).off.includes(gameId)) throw new ApiError(403, "That game is taking a break. Try another one?");
   await rateLimit(user.id, "create_session", 20, 600);
 
   const { data: members } = await supabase.from("room_members").select("room_id, user_id, spicy_opt_in, age_confirmed_at");

@@ -134,6 +134,7 @@ All schema lives in `supabase/migrations/`, applied in filename order:
 | `0007_spicy_sessions_readable.sql` | Lets an in-progress After Dark card finish after an opt-out. |
 | `0008_chat.sql` | Room chat: `chat_messages`, `chat_reads` (unread and "Seen") and `mark_chat_read`. |
 | `0009_chat_media.sql` | Voice notes and stickers: message kinds, `stickers`, the public `stickers` bucket (starter pack) and the private `chat-media` bucket. |
+| `0010_admin.sql` | Admin: `app_admins`, `is_admin()`, `app_config` (game switches), `announcements`, and the service-role-only `admin_stats`, `admin_find_user`, `admin_remove_from_room`. |
 
 `npm run db:migrate` records what it has applied in `public._twain_migrations` (the original project name; kept so existing databases stay in sync) and only runs new
 files, each in its own transaction. To change the schema, **add a new numbered file**; never edit
@@ -290,6 +291,28 @@ npm run stickers:import -- "C:\Users\you\Downloads\WhatsApp Stickers"
 ```
 
 Only use stickers you have the right to share with every user of the app.
+
+### Admin
+
+`/admin` is for the people running Amah. Grant access to an existing account (sign in to the app
+once with it first):
+
+```bash
+npm run admin:grant -- you@example.com            # add
+npm run admin:grant -- you@example.com --revoke   # remove
+```
+
+- **Overview:** counts only, over 7, 30 or 90 days. It shows people, paired couples,
+  daily/weekly/monthly active people, games started and finished per game, chat volume and
+  weekly retention. "Active" means a game move, a chat message or a Daily Question answer that
+  day. Nobody's content is read, and After Dark is never counted.
+- **Users:** look up one account by exact email, then suspend, restore or delete it.
+  Deleting works like self-deletion: the partner keeps the room.
+- **Games:** switch a game off (hidden everywhere, and new sessions are refused) or tag it "New".
+- **Announcements:** a dismissible banner in every room, for a set number of days.
+
+All admin reads go through `SECURITY DEFINER` functions that only the service role can execute,
+and every admin action re-checks `is_admin()` on the server.
 
 ---
 

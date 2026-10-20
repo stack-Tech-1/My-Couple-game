@@ -6,15 +6,19 @@ import { Icon } from "@/design/icons";
 import { useRoom } from "@/lib/realtime/RoomProvider";
 import { CATEGORIES, GAMES } from "@/games/catalog";
 import { GameArt } from "@/games/GameArt";
+import { useGameFlags } from "@/lib/games/FlagsProvider";
 
 /** A featured pick that rotates daily, so the dashboard always suggests something. */
 export function PlayNext() {
   const { bundle } = useRoom();
+  const { isOff } = useGameFlags();
   const game = useMemo(() => {
-    const pool = GAMES.filter((g) => g.category !== "spicy" && g.scored);
+    const all = GAMES.filter((g) => g.category !== "spicy" && g.scored);
+    const on = all.filter((g) => !isOff(g.id));
+    const pool = on.length ? on : all;
     const day = Math.floor(Date.now() / 86_400_000);
     return pool[day % pool.length]!;
-  }, []);
+  }, [isOff]);
   const cat = CATEGORIES[game.category];
 
   return (
