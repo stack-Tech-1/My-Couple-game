@@ -7,7 +7,13 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   reporter: [["list"]],
-  use: { baseURL: "http://localhost:3100", trace: "retain-on-failure", viewport: { width: 420, height: 900 } },
+  use: {
+    baseURL: "http://localhost:3100",
+    trace: "retain-on-failure",
+    viewport: { width: 420, height: 900 },
+    // A synthetic microphone (a beeping tone) so voice notes can be recorded without hardware.
+    launchOptions: { args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"] },
+  },
   // Production build: realistic timings, no on-demand route compiles.
   // E2E_NO_SERVER=1 skips it entirely, for database-only specs.
   ...(process.env.E2E_NO_SERVER

@@ -13,7 +13,8 @@
     "test:watch": "vitest",
     "e2e": "playwright test",
     "check": "npm run typecheck && npm run lint && npm run test",
-    "db:migrate": "node scripts/migrate.mjs"
+    "db:migrate": "node scripts/migrate.mjs",
+    "stickers:import": "node scripts/import-stickers.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

@@ -133,6 +133,7 @@ All schema lives in `supabase/migrations/`, applied in filename order:
 | `0006_discreet_moments.sql` | Keeps After Dark sessions off the shared timeline. |
 | `0007_spicy_sessions_readable.sql` | Lets an in-progress After Dark card finish after an opt-out. |
 | `0008_chat.sql` | Room chat: `chat_messages`, `chat_reads` (unread and "Seen") and `mark_chat_read`. |
+| `0009_chat_media.sql` | Voice notes and stickers: message kinds, `stickers`, the public `stickers` bucket (starter pack) and the private `chat-media` bucket. |
 
 `npm run db:migrate` records what it has applied in `public._twain_migrations` (the original project name; kept so existing databases stay in sync) and only runs new
 files, each in its own transaction. To change the schema, **add a new numbered file**; never edit
@@ -278,6 +279,17 @@ room page and mid-game. The browser writes messages straight to Supabase under R
 broadcasts the saved row on the room channel for instant delivery. Postgres Changes and refetches
 on reconnect are the backstop, and messages are deduped by id. In After Dark, a message preview
 says "Sent you a message" and never quotes the text.
+
+Voice notes record in the browser (MediaRecorder, up to 3 minutes) and upload to the private
+`chat-media` bucket at `<room>/voice/`. Stickers come from two places: the **starter pack** every
+couple gets, and each couple's own stickers made from their photos (`<room>/stickers/`, private).
+To fill the starter pack from a folder (WhatsApp's sticker folder works as is):
+
+```bash
+npm run stickers:import -- "C:\Users\you\Downloads\WhatsApp Stickers"
+```
+
+Only use stickers you have the right to share with every user of the app.
 
 ---
 

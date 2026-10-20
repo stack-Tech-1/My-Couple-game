@@ -1,19 +1,27 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Avatar } from "@/design/Avatar";
-import { IconButton } from "@/design/Button";
 import { Icon } from "@/design/icons";
 import { toast } from "@/design/toast";
 import { cn } from "@/lib/cn";
-import { CHAT_PAGE, MAX_CHAT_LENGTH, chatMessageSchema, countUnread, mergeMessages, type ChatMessage, type LocalMessage } from "@/lib/chat/types";
+import { CHAT_PAGE, chatMessageSchema, countUnread, describe, mergeMessages, type ChatMessage, type LocalMessage, type StickerMedia } from "@/lib/chat/types";
+import { extFor, PRIVATE_BUCKET, type Recording } from "@/lib/chat/media";
+import { ChatPanel } from "./ChatPanel";
 import { useRoom } from "@/lib/realtime/RoomProvider";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import { playSound } from "@/lib/sound";
 
-const COLS = "id, room_id, sender_id, body, created_at";
+const COLS = "id, room_id, sender_id, kind, body, media, created_at";
+
+/** Rows from the database, keeping only well-formed ones (an unknown kind from a newer version is skipped). */
+const parseRows = (rows: unknown[] | null): ChatMessage[] =>
+  (rows ?? []).flatMap((r) => {
+    const p = chatMessageSchema.safeParse(r);
+    return p.success ? [p.data] : [];
+  });
 const TYPING_EVERY = 2500;
 const TYPING_SHOWS = 4000;
 
@@ -65,7 +73,7 @@ function ChatInner() {
       sb.from("chat_reads").select("user_id, read_at").eq("room_id", roomId),
     ]);
     if (rows) {
-      const latest = rows as ChatMessage[];
+      const latest = parseRows(rows);
       latest.forEach((m) => known.current.add(m.id));
       const newestHeld = messagesRef.current.findLast((m) => !m.status);
       const oldestFetched = latest.at(-1);
@@ -116,9 +124,10 @@ function ChatInner() {
       .limit(CHAT_PAGE);
     setLoadingEarlier(false);
     if (!data) return;
-    (data as ChatMessage[]).forEach((m) => known.current.add(m.id));
+    const earlier = parseRows(data);
+    earlier.forEach((m) => known.current.add(m.id));
     setHasMore(data.length === CHAT_PAGE);
-    setMessages((list) => mergeMessages(list, data as ChatMessage[]));
+    setMessages((list) => mergeMessages(list, earlier));
   }
 
   // ---- receiving -----------------------------------------------------------------------------
@@ -210,30 +219,60 @@ function ChatInner() {
   }, [open, unread, newestFromPartner, roomId, broadcast]);
 
   // ---- sending -------------------------------------------------------------------------------
+  // Voice notes upload before the row is written; the recording stays here for a retry.
+  const pendingAudio = useRef(new Map<string, Blob>());
+
   const persist = useCallback(
     async (msg: LocalMessage) => {
       known.current.add(msg.id);
-      const { data, error } = await supabaseBrowser().from("chat_messages").insert({ id: msg.id, room_id: roomId, sender_id: me, body: msg.body }).select(COLS).single();
+      const sb = supabaseBrowser();
+      const fail = (rateLimited = false) => {
+        setMessages((list) => list.map((m) => (m.id === msg.id ? { ...m, status: "failed" } : m)));
+        if (rateLimited) toast.info("Slow down a little.", "Messages will send again in a minute.");
+      };
+      if (msg.kind === "voice") {
+        const audio = pendingAudio.current.get(msg.id);
+        if (audio) {
+          const { error: up } = await sb.storage.from(PRIVATE_BUCKET).upload(msg.media.path, audio, { contentType: msg.media.mime, upsert: false });
+          // "Already exists" means an earlier try got it there.
+          if (up && !/exists|duplicate/i.test(up.message)) return fail();
+          pendingAudio.current.delete(msg.id);
+        }
+      }
+      const row = { id: msg.id, room_id: roomId, sender_id: me, kind: msg.kind, body: msg.kind === "text" ? msg.body : null, media: msg.kind === "text" ? null : msg.media };
+      const { data, error } = await sb.from("chat_messages").insert(row).select(COLS).single();
       if (error || !data) {
         // Already saved on an earlier try (the response got lost): just pick it up.
         if (error?.code === "23505") return void refresh();
-        setMessages((list) => list.map((m) => (m.id === msg.id ? { ...m, status: "failed" } : m)));
-        if (error?.message.includes("rate limited")) toast.info("Slow down a little.", "Messages will send again in a minute.");
-        return;
+        return fail(!!error?.message.includes("rate limited"));
       }
-      setMessages((list) => mergeMessages(list, [data as ChatMessage]));
-      broadcast("chat:msg", data);
+      const saved = chatMessageSchema.safeParse(data);
+      if (!saved.success) return void refresh();
+      setMessages((list) => mergeMessages(list, [saved.data]));
+      broadcast("chat:msg", saved.data);
     },
     [roomId, me, broadcast, refresh],
   );
 
-  const submit = useCallback(
-    (body: string) => {
-      const msg: LocalMessage = { id: crypto.randomUUID(), room_id: roomId, sender_id: me, body, created_at: new Date().toISOString(), status: "sending" };
+  const draft = useCallback(
+    (m: Omit<ChatMessage, "id" | "room_id" | "sender_id" | "created_at"> & { localUrl?: string }, id: string = crypto.randomUUID()) => {
+      const msg = { ...m, id, room_id: roomId, sender_id: me, created_at: new Date().toISOString(), status: "sending" } as LocalMessage;
       setMessages((list) => mergeMessages(list, [msg]));
       void persist(msg);
     },
     [roomId, me, persist],
+  );
+
+  const sendText = useCallback((body: string) => draft({ kind: "text", body }), [draft]);
+  const sendSticker = useCallback((media: StickerMedia) => draft({ kind: "sticker", media }), [draft]);
+  const sendVoice = useCallback(
+    (r: Recording) => {
+      const id = crypto.randomUUID();
+      pendingAudio.current.set(id, r.blob);
+      const path = `${roomId}/voice/${id}.${extFor(r.mime)}`;
+      draft({ kind: "voice", media: { path, duration: Math.round(r.duration * 10) / 10, mime: r.mime, peaks: r.peaks }, localUrl: URL.createObjectURL(r.blob) }, id);
+    },
+    [roomId, draft],
   );
 
   const retry = useCallback(
@@ -303,7 +342,7 @@ function ChatInner() {
             <Avatar name={partnerName} motif={partner.avatar_key} hue={partner.avatar_hue} size={28} />
             <span className="min-w-0">
               <span className="block text-[0.78rem] font-semibold">{partnerName}</span>
-              <span className="line-clamp-2 break-words text-[0.86rem] text-muted">{discreet ? "Sent you a message" : preview.body}</span>
+              <span className="line-clamp-2 break-words text-[0.86rem] text-muted">{discreet ? "Sent you a message" : describe(preview)}</span>
             </span>
           </motion.button>
         ) : null}
@@ -311,7 +350,8 @@ function ChatInner() {
 
       {open
         ? createPortal(
-            <Panel
+            <ChatPanel
+              roomId={roomId}
               me={me}
               partner={partner}
               online={!!partnerPresence}
@@ -322,7 +362,9 @@ function ChatInner() {
               loadingEarlier={loadingEarlier}
               partnerReadAt={partnerReadAt}
               onEarlier={loadEarlier}
-              onSend={submit}
+              onSendText={sendText}
+              onSendSticker={sendSticker}
+              onSendVoice={sendVoice}
               onRetry={retry}
               onTyping={onTyping}
               onClose={() => toggle(false)}
@@ -331,232 +373,5 @@ function ChatInner() {
           )
         : null}
     </div>
-  );
-}
-
-// ---- panel -------------------------------------------------------------------------------------
-
-const dayKey = (iso: string) => new Date(iso).toDateString();
-function dayLabel(iso: string): string {
-  const d = new Date(iso);
-  const today = new Date();
-  const yesterday = new Date(today.getTime() - 86_400_000);
-  if (d.toDateString() === today.toDateString()) return "Today";
-  if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
-  return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
-}
-const clockTime = (iso: string) => new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
-
-function Panel({
-  me,
-  partner,
-  online,
-  typing,
-  messages,
-  loaded,
-  hasMore,
-  loadingEarlier,
-  partnerReadAt,
-  onEarlier,
-  onSend,
-  onRetry,
-  onTyping,
-  onClose,
-}: {
-  me: string;
-  partner: { display_name: string; avatar_key: string; avatar_hue: number };
-  online: boolean;
-  typing: boolean;
-  messages: LocalMessage[];
-  loaded: boolean;
-  hasMore: boolean;
-  loadingEarlier: boolean;
-  partnerReadAt: string | null;
-  onEarlier: () => void;
-  onSend: (body: string) => void;
-  onRetry: (m: LocalMessage) => void;
-  onTyping: () => void;
-  onClose: () => void;
-}) {
-  const [draft, setDraft] = useState("");
-  const listRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
-  const stick = useRef(true);
-  const firstId = useRef<string | undefined>(undefined);
-
-  useEffect(() => inputRef.current?.focus(), []);
-
-  // Stay pinned to the newest message unless the reader has scrolled up; keep position steady
-  // when older messages are prepended.
-  const prevHeight = useRef(0);
-  useLayoutEffect(() => {
-    const el = listRef.current;
-    if (!el) return;
-    const prepended = firstId.current !== undefined && messages[0]?.id !== firstId.current;
-    if (prepended && !stick.current) el.scrollTop += el.scrollHeight - prevHeight.current;
-    else if (stick.current) el.scrollTop = el.scrollHeight;
-    firstId.current = messages[0]?.id;
-    prevHeight.current = el.scrollHeight;
-  }, [messages, typing]);
-
-  function send(e?: FormEvent) {
-    e?.preventDefault();
-    const body = draft.trim();
-    if (!body) return;
-    stick.current = true;
-    onSend(body);
-    setDraft("");
-    inputRef.current?.focus();
-  }
-
-  function onKey(e: KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
-      e.preventDefault();
-      send();
-    }
-  }
-
-  // The partner has seen everything up to my latest confirmed message?
-  const myLast = messages.findLast((m) => m.sender_id === me && !m.status);
-  const seen = !!(myLast && partnerReadAt && Date.parse(partnerReadAt) >= Date.parse(myLast.created_at));
-  const name = partner.display_name;
-
-  return (
-    <motion.div
-      role="dialog"
-      aria-label={`Chat with ${name}`}
-      onKeyDown={(e) => {
-        if (e.key === "Escape") {
-          // Handled here so it doesn't also count towards After Dark's double-Escape exit.
-          e.stopPropagation();
-          onClose();
-        }
-      }}
-      initial={{ opacity: 0, x: 24 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-      className="fixed inset-x-0 bottom-0 top-16 z-[86] flex flex-col border-line bg-bg sm:left-auto sm:w-[400px] sm:border-l-[1.5px] sm:shadow-[-24px_0_60px_-40px_rgba(28,20,22,.6)]"
-    >
-      <div className="flex items-center gap-3 border-b border-line px-4 py-3">
-        <Avatar name={name} motif={partner.avatar_key} hue={partner.avatar_hue} size={36} online={online} />
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[0.95rem] font-semibold leading-tight">{name}</p>
-          <p className="text-[0.78rem] leading-tight text-muted">{typing ? "typing…" : online ? "here now" : "away"}</p>
-        </div>
-        <IconButton icon="close" label="Close chat" onClick={onClose} />
-      </div>
-
-      <div
-        ref={listRef}
-        onScroll={(e) => {
-          const el = e.currentTarget;
-          stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
-        }}
-        className="flex-1 overflow-y-auto overscroll-contain px-4 py-4"
-        aria-live="polite"
-        aria-relevant="additions"
-      >
-        {hasMore ? (
-          <div className="mb-4 flex justify-center">
-            <button type="button" onClick={onEarlier} disabled={loadingEarlier} className="rounded-full border border-line px-3.5 py-1.5 text-[0.8rem] font-semibold text-muted hover:text-fg disabled:opacity-50">
-              {loadingEarlier ? "Loading…" : "Earlier messages"}
-            </button>
-          </div>
-        ) : null}
-
-        {loaded && !messages.length ? (
-          <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
-            <Icon name="chat" size={28} className="text-muted" />
-            <p className="display text-[1.3rem]">Say something sweet.</p>
-            <p className="text-[0.88rem] text-muted">Or trash-talk. This chat follows you into every game.</p>
-          </div>
-        ) : null}
-
-        <ol className="flex flex-col">
-          {messages.map((m, i) => {
-            const prev = messages[i - 1];
-            const next = messages[i + 1];
-            const mine = m.sender_id === me;
-            const newDay = !prev || dayKey(prev.created_at) !== dayKey(m.created_at);
-            // Group runs from the same person within a few minutes; show the time at the end of a run.
-            const joinsPrev = !newDay && prev?.sender_id === m.sender_id && Date.parse(m.created_at) - Date.parse(prev.created_at) < 180_000;
-            const endsRun = !next || next.sender_id !== m.sender_id || Date.parse(next.created_at) - Date.parse(m.created_at) >= 180_000 || dayKey(next.created_at) !== dayKey(m.created_at);
-            return (
-              <Fragment key={m.id}>
-                {newDay ? (
-                  <li className="my-3 flex justify-center" aria-hidden>
-                    <span className="eyebrow text-muted">{dayLabel(m.created_at)}</span>
-                  </li>
-                ) : null}
-                <li className={cn("flex flex-col", mine ? "items-end" : "items-start", joinsPrev ? "mt-1" : "mt-3")}>
-                  <p className="sr-only">{mine ? "You" : name}:</p>
-                  <div
-                    className={cn(
-                      "max-w-[82%] whitespace-pre-wrap break-words px-3.5 py-2 text-[0.95rem] leading-snug",
-                      mine ? "rounded-[18px] rounded-br-[6px] bg-fg text-bg" : "rounded-[18px] rounded-bl-[6px] border-[1.5px] border-line bg-raised",
-                      m.status === "sending" && "opacity-60",
-                      m.status === "failed" && "opacity-60 ring-2 ring-accent-ink",
-                    )}
-                  >
-                    {m.body}
-                  </div>
-                  {m.status === "failed" ? (
-                    <button type="button" onClick={() => onRetry(m)} className="mt-1 text-[0.75rem] font-semibold text-accent-ink underline underline-offset-2">
-                      Didn&apos;t send. Tap to retry.
-                    </button>
-                  ) : endsRun ? (
-                    <p className="mt-1 text-[0.7rem] text-muted">
-                      {clockTime(m.created_at)}
-                      {mine && m.id === myLast?.id && seen ? " · Seen" : ""}
-                    </p>
-                  ) : null}
-                </li>
-              </Fragment>
-            );
-          })}
-        </ol>
-
-        {typing ? (
-          <div className="mt-3 flex" aria-hidden>
-            <span className="flex gap-1 rounded-[18px] rounded-bl-[6px] border-[1.5px] border-line bg-raised px-3.5 py-3">
-              {[0, 1, 2].map((d) => (
-                <motion.span key={d} className="h-1.5 w-1.5 rounded-full bg-muted" animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1.1, repeat: Infinity, delay: d * 0.18 }} />
-              ))}
-            </span>
-          </div>
-        ) : null}
-      </div>
-
-      <form onSubmit={send} className="flex items-end gap-2 border-t border-line px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
-        <label htmlFor="chat-input" className="sr-only">
-          Message {name}
-        </label>
-        <textarea
-          id="chat-input"
-          ref={inputRef}
-          value={draft}
-          rows={1}
-          maxLength={MAX_CHAT_LENGTH}
-          onChange={(e) => {
-            setDraft(e.target.value);
-            if (e.target.value.trim()) onTyping();
-            // Grow with the message, up to about five lines.
-            e.target.style.height = "auto";
-            e.target.style.height = `${Math.min(e.target.scrollHeight, 132)}px`;
-          }}
-          onKeyDown={onKey}
-          placeholder={`Message ${name}`}
-          className="max-h-[132px] min-h-11 flex-1 resize-none rounded-[22px] border-[1.5px] border-line bg-raised px-4 py-2.5 text-[1rem] leading-snug text-fg placeholder:text-muted/70 focus:border-line-strong focus:outline-none"
-        />
-        <button
-          type="submit"
-          disabled={!draft.trim()}
-          aria-label="Send"
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent shadow-[inset_0_-2px_0_rgba(0,0,0,.18)] transition-opacity disabled:opacity-40"
-        >
-          <Icon name="arrowRight" size={20} />
-        </button>
-      </form>
-    </motion.div>
   );
 }

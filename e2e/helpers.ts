@@ -60,6 +60,13 @@ export async function pairedRoom(names: [string, string]) {
 export async function cleanup(userIds: string[]) {
   const { data: rooms } = await admin.from("room_members").select("room_id").in("user_id", userIds);
   const roomIds = [...new Set((rooms ?? []).map((r) => r.room_id as string))];
+  // Chat files aren't removed by the database cascade.
+  for (const rid of roomIds) {
+    for (const folder of ["voice", "stickers"]) {
+      const { data: files } = await admin.storage.from("chat-media").list(`${rid}/${folder}`);
+      if (files?.length) await admin.storage.from("chat-media").remove(files.map((f) => `${rid}/${folder}/${f.name}`));
+    }
+  }
   if (roomIds.length) await admin.from("rooms").delete().in("id", roomIds);
   await admin.from("rooms").delete().in("created_by", userIds);
   for (const id of userIds) await admin.auth.admin.deleteUser(id).catch(() => {});
