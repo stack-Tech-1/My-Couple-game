@@ -79,8 +79,21 @@ If the Supabase keys are missing, the app shows a "not wired up yet" screen inst
    The token-hash version also works when someone requests the link on their laptop and opens
    it on their phone, which is common.
 
-8. **Email sending**: Supabase's built-in sender is heavily rate-limited and meant for testing.
-   Before launch, configure custom SMTP under *Authentication → Emails → SMTP settings*.
+8. **Email sending**: Supabase's built-in sender is heavily rate-limited and meant for testing,
+   and templates can only be edited once custom SMTP is set up (*Authentication → Emails →
+   SMTP Settings*). A Gmail address with an app password works to start; use a provider with your
+   own domain (e.g. Resend, Postmark) before launch.
+
+9. **Branded emails**: paste these into *Authentication → Emails → Templates* (Source tab):
+
+   | Template | Subject | File |
+   | --- | --- | --- |
+   | Confirm sign up | `Your Amah room is waiting` | `supabase/templates/confirm-signup.html` |
+   | Magic link or OTP | `Your Amah sign-in link` | `supabase/templates/magic-link.html` |
+   | Change email address | `Confirm your new email for Amah` | `supabase/templates/change-email.html` |
+
+   They link to `/auth/confirm` with a token hash, so a link requested on one device works on any
+   other. Open the files in a browser to preview them.
 
 No other dashboard setup is needed: tables, policies, storage and realtime all come from the
 migrations.
