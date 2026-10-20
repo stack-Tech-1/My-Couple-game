@@ -55,7 +55,7 @@ test("accessibility: key screens have no serious or critical violations", async 
     await ctx.close();
   }
 });
-/** Every game board, via the two-seat sandbox (needs a server started with TWAIN_SANDBOX=1). */
+/** Every game board, via the two-seat sandbox (needs a server started with AMAH_SANDBOX=1). */
 test("accessibility: every game board", async ({ page }) => {
   test.setTimeout(400_000);
   const probe = await page.goto("/dev/play/connect-four");

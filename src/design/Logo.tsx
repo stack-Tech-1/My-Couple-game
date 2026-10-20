@@ -1,7 +1,7 @@
 import { APP_NAME } from "@/lib/config";
 import { cn } from "@/lib/cn";
 
-/** Wordmark: two interlocking loops (the "twain") beside the name in Fraunces. */
+/** Wordmark: two interlocking loops (the two of you) beside the name in Fraunces. */
 export function Logo({ className, mark = true }: { className?: string; mark?: boolean }) {
   return (
     <span className={cn("inline-flex items-center gap-2", className)}>

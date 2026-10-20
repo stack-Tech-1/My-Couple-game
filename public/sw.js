@@ -1,9 +1,9 @@
-/* Twain service worker.
+/* Amah service worker.
  * - Navigations: network first; offline falls back to a friendly /offline page.
  * - /_next/static: cache first (content-hashed, immutable).
  * - Everything else (API, Supabase, realtime, auth): never cached. Private data must stay live.
  */
-const VERSION = "twain-v1";
+const VERSION = "amah-v1";
 const OFFLINE = "/offline";
 
 self.addEventListener("install", (event) => {

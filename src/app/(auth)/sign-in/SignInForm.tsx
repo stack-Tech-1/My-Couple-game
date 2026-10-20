@@ -13,7 +13,7 @@ import { track } from "@/lib/analytics";
 
 const emailSchema = z.email();
 
-export function SignInForm({ next, linkError }: { next: string; linkError: boolean }) {
+export function SignInForm({ next, linkError, google: googleEnabled }: { next: string; linkError: boolean; google: boolean }) {
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(
     linkError ? "That link has expired or was already used. Send yourself a fresh one." : null,
@@ -57,15 +57,16 @@ export function SignInForm({ next, linkError }: { next: string; linkError: boole
   }
 
   return (
-    <div className="rounded-[22px] border-[1.5px] border-line-strong bg-raised p-6 sm:p-8">
+    <div className="min-w-0 rounded-[22px] border-[1.5px] border-line-strong bg-raised p-6 sm:p-8">
       <AnimatePresence mode="wait" initial={false}>
         {sentTo ? (
           <motion.div key="sent" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
             <Icon name="envelope" size={36} className="text-accent" />
             <h2 className="display mt-4 text-[2rem]">Check your inbox.</h2>
             <p className="mt-3 leading-relaxed text-muted">
-              We sent a sign-in link to <b className="text-fg">{sentTo}</b>. It works once and expires in an hour. If it
-              hasn&apos;t shown up in a minute, the spam folder is the usual suspect.
+              We sent a sign-in link to <b className="break-all text-fg">{sentTo}</b>. It works once and expires in an hour. First time here? It may be titled
+              &ldquo;Confirm your email address&rdquo;: same link, same result. If it hasn&apos;t shown up in a minute, the spam
+              folder is the usual suspect.
             </p>
             <Button variant="ghost" className="mt-6 -ml-3" onClick={() => setSentTo(null)} icon="arrowLeft">
               Use a different email
@@ -73,10 +74,14 @@ export function SignInForm({ next, linkError }: { next: string; linkError: boole
           </motion.div>
         ) : (
           <motion.div key="form" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-            <Button variant="outline" size="lg" className="w-full" icon="google" onClick={google}>
-              Continue with Google
-            </Button>
-            <Rule label="or" className="my-6" />
+            {googleEnabled ? (
+              <>
+                <Button variant="outline" size="lg" className="w-full" icon="google" onClick={google}>
+                  Continue with Google
+                </Button>
+                <Rule label="or" className="my-6" />
+              </>
+            ) : null}
             <form onSubmit={sendLink} noValidate className="flex flex-col gap-4">
               <TextField
                 label="Email"

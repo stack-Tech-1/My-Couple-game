@@ -6,8 +6,27 @@ const PROTECTED = ["/room", "/onboarding", "/account", "/join"];
 const APP_PREFIXES = [...PROTECTED, "/sign-in", "/auth", "/offline"];
 
 export async function updateSession(request: NextRequest): Promise<NextResponse> {
-  let response = NextResponse.next({ request });
   const path = request.nextUrl.pathname;
+  const params = request.nextUrl.searchParams;
+
+  // Auth links that land somewhere other than our callbacks (e.g. Supabase falling back to the
+  // Site URL when a redirect isn't allow-listed) are forwarded so the sign-in still completes.
+  if (!path.startsWith("/auth/")) {
+    if (params.has("code")) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/auth/callback";
+      url.search = `?code=${encodeURIComponent(params.get("code")!)}&next=${encodeURIComponent(params.get("next") ?? "/room")}`;
+      return NextResponse.redirect(url);
+    }
+    if (params.has("error_description") || params.get("error") === "access_denied") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/sign-in";
+      url.search = "?error=link";
+      return NextResponse.redirect(url);
+    }
+  }
+
+  let response = NextResponse.next({ request });
   const isApp = APP_PREFIXES.some((p) => path.startsWith(p));
   const env = publicEnv();
 

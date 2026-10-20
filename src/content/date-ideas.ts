@@ -54,7 +54,7 @@ export const DATE_IDEAS: DateIdea[] = [
   { title: "Virtual museum tour", detail: "Pick a museum with an online tour and explore it side by side.", where: "distance", budget: 0 },
   { title: "Send a surprise delivery", detail: "Order something small to their door, timed to your call.", where: "distance", budget: 2 },
   { title: "Same sky", detail: "Go outside at the same time, describe what you can see.", where: "distance", budget: 0 },
-  { title: "Twain marathon", detail: "Play three games here back to back. Loser plans the next date.", where: "distance", budget: 0 },
+  { title: "Amah marathon", detail: "Play three games here back to back. Loser plans the next date.", where: "distance", budget: 0 },
   { title: "Open-when letters", detail: "Write sealed notes for the days you'll miss each other most.", where: "distance", budget: 0 },
   { title: "Video-call dinner date", detail: "Dress up, light a candle each, eat together on screen.", where: "distance", budget: 1 },
   { title: "Plan the next visit", detail: "Build the itinerary hour by hour. Dream a little.", where: "distance", budget: 0 },

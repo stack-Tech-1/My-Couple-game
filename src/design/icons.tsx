@@ -1,7 +1,7 @@
 import type { SVGProps } from "react";
 
 /**
- * Twain icon set. 24px grid, 1.75 stroke, round joins, slightly hand-drawn
+ * Amah icon set. 24px grid, 1.75 stroke, round joins, slightly hand-drawn
  * curves so nothing reads as a stock icon pack. Decorative by default; pass
  * `label` to expose an icon to assistive tech.
  */

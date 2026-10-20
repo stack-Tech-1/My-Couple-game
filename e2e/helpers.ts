@@ -19,7 +19,7 @@ export const admin: SupabaseClient = createClient(SUPABASE_URL, env.SUPABASE_SER
 });
 
 export async function makeUser(tag: string) {
-  const email = `twain-e2e-${tag}-${Date.now()}@example.com`;
+  const email = `amah-e2e-${tag}-${Date.now()}@example.com`;
   const { data, error } = await admin.auth.admin.createUser({ email, email_confirm: true });
   if (error || !data.user) throw error ?? new Error("createUser failed");
   return { id: data.user.id, email };

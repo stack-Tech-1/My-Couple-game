@@ -3,7 +3,7 @@
 export type ThemePref = "day" | "night" | "auto";
 export type ThemeName = "day" | "night" | "afterdark";
 
-const KEY = "twain-theme";
+const KEY = "amah-theme";
 
 export function resolveTheme(pref: ThemePref): Exclude<ThemeName, "afterdark"> {
   if (pref === "auto") {

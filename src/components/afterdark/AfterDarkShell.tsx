@@ -8,7 +8,7 @@ import { cn } from "@/lib/cn";
 import { useRoom } from "@/lib/realtime/RoomProvider";
 import { setPin, verifyPin } from "@/lib/afterdark/actions";
 
-const UNLOCK_KEY = "twain-ad-until";
+const UNLOCK_KEY = "amah-ad-until";
 const UNLOCK_MS = 30 * 60_000;
 
 const readUnlocked = () => {

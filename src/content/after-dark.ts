@@ -1,5 +1,5 @@
 /**
- * After Dark decks. Original, written for Twain. Flirty, suggestive, teasing; never graphic.
+ * After Dark decks. Original, written for Amah. Flirty, suggestive, teasing; never graphic.
  * Heat: 1 Warm, 2 Hot, 3 Fire. Players can add their own cards (private to their room).
  * Every card can be skipped instantly, with no penalty and no explanation.
  */

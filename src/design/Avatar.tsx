@@ -1,6 +1,6 @@
 import { cn } from "@/lib/cn";
 
-/** Motifs drawn for Twain. Each is a single-line mark on a tinted disc. */
+/** Motifs drawn for Amah. Each is a single-line mark on a tinted disc. */
 export const AVATAR_MOTIFS = {
   fig: "M12 6.4c-.2-1.2.4-2.2 1.6-2.6M12 6.6c3.4 0 5.6 3 5.6 6.6 0 3.6-2.6 6.2-5.6 6.2s-5.6-2.6-5.6-6.2c0-3.6 2.2-6.6 5.6-6.6Z",
   moon: "M16.8 15.4A6.4 6.4 0 0 1 9 6.6a6.4 6.4 0 1 0 7.8 8.8Z",

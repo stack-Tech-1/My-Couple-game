@@ -1,5 +1,5 @@
 /**
- * Content for the personal games. All original, written for Twain.
+ * Content for the personal games. All original, written for Amah.
  * Kept in data so decks can be edited and expanded without touching components.
  */
 

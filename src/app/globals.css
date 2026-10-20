@@ -56,7 +56,7 @@
 
 
 /* ------------------------------------------------------------------
-   Twain design tokens
+   Amah design tokens
    Raw palette lives on :root; semantic tokens are what components use.
    Themes: day (default), night, afterdark (spicy section).
 ------------------------------------------------------------------- */
@@ -314,10 +314,10 @@ body::after {
 }
 
 /* Modal entrance: rises like a sheet on phones, settles in place on desktop */
-.twain-modal[open] {
+.amah-modal[open] {
   animation: modal-rise 420ms var(--ease-out);
 }
-.twain-modal[open]::backdrop {
+.amah-modal[open]::backdrop {
   animation: modal-fade 300ms ease-out;
 }
 @keyframes modal-rise {

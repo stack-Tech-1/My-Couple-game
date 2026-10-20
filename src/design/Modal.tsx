@@ -45,7 +45,7 @@ export function Modal({
       }}
       aria-labelledby="modal-title"
       className={cn(
-        "twain-modal m-0 mt-auto w-full max-w-none rounded-t-[22px] border border-line bg-bg p-0 text-fg",
+        "amah-modal m-0 mt-auto w-full max-w-none rounded-t-[22px] border border-line bg-bg p-0 text-fg",
         "sm:m-auto sm:max-w-lg sm:rounded-[22px]",
         "backdrop:bg-[rgba(18,12,14,.55)]",
         className,

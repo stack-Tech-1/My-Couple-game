@@ -1,4 +1,4 @@
-# Twain
+# Amah
 
 A private game room for two. Partners pair up in a shared room and play 27 games and
 activities live from their own phones: head-to-head games, co-op puzzles, personal and
@@ -63,7 +63,7 @@ If the Supabase keys are missing, the app shows a "not wired up yet" screen inst
      and secret here. The authorised redirect URI is the one Supabase shows on that page.
 
 6. **Redirect URLs**: *Authentication → URL Configuration*.
-   - **Site URL**: your production URL, e.g. `https://twain.example`.
+   - **Site URL**: your production URL, e.g. `https://amah.example`.
    - **Redirect URLs**: add
      `http://localhost:3000/auth/callback`, `http://localhost:3000/auth/confirm`,
      `https://<your-domain>/auth/callback` and `https://<your-domain>/auth/confirm`.
@@ -72,7 +72,7 @@ If the Supabase keys are missing, the app shows a "not wired up yet" screen inst
    link in the template with:
 
    ```html
-   <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email&next=/room">Sign in to Twain</a>
+   <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email&next=/room">Sign in to Amah</a>
    ```
 
    The default template works when the link is opened in the same browser that requested it.
@@ -98,7 +98,7 @@ migrations.
 | `SUPABASE_DB_URL` | your machine / CI | Postgres session-pooler connection string, used only by `npm run db:migrate`. Not needed by the deployed app. |
 | `NEXT_PUBLIC_ANALYTICS_PROVIDER` | optional | Empty (off), `console` (logs events) or `plausible`. |
 | `NEXT_PUBLIC_ANALYTICS_DOMAIN` | optional | Your Plausible site domain, when the provider is `plausible`. |
-| `TWAIN_SANDBOX` | optional | `1` enables `/dev/play/<game>` in a production build (used by tests). Leave unset in production. |
+| `AMAH_SANDBOX` | optional | `1` enables `/dev/play/<game>` in a production build (used by tests). Leave unset in production. |
 
 `.env.local` is git-ignored. **Never put real keys in `.env.example`**: it is committed.
 
@@ -118,7 +118,7 @@ All schema lives in `supabase/migrations/`, applied in filename order:
 | `0006_discreet_moments.sql` | Keeps After Dark sessions off the shared timeline. |
 | `0007_spicy_sessions_readable.sql` | Lets an in-progress After Dark card finish after an opt-out. |
 
-`npm run db:migrate` records what it has applied in `public._twain_migrations` and only runs new
+`npm run db:migrate` records what it has applied in `public._twain_migrations` (the original project name; kept so existing databases stay in sync) and only runs new
 files, each in its own transaction. To change the schema, **add a new numbered file**; never edit
 one that has already been applied.
 
@@ -152,7 +152,7 @@ fastest way to build or debug a game. Game ids are listed in `src/games/catalog.
 game's per-player view. They run in a couple of seconds.
 
 **End-to-end tests** (`npm run e2e`, Playwright) run against a production build and your real
-Supabase project. They create throwaway users (`twain-e2e-…@example.com`) and delete them
+Supabase project. They create throwaway users (`amah-e2e-…@example.com`) and delete them
 afterwards. Coverage:
 
 - Pairing, then Connect Four played live in two browsers (with a mid-game refresh).
@@ -172,7 +172,7 @@ Handy flags:
 ```bash
 E2E_REUSE=1 npm run e2e        # reuse a server you already started with `next start -p 3100`
 E2E_NO_SERVER=1 npx playwright test e2e/daily-privacy.spec.ts   # database-only specs
-TWAIN_SANDBOX=1 npx next start -p 3100   # lets the per-board accessibility audit run
+AMAH_SANDBOX=1 npx next start -p 3100   # lets the per-board accessibility audit run
 ```
 
 ---
@@ -184,7 +184,7 @@ TWAIN_SANDBOX=1 npx next start -p 3100   # lets the per-board accessibility audi
 1. Import the repository in Vercel. The framework (Next.js) is detected automatically.
 2. Add the environment variables from the table above, for Production and Preview.
    Set `NEXT_PUBLIC_SITE_URL` to the production URL. Don't set `SUPABASE_DB_URL` or
-   `TWAIN_SANDBOX` there.
+   `AMAH_SANDBOX` there.
 3. Deploy, then add the production `…/auth/callback` and `…/auth/confirm` URLs to Supabase's
    redirect list (see [Supabase setup](#supabase-setup)).
 4. Run migrations from your machine or CI (`npm run db:migrate`) before deploying any change that
