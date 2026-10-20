@@ -9,10 +9,16 @@ export class GameApiError extends Error {
   }
 }
 
+/**
+ * A request that hangs on a flaky mobile connection would otherwise block every refetch queued
+ * behind it (the sync loop allows one in flight), freezing the board until a reload.
+ */
+const TIMEOUT_MS = 10_000;
+
 async function call<T>(url: string, init?: RequestInit): Promise<T> {
   let res: Response;
   try {
-    res = await fetch(url, { ...init, headers: { "content-type": "application/json", ...init?.headers }, cache: "no-store" });
+    res = await fetch(url, { ...init, headers: { "content-type": "application/json", ...init?.headers }, cache: "no-store", signal: AbortSignal.timeout(TIMEOUT_MS) });
   } catch {
     throw new GameApiError(0, "Couldn't reach the server. Is the Wi-Fi napping?");
   }

@@ -92,7 +92,13 @@ export function GameHost({ initial }: { initial: SessionSnapshot }) {
   // Realtime: my projection and the session row. RLS means I only ever receive my own view.
   useEffect(() => {
     const supabase = supabaseBrowser();
-    const ch = supabase
+    let ch: ReturnType<typeof supabase.channel> | undefined;
+    let cancelled = false;
+    // Private channels need the user's token first. This effect runs before RoomProvider's (child
+    // effects run first), so on a fresh page load the room channel hasn't set it yet.
+    void supabase.realtime.setAuth().then(() => {
+      if (cancelled) return;
+      ch = supabase
       .channel(`room:${session.room_id}:game:${sessionId}`, { config: { private: true } })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "game_views", filter: `session_id=eq.${sessionId}` }, (p) => {
         // Realtime payloads can omit columns (large or array values), so only trust a complete one.
@@ -108,8 +114,10 @@ export function GameHost({ initial }: { initial: SessionSnapshot }) {
       .subscribe((status) => {
         if (status === "SUBSCRIBED") void resync(); // catch anything missed while connecting
       });
+    });
     return () => {
-      void supabase.removeChannel(ch);
+      cancelled = true;
+      if (ch) void supabase.removeChannel(ch);
     };
   }, [sessionId, session.room_id, me, store, resync]);
 

@@ -53,9 +53,15 @@ async function loadOwnSession(sessionId: string) {
 }
 
 export async function getSnapshot(sessionId: string): Promise<SessionSnapshot> {
-  const { supabase, user, session } = await loadOwnSession(sessionId);
-  const { data } = await supabase.from("game_views").select("view, version").eq("session_id", sessionId).eq("user_id", user.id).single();
-  if (!data) throw new ApiError(404, "That game has wandered off.");
+  // Session and view in parallel: RLS already limits game_views to my own row, and the session
+  // check below still decides whether the caller gets anything back.
+  const { supabase, user } = await requireUser();
+  const [{ data: sessionRow }, { data }] = await Promise.all([
+    supabase.from("game_sessions").select("*").eq("id", sessionId).maybeSingle(),
+    supabase.from("game_views").select("view, version").eq("session_id", sessionId).eq("user_id", user.id).maybeSingle(),
+  ]);
+  const session = sessionRow as SessionRow | null;
+  if (!session || !session.players.includes(user.id) || !data) throw new ApiError(404, "That game has wandered off.");
   const closing = isSpicy(session.game_id) && session.status === "active" ? !(await spicyUnlocked(session.room_id)) : false;
   return { session, view: data.view, version: data.version as number, serverNow: Date.now(), ...(closing ? { closing } : {}) };
 }
@@ -135,20 +141,29 @@ export async function createSession(gameId: string, rawConfig: unknown, rematchO
 
 export async function submitMove(sessionId: string, rawMove: unknown): Promise<SessionSnapshot> {
   const { user, session: initial } = await loadOwnSession(sessionId);
-  await rateLimit(user.id, "move", 300, 60);
   const logic = GAME_LOGIC[initial.game_id];
   if (!logic) throw new ApiError(404, "We don't have that game (yet).");
   const admin = supabaseAdmin();
+  const readSecret = () => admin.from("game_secrets").select("state").eq("session_id", sessionId).single();
 
   // Every move is judged against the latest state. If another move commits between our
   // read and our write, the version check in commit_game_move fails and we simply retry.
+  // Each step here is a database round trip, so independent ones run side by side.
   for (let attempt = 0; attempt < 5; attempt++) {
     // Order matters: version first, then state. A newer state with an older version can
-    // only cause a harmless conflict; the reverse could never happen.
-    const { data: row } = await admin.from("game_sessions").select("version, status, players").eq("id", sessionId).single();
-    if (!row) throw new ApiError(404, "That game has wandered off.");
+    // only cause a harmless conflict; the reverse could never happen. The first attempt
+    // reuses the session row we just loaded as its version read.
+    let row: Pick<SessionRow, "version" | "status" | "players"> | null = initial;
+    let secret: { state: unknown } | null;
+    if (attempt === 0) {
+      const [, s] = await Promise.all([rateLimit(user.id, "move", 300, 60), readSecret()]);
+      secret = s.data;
+    } else {
+      ({ data: row } = await admin.from("game_sessions").select("version, status, players").eq("id", sessionId).single());
+      if (!row) throw new ApiError(404, "That game has wandered off.");
+      ({ data: secret } = await readSecret());
+    }
     if (row.status !== "active") throw new ApiError(409, "This game is already over.");
-    const { data: secret } = await admin.from("game_secrets").select("state").eq("session_id", sessionId).single();
     if (!secret) throw new ApiError(404, "That game has wandered off.");
 
     let result;

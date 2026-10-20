@@ -132,6 +132,7 @@ All schema lives in `supabase/migrations/`, applied in filename order:
 | `0005_after_dark.sql` | 18+ consent model, per-person PIN, custom cards, Fantasy Match (mutual matches only). |
 | `0006_discreet_moments.sql` | Keeps After Dark sessions off the shared timeline. |
 | `0007_spicy_sessions_readable.sql` | Lets an in-progress After Dark card finish after an opt-out. |
+| `0008_chat.sql` | Room chat: `chat_messages`, `chat_reads` (unread and "Seen") and `mark_chat_read`. |
 
 `npm run db:migrate` records what it has applied in `public._twain_migrations` (the original project name; kept so existing databases stay in sync) and only runs new
 files, each in its own transaction. To change the schema, **add a new numbered file**; never edit
@@ -205,11 +206,18 @@ AMAH_SANDBOX=1 npx next start -p 3100   # lets the per-board accessibility audit
 4. Run migrations from your machine or CI (`npm run db:migrate`) before deploying any change that
    needs a new one.
 
+**Keep the functions next to the database.** Every move makes several sequential database calls,
+so the distance between the server functions and Supabase is paid several times per move.
+`vercel.json` pins functions to `dub1` (Dublin) to sit beside a Supabase project in `eu-west-1`
+(Ireland). If your project lives elsewhere, change `regions` to the closest Vercel region (for
+example `iad1` for `us-east-1`, `sfo1` for `us-west-1`, `sin1` for `ap-southeast-1`).
+
 ### Netlify
 
 `netlify.toml` is included. Netlify's Next.js runtime is detected automatically. Add the same
 environment variables, deploy, and add the redirect URLs to Supabase. Middleware and server
-actions run on Netlify Functions; nothing in the app is Vercel-specific.
+actions run on Netlify Functions; nothing in the app is Vercel-specific. Set the Functions region
+(Site configuration → Functions) to the one closest to your Supabase project.
 
 ### Checklist after the first deploy
 
@@ -264,6 +272,12 @@ e2e/                   Playwright tests
 Daily Question, Love Notes, Memory Lane, Date Night, the bucket list and Fantasy Match are
 ongoing room features rather than turn-based sessions. They use their own tables, server
 actions and RLS (see `src/components/romantic`, `src/components/afterdark` and `src/lib/*`).
+
+**Chat** (`src/components/chat/Chat.tsx`) sits in the room header, so it's one tap away on every
+room page and mid-game. The browser writes messages straight to Supabase under RLS, then
+broadcasts the saved row on the room channel for instant delivery. Postgres Changes and refetches
+on reconnect are the backstop, and messages are deduped by id. In After Dark, a message preview
+says "Sent you a message" and never quotes the text.
 
 ---
 

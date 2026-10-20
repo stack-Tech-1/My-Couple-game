@@ -25,6 +25,8 @@ type RoomCtx = {
   bundle: RoomBundle;
   connection: ConnectionState;
   partnerPresence: PresenceState | null;
+  /** Where I am right now (what I last told my partner). */
+  myWhere: PresenceState["where"];
   /** Update what I'm doing (shown to partner). */
   setWhere: (p: Omit<PresenceState, "userId">) => void;
   /** Low-latency broadcast to the partner. Payloads are validated by the receiver. */
@@ -53,6 +55,7 @@ export function RoomProvider({ bundle, children }: { bundle: RoomBundle; childre
   const [override, setThemeOverride] = useState<ThemeName | null>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
   const whereRef = useRef<Omit<PresenceState, "userId">>({ where: "home" });
+  const [myWhere, setMyWhere] = useState<PresenceState["where"]>("home");
   const handlers = useRef(new Map<string, Set<Handler>>());
 
   // Theme: member preference, unless a section (After Dark) overrides it.
@@ -139,6 +142,7 @@ export function RoomProvider({ bundle, children }: { bundle: RoomBundle; childre
 
   const setWhere = useCallback((p: Omit<PresenceState, "userId">) => {
     whereRef.current = p;
+    setMyWhere(p.where);
     void channelRef.current?.track({ userId: myId, ...p });
   }, [myId]);
 
@@ -156,8 +160,8 @@ export function RoomProvider({ bundle, children }: { bundle: RoomBundle; childre
   }, []);
 
   const value = useMemo<RoomCtx>(
-    () => ({ bundle, connection, partnerPresence, setWhere, send, on, setThemeOverride }),
-    [bundle, connection, partnerPresence, setWhere, send, on],
+    () => ({ bundle, connection, partnerPresence, myWhere, setWhere, send, on, setThemeOverride }),
+    [bundle, connection, partnerPresence, myWhere, setWhere, send, on],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

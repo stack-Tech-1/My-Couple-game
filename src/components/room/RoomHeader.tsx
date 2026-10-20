@@ -6,6 +6,7 @@ import { LogoMark } from "@/design/Logo";
 import { Icon } from "@/design/icons";
 import { useRoom } from "@/lib/realtime/RoomProvider";
 import { gameMeta } from "@/games/catalog";
+import { Chat } from "@/components/chat/Chat";
 
 export function RoomHeader() {
   const { bundle, partnerPresence } = useRoom();
@@ -26,7 +27,7 @@ export function RoomHeader() {
           <LogoMark size={26} />
           <span className="display truncate text-[1.25rem]">{room.name}</span>
         </Link>
-        <div className="ml-auto flex items-center gap-3">
+        <div className="ml-auto flex items-center gap-2 sm:gap-3">
           <div className="hidden text-right sm:block">
             <p className="text-[0.82rem] font-semibold leading-tight">{partner?.profile.display_name ?? "Waiting for your person"}</p>
             <p className="text-[0.75rem] leading-tight text-muted" aria-live="polite">{partner ? activity : "invite pending"}</p>
@@ -41,6 +42,7 @@ export function RoomHeader() {
               </span>
             )}
           </div>
+          <Chat />
           <Link href={`/room/${room.id}/settings`} aria-label="Room settings" className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-sunk">
             <Icon name="settings" size={20} />
           </Link>
