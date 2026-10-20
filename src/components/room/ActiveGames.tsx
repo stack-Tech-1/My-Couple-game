@@ -7,6 +7,8 @@ import type { SessionRow } from "@/lib/games/types";
 
 /** Games left mid-way. Shown right under the greeting so nothing gets forgotten. */
 export function ActiveGames({ sessions }: { sessions: SessionRow[] }) {
+  // After Dark never shows on the shared dashboard.
+  sessions = sessions.filter((s) => gameMeta(s.game_id)?.category !== "spicy");
   if (sessions.length === 0) return null;
   return (
     <section aria-label="Games in progress" className="mt-8 flex gap-3 overflow-x-auto pb-1">

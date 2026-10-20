@@ -17,7 +17,14 @@ export type SessionRow = {
 };
 
 /** serverNow lets clients estimate clock offset for timed games. */
-export type SessionSnapshot = { session: SessionRow; view: unknown; version: number; serverNow?: number };
+export type SessionSnapshot = {
+  session: SessionRow;
+  view: unknown;
+  version: number;
+  serverNow?: number;
+  /** After Dark only: a partner opted out; the current card finishes, then the session ends. */
+  closing?: boolean;
+};
 
 export const createSessionBody = z.object({
   gameId: z.string().min(1).max(40),

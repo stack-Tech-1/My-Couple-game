@@ -11,6 +11,9 @@ import { activeSessions } from "@/lib/games/server";
 import { Rules } from "@/components/game/Rules";
 import { StartGame } from "@/components/game/StartGame";
 import { FeaturePage, FEATURES } from "@/components/romantic/FeaturePage";
+import { AfterDarkShell } from "@/components/afterdark/AfterDarkShell";
+import { FantasyMatch } from "@/components/afterdark/FantasyMatch";
+import { getAfterDark, getFantasy } from "@/lib/afterdark/server";
 
 export async function generateMetadata({ params }: { params: Promise<{ gameId: string }> }): Promise<Metadata> {
   const { gameId } = await params;
@@ -26,6 +29,35 @@ export default async function GamePage({ params }: { params: Promise<{ roomId: s
   if (game.category === "spicy" && !afterDarkOpen(bundle)) redirect(`/room/${roomId}`);
   const cat = CATEGORIES[game.category];
   if (FEATURES.has(game.id)) return <FeaturePage gameId={game.id} roomId={roomId} bundle={bundle} />;
+  if (game.category === "spicy") {
+    const ad = await getAfterDark(bundle);
+    const logicFor = GAME_LOGIC[game.id];
+    const activeSpicy = logicFor ? (await activeSessions(roomId)).find((s) => s.game_id === game.id) : undefined;
+    return (
+      <AfterDarkShell hasPin={ad.me.hasPin}>
+        <div className="@container mx-auto max-w-3xl pt-8">
+          <Link href={`/room/${roomId}/after-dark`} className="inline-flex items-center gap-1.5 text-[0.9rem] font-semibold text-muted hover:text-fg">
+            <Icon name="arrowLeft" size={16} /> After dark
+          </Link>
+          <h1 className="display mt-6 text-[clamp(2.4rem,8vw,3.6rem)]">{game.name}</h1>
+          <p className="mt-2 text-[1.05rem] text-muted">{game.tagline}</p>
+          <div className="mt-8">
+            {game.id === "fantasy-match" ? (
+              <FantasyMatch initial={await getFantasy(roomId, bundle.me.profile.id)} />
+            ) : logicFor ? (
+              <>
+                <StartGame gameId={game.id} activeSessionId={activeSpicy?.id ?? null} />
+                <section aria-labelledby="rules-h" className="mt-12 border-t-[1.5px] border-line-strong pt-5">
+                  <h2 id="rules-h" className="eyebrow mb-6 text-muted">How to play</h2>
+                  <Rules rules={logicFor.rules} />
+                </section>
+              </>
+            ) : null}
+          </div>
+        </div>
+      </AfterDarkShell>
+    );
+  }
   const logic = GAME_LOGIC[game.id];
   const active = logic ? (await activeSessions(roomId)).find((s) => s.game_id === game.id) : undefined;
 

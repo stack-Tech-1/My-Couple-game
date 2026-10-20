@@ -64,6 +64,7 @@ export function GameHost({ initial }: { initial: SessionSnapshot }) {
           const snap = await gameApi.snapshot(sessionId);
           sample(t0, snap.serverNow);
           store.getState().accept(snap);
+          setClosing(!!snap.closing);
         } catch {
           // stay on what we have; the banner already explains connectivity issues
         }
@@ -78,10 +79,15 @@ export function GameHost({ initial }: { initial: SessionSnapshot }) {
   }, [resync]);
 
   // Presence: tell the partner what we're playing.
+  // After Dark never names the game in presence: the partner's header just says "in the room".
+  const spicy = meta?.category === "spicy";
   useEffect(() => {
-    setWhere({ where: "game", gameId: session.game_id, sessionId });
+    setWhere(spicy ? { where: "afterdark" } : { where: "game", gameId: session.game_id, sessionId });
     return () => setWhere({ where: "home" });
-  }, [setWhere, session.game_id, sessionId]);
+  }, [setWhere, session.game_id, sessionId, spicy]);
+
+  // A partner opted out of After Dark: this card finishes, then the session ends. No reason shown.
+  const [closing, setClosing] = useState(!!initial.closing);
 
   // Realtime: my projection and the session row. RLS means I only ever receive my own view.
   useEffect(() => {
@@ -226,6 +232,11 @@ export function GameHost({ initial }: { initial: SessionSnapshot }) {
         )}
       </div>
 
+      {closing && session.status === "active" ? (
+        <p role="status" className="mb-5 rounded-[14px] border border-line bg-sunk px-4 py-3 text-center text-[0.9rem]">
+          This session will end after this card.
+        </p>
+      ) : null}
       <div className="@container">
       <Component view={view} me={me} partner={partner} names={names} sendMove={sendMove} pending={pending} broadcast={broadcast} sound={sound} clock={clock} />
       </div>

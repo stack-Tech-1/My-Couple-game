@@ -20,6 +20,7 @@ import { ThisOrThatBoard } from "./this-or-that/Board";
 import { StoryChainBoard } from "./story-chain/Board";
 import { DeepQuestionsBoard } from "./deep-questions/Board";
 import { ComplimentBattleBoard } from "./compliment-battle/Board";
+import { TruthOrDareBoard, SpicyDiceBoard, HotSeatBoard, NeverHaveIBoard } from "./after-dark/Boards";
 
 /**
  * Client registry: game id -> component. Logic comes from the server-safe
@@ -44,6 +45,10 @@ const components: Record<string, ComponentType<GameProps<any, any>>> = {
   "story-chain": StoryChainBoard,
   "deep-questions": DeepQuestionsBoard,
   "compliment-battle": ComplimentBattleBoard,
+  "truth-or-dare": TruthOrDareBoard,
+  "spicy-dice": SpicyDiceBoard,
+  "hot-seat": HotSeatBoard,
+  "never-have-i": NeverHaveIBoard,
 };
 
 export function gameComponent(id: string) {

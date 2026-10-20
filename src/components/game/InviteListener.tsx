@@ -24,9 +24,11 @@ export function InviteListener() {
         const { sessionId, gameId, rematch } = parsed.data;
         const href = `/room/${bundle.room.id}/play/${sessionId}`;
         if (pathname === href) return;
-        const name = gameMeta(gameId)?.name ?? "a game";
+        const meta = gameMeta(gameId);
+        // After Dark invites never name the game: a toast can be seen over a shoulder.
+        const name = meta?.category === "spicy" ? "Tap to join" : (meta?.name ?? "a game");
         if (soundOn) playSound("invite");
-        toast.invite(rematch ? `${partnerName} wants a rematch` : `${partnerName} wants to play`, name, {
+        toast.invite(meta?.category === "spicy" ? `${partnerName} sent you an invite` : rematch ? `${partnerName} wants a rematch` : `${partnerName} wants to play`, name, {
           label: "Join",
           onClick: () => router.push(href),
         });

@@ -5,6 +5,13 @@ import { GAME_LOGIC } from "@/games/logic";
 import { MoveRejected, runMove, toDb, viewsFor } from "@/games/_engine/runner";
 import type { Players } from "@/games/_engine/types";
 import type { SessionRow, SessionSnapshot } from "./types";
+import { isSpicy } from "@/games/after-dark/logic";
+
+/** Both current members confirmed 18+ and opted in. The same gate the database uses. */
+async function spicyUnlocked(roomId: string): Promise<boolean> {
+  const { data } = await supabaseAdmin().rpc("spicy_unlocked", { p_room: roomId });
+  return data === true;
+}
 
 /**
  * A plpgsql function declared to return a row type that does `return null` comes back from
@@ -49,7 +56,8 @@ export async function getSnapshot(sessionId: string): Promise<SessionSnapshot> {
   const { supabase, user, session } = await loadOwnSession(sessionId);
   const { data } = await supabase.from("game_views").select("view, version").eq("session_id", sessionId).eq("user_id", user.id).single();
   if (!data) throw new ApiError(404, "That game has wandered off.");
-  return { session, view: data.view, version: data.version as number, serverNow: Date.now() };
+  const closing = isSpicy(session.game_id) && session.status === "active" ? !(await spicyUnlocked(session.room_id)) : false;
+  return { session, view: data.view, version: data.version as number, serverNow: Date.now(), ...(closing ? { closing } : {}) };
 }
 
 export async function createSession(gameId: string, rawConfig: unknown, rematchOf?: string): Promise<SessionRow> {
@@ -64,9 +72,15 @@ export async function createSession(gameId: string, rawConfig: unknown, rematchO
   if (!mine) throw new ApiError(403, "You need a room first.");
   if (!partner) throw new ApiError(409, "Games need two players. Invite your person first.");
 
+  // After Dark: both must be confirmed and opted in. Heat cap and custom cards come from the
+  // database, never from the client.
+  let spicyConfig: Record<string, unknown> | null = null;
   if (logic.category === "spicy") {
-    const ok = [mine, partner].every((m) => m.spicy_opt_in && m.age_confirmed_at);
-    if (!ok) throw new ApiError(403, "That one's locked.");
+    if (!(await spicyUnlocked(mine.room_id))) throw new ApiError(403, "That one's locked.");
+    const { data: limits } = await supabaseAdmin().from("room_members").select("max_heat").eq("room_id", mine.room_id);
+    const maxHeat = Math.min(...(limits ?? []).map((m) => Number(m.max_heat)), 3);
+    const { data: custom } = await supabaseAdmin().from("custom_cards").select("deck, heat, text").eq("room_id", mine.room_id).lte("heat", maxHeat).limit(500);
+    spicyConfig = { maxHeat, custom: custom ?? [] };
   }
 
   // Room house rules first, then anything the caller passed explicitly.
@@ -74,7 +88,7 @@ export async function createSession(gameId: string, rawConfig: unknown, rematchO
   const houseRules = ((roomRow?.settings as { houseRules?: Record<string, Record<string, unknown>> } | null)?.houseRules ?? {})[gameId] ?? {};
   let config: Record<string, unknown> = {};
   if (logic.configSchema) {
-    const parsed = logic.configSchema.safeParse({ ...houseRules, ...((rawConfig as Record<string, unknown> | undefined) ?? {}) });
+    const parsed = logic.configSchema.safeParse(spicyConfig ?? { ...houseRules, ...((rawConfig as Record<string, unknown> | undefined) ?? {}) });
     if (!parsed.success) throw new ApiError(400, "Those game settings didn't add up.");
     config = parsed.data as Record<string, unknown>;
   }
@@ -145,7 +159,10 @@ export async function submitMove(sessionId: string, rawMove: unknown): Promise<S
       throw e;
     }
 
-    const db = toDb(result.outcome);
+    let db = toDb(result.outcome);
+    if (isSpicy(initial.game_id) && db.status === "active" && !(await spicyUnlocked(initial.room_id))) {
+      db = { status: "finished", outcome: "complete", winner: null };
+    }
     const { data, error } = await admin.rpc("commit_game_move", {
       p_session: sessionId,
       p_expected_version: row.version,

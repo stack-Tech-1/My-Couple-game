@@ -19,7 +19,8 @@ export function Library() {
         {CATEGORY_ORDER.map((c) => {
           const cat = CATEGORIES[c];
           const games = gamesIn(c);
-          if (c === "spicy" && !spicyOpen) return <LockedAfterDark key={c} roomId={bundle.room.id} />;
+          // Discretion: After Dark is one panel on the shared home screen, never a list of its games.
+          if (c === "spicy") return <AfterDarkEntry key={c} roomId={bundle.room.id} open={spicyOpen} />;
           return (
             <div key={c}>
               <div className="flex items-baseline justify-between gap-4">
@@ -60,18 +61,20 @@ function Tile({ game, roomId, accent, large }: { game: GameMeta; roomId: string;
   );
 }
 
-function LockedAfterDark({ roomId }: { roomId: string }) {
+function AfterDarkEntry({ roomId, open }: { roomId: string; open: boolean }) {
   return (
     <div className="relative overflow-hidden rounded-[22px] bg-[#120c0e] p-7 text-[#f4e4da]">
       <div aria-hidden className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(60% 80% at 100% 0%, rgba(232,86,58,.3), transparent 70%)" }} />
       <div className="relative">
-        <Icon name="lock" size={26} className="text-[#ff8a6e]" />
-        <h3 className="display mt-4 text-[2rem]">After dark is locked.</h3>
+        <Icon name={open ? "flame" : "lock"} size={26} className="text-[#ff8a6e]" />
+        <h3 className="display mt-4 text-[2rem]">{open ? "After dark." : "After dark is locked."}</h3>
         <p className="mt-2 max-w-md text-[#c9b0a7]">
-          Five 18+ games for the two of you. It opens only when you&apos;ve both confirmed your age and both said yes. Either of you can close it again anytime.
+          {open
+            ? "Behind your PIN. Lights down, phones close."
+            : "Five 18+ games for the two of you. It opens only when you’ve both confirmed your age and both said yes. Either of you can close it again anytime."}
         </p>
-        <Link href={`/room/${roomId}/settings#after-dark`} className="mt-6 inline-flex h-11 items-center gap-2 rounded-full border-[1.5px] border-[#f4e4da] px-5 text-[0.95rem] font-semibold hover:bg-[#f4e4da] hover:text-[#120c0e]">
-          See how it works <Icon name="arrowRight" size={18} />
+        <Link href={`/room/${roomId}/after-dark`} className="mt-6 inline-flex h-11 items-center gap-2 rounded-full border-[1.5px] border-[#f4e4da] px-5 text-[0.95rem] font-semibold hover:bg-[#f4e4da] hover:text-[#120c0e]">
+          {open ? "Go in" : "See how it works"} <Icon name="arrowRight" size={18} />
         </Link>
       </div>
     </div>

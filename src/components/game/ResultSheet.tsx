@@ -28,7 +28,13 @@ export function ResultSheet({ session, me, names }: { session: SessionRow; me: s
   let title: string;
   let sub: string;
   const iWon = session.outcome === "win" && session.winner === me;
-  switch (session.outcome) {
+  const spicy = meta?.category === "spicy";
+  switch (spicy ? "spicy" : session.outcome) {
+    case "spicy":
+      eyebrow = "After dark";
+      title = "Session ended.";
+      sub = "";
+      break;
     case "win":
       title = iWon ? "You won." : `${partnerName} won.`;
       sub = iWon ? pick(WIN) : pick(LOSE);

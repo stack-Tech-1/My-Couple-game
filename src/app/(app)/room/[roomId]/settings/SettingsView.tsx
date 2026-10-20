@@ -13,6 +13,7 @@ import { useRoom } from "@/lib/realtime/RoomProvider";
 import { deleteAccount, leaveRoom, renameRoom, signOut, updateMyPrefs } from "@/lib/room/actions";
 import { applyTheme, resolveTheme, saveThemePref, type ThemePref } from "@/lib/theme/theme";
 import { HouseRules } from "@/components/room/HouseRules";
+import { setOptIn } from "@/lib/afterdark/actions";
 
 export function SettingsView() {
   const { bundle } = useRoom();
@@ -104,9 +105,24 @@ export function SettingsView() {
         <p className="leading-relaxed text-muted">
           An 18+ section with five flirty games. It stays locked until <b className="text-fg">both</b> of you have confirmed you&apos;re over 18 and opted in, each on your own phone. The heat never goes above the lower of your two limits, any card can be skipped without a reason, and it has its own PIN and a one-tap exit.
         </p>
-        <p className="mt-4 rounded-[12px] border border-dashed border-line p-4 text-[0.9rem] text-muted">
-          The opt-in controls arrive together with the After Dark games, so nothing here can be switched on half-built.
-        </p>
+        {me.member.spicy_opt_in ? (
+          <div className="mt-4 border-t border-line">
+            <Toggle
+              label="After Dark open from my side"
+              description="Switch off to close it for both of you, instantly. Any card in progress finishes first. No PIN needed, no reason given."
+              checked
+              onChange={() => start(async () => {
+                const r = await setOptIn(false);
+                if (!r.ok) return void toast.error(r.error);
+                toast.info("Closed.");
+                router.refresh();
+              })}
+            />
+          </div>
+        ) : null}
+        <Link href={`/room/${room.id}/after-dark`} className="mt-4 inline-flex items-center gap-1.5 font-semibold underline underline-offset-4">
+          {me.member.spicy_opt_in ? "Manage After Dark" : "How After Dark works"} <Icon name="arrowRight" size={16} />
+        </Link>
       </Section>
 
       <Section title="Account">
@@ -117,7 +133,7 @@ export function SettingsView() {
         </div>
       </Section>
 
-      <Modal open={leaveOpen} onClose={() => setLeaveOpen(false)} title="Leave the room?" description={partner ? `You'll be unpaired from ${partner.profile.display_name}. They keep the room and its history, and get a fresh invite code. Any After Dark data is erased for both of you.` : "The room will be deleted, since nobody else is in it."}>
+      <Modal open={leaveOpen} onClose={() => setLeaveOpen(false)} title="Leave the room?" description={partner ? `You'll be unpaired from ${partner.profile.display_name}. They keep the room and its history, and get a fresh invite code. After Dark closes; your own After Dark answers stay private to you and are never shown to anyone.` : "The room will be deleted, since nobody else is in it."}>
         <div className="flex justify-end gap-3">
           <Button variant="ghost" onClick={() => setLeaveOpen(false)}>Stay</Button>
           <Button
