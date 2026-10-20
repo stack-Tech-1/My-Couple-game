@@ -93,7 +93,9 @@ If the Supabase keys are missing, the app shows a "not wired up yet" screen inst
    | Change email address | `Confirm your new email for Amah` | `supabase/templates/change-email.html` |
 
    They link to `/auth/confirm` with a token hash, so a link requested on one device works on any
-   other. Open the files in a browser to preview them.
+   other. Open the files in a browser to preview them. The logo is the static file
+   `public/email/amah-mark.png`, referenced by its full URL; if the production domain changes,
+   update that URL in all three templates.
 
 No other dashboard setup is needed: tables, policies, storage and realtime all come from the
 migrations.
