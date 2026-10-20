@@ -144,7 +144,7 @@ function Hole({ cell, drop, row, winning, reduce }: { cell: Cell; drop: boolean;
 
 function PlayerChip({ name, piece, active, align, label }: { name: string; piece: 1 | 2; active: boolean; align?: "right"; label?: string }) {
   return (
-    <div className={cn("flex min-w-0 items-center gap-2 transition-opacity", align === "right" && "flex-row-reverse text-right", !active && "opacity-55")}>
+    <div className={cn("flex min-w-0 items-center gap-2 transition-colors", align === "right" && "flex-row-reverse text-right", !active && "text-muted")}>
       <span className="h-5 w-5 shrink-0 rounded-full" style={{ background: DISC[piece].fill, boxShadow: `inset 0 -2px 0 ${DISC[piece].rim}` }} aria-hidden />
       <span className="truncate text-[0.9rem] font-semibold">
         {name}

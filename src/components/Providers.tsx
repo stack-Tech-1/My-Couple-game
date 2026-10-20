@@ -2,6 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
+import { MotionConfig } from "framer-motion";
 import { Toaster } from "@/design/Toaster";
 import { toast } from "@/design/toast";
 import { friendlyError } from "@/lib/errors";
@@ -23,8 +24,11 @@ export function Providers({ children }: { children: ReactNode }) {
 
   return (
     <QueryClientProvider client={client}>
-      {children}
-      <Toaster />
+      {/* Every Framer animation honours prefers-reduced-motion, app-wide. */}
+      <MotionConfig reducedMotion="user">
+        {children}
+        <Toaster />
+      </MotionConfig>
     </QueryClientProvider>
   );
 }

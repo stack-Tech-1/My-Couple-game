@@ -31,7 +31,7 @@ export function DeepQuestionsBoard({ view, me, names, sendMove, pending, sound }
     <div className="mx-auto flex w-full max-w-[600px] flex-col gap-6">
       <div className="flex gap-2" aria-label="Depth">
         {view.levels.map((l, i) => (
-          <div key={l.level} className={cn("flex-1 rounded-full border px-3 py-1.5 text-center text-[0.8rem] font-semibold", i === view.level ? "border-line-strong bg-fg text-bg" : i < view.level ? "border-line text-muted" : "border-line text-muted opacity-60")}>
+          <div key={l.level} className={cn("flex-1 rounded-full border px-3 py-1.5 text-center text-[0.8rem] font-semibold", i === view.level ? "border-line-strong bg-fg text-bg" : i < view.level ? "border-line text-muted" : "border-dashed border-line text-muted")}>
             {l.level}
           </div>
         ))}

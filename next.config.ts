@@ -8,6 +8,10 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
+      // The service worker must always be revalidated so updates roll out promptly.
+      { source: "/sw.js", headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }] },
+      // Font files are versioned by name (-v1), so they can be cached forever.
+      { source: "/fonts/:file*.woff2", headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }] },
       {
         source: "/:path*",
         headers: [

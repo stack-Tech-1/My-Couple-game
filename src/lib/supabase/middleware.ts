@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { publicEnv } from "@/lib/env";
 
 const PROTECTED = ["/room", "/onboarding", "/account", "/join"];
-const APP_PREFIXES = [...PROTECTED, "/sign-in", "/auth"];
+const APP_PREFIXES = [...PROTECTED, "/sign-in", "/auth", "/offline"];
 
 export async function updateSession(request: NextRequest): Promise<NextResponse> {
   let response = NextResponse.next({ request });

@@ -59,6 +59,7 @@ export default async function GamePage({ params }: { params: Promise<{ roomId: s
     );
   }
   const logic = GAME_LOGIC[game.id];
+  if (!logic) notFound(); // every library entry is a feature, an After Dark page, or a session game
   const active = logic ? (await activeSessions(roomId)).find((s) => s.game_id === game.id) : undefined;
 
   return (
@@ -71,13 +72,7 @@ export default async function GamePage({ params }: { params: Promise<{ roomId: s
           <p className="eyebrow" style={{ color: cat.ink }}>{cat.label}</p>
           <h1 className="display mt-3 text-[clamp(2.8rem,9vw,5rem)]">{game.name}</h1>
           <p className="mt-4 text-[1.1rem] text-muted">{game.tagline}</p>
-          {logic ? (
-            <StartGame gameId={game.id} activeSessionId={active?.id ?? null} />
-          ) : (
-            <p className="mt-8 max-w-md rounded-[14px] border border-dashed border-line-strong p-5 leading-relaxed">
-              <b>On the workbench.</b> This one&apos;s being built and tested in two windows side by side before it gets a Play button. It&apos;ll show up here as soon as it&apos;s ready.
-            </p>
-          )}
+          {logic ? <StartGame gameId={game.id} activeSessionId={active?.id ?? null} /> : null}
         </div>
         <div className="text-fg">
           <GameArt id={game.id} accent={cat.color} className="mx-auto h-auto w-full max-w-sm" />

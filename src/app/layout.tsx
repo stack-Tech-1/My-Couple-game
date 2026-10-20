@@ -1,17 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Manrope } from "next/font/google";
 import { APP_DESCRIPTION, APP_NAME, APP_TAGLINE, siteUrl } from "@/lib/config";
-import { Providers } from "@/components/Providers";
+import { ServiceWorker } from "@/components/ServiceWorker";
 import "./globals.css";
-
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  variable: "--font-fraunces",
-  axes: ["SOFT", "WONK", "opsz"],
-  display: "swap",
-});
-
-const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope", display: "swap" });
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
@@ -37,12 +27,18 @@ const themeBoot = `try{var t=localStorage.getItem("twain-theme");if(t==="night"|
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${fraunces.variable} ${manrope.variable}`} suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBoot }} />
+        {/* Self-hosted fonts (see globals.css): preloaded so the display face is there for first paint. */}
+        <link rel="preload" href="/fonts/fraunces-latin-v1.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+        <link rel="preload" href="/fonts/manrope-latin-v1.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
       </head>
       <body>
-        <Providers>{children}</Providers>
+        {/* Client providers (query cache, motion, toasts) live in the app and auth layouts, so the
+            marketing pages ship almost no JavaScript. */}
+        {children}
+        <ServiceWorker />
       </body>
     </html>
   );

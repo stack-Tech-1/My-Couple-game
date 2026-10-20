@@ -6,6 +6,7 @@ import type { GameProps } from "@/games/_engine/types";
 import { Dice } from "@/design/Dice";
 import { Button } from "@/design/Button";
 import { Status } from "@/games/_ui";
+import { cn } from "@/lib/cn";
 import { HOME, LAST_TRACK, SAFE, START, YARD, absolute, type LudoMove, type LudoView } from "./logic";
 
 const S = 40; // cell size in the 15x15 SVG
@@ -106,7 +107,7 @@ export function LudoBoard({ view, me, names, sendMove, pending, sound }: GamePro
     <div className="mx-auto flex w-full max-w-[560px] flex-col items-center gap-5">
       <div className="flex w-full items-center justify-between text-[0.88rem]">
         {view.players.map((p, seat) => (
-          <span key={p} className="flex items-center gap-2 font-semibold" style={{ opacity: view.players[view.turn] === p ? 1 : 0.55 }}>
+          <span key={p} className={cn("flex items-center gap-2 font-semibold transition-colors", view.players[view.turn] !== p && "text-muted")}>
             <span className="h-4 w-4 rounded-full" style={{ background: COLORS[seat as 0 | 1].fill, boxShadow: `inset 0 -2px 0 ${COLORS[seat as 0 | 1].rim}` }} aria-hidden />
             {p === me ? "You" : names[p]} · {view.tokens[p]!.filter((r) => r === HOME).length}/4 home
           </span>

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { GAME_LOGIC } from "@/games/logic";
 import { Sandbox } from "./Sandbox";
+import { Providers } from "@/components/Providers";
 
 export const metadata = { robots: { index: false } };
 
@@ -9,5 +10,9 @@ export default async function DevPlay({ params }: { params: Promise<{ gameId: st
   if (process.env.NODE_ENV === "production" && process.env.TWAIN_SANDBOX !== "1") notFound();
   const { gameId } = await params;
   if (!GAME_LOGIC[gameId]) notFound();
-  return <Sandbox gameId={gameId} />;
+  return (
+    <Providers>
+      <Sandbox gameId={gameId} />
+    </Providers>
+  );
 }

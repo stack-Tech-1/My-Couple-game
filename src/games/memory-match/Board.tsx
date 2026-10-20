@@ -45,7 +45,7 @@ export function MemoryMatchBoard({ view, me, names, sendMove, pending, clock, so
       <TimerBar left={left} total={view.targetMs} />
       <Status>{status}</Status>
 
-      <div className="grid grid-cols-4 gap-2.5 sm:gap-3" role="grid" aria-label="Cards">
+      <div className="grid grid-cols-4 gap-2.5 sm:gap-3" role="group" aria-label="Cards">
         {view.cards.map((c, i) => {
           const faceUp = c !== null;
           const canFlip = myTurn && !view.matched[i] && !(view.up.length === 1 && view.up[0] === i) && !pending;

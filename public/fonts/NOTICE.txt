@@ -1,0 +1,8 @@
+Fonts in this folder are self-hosted subsets (latin, latin-ext) of:
+
+  Fraunces  - Copyright 2018 The Fraunces Project Authors (https://github.com/undercasetype/Fraunces)
+  Manrope   - Copyright 2018 The Manrope Project Authors (https://github.com/sharanda/manrope)
+
+Both are licensed under the SIL Open Font License, Version 1.1.
+Full licence text: https://openfontlicense.org/open-font-license-official-text/
+The fonts may be used, bundled and redistributed with this app; they may not be sold on their own.

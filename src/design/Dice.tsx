@@ -65,7 +65,7 @@ export function Dice({
 
   const colors = {
     paper: { face: "#fbf7f1", edge: "#1c1416", pip: "#1c1416" },
-    ember: { face: "#e8563a", edge: "#5b1a2b", pip: "#fff3ea" },
+    ember: { face: "#e8563a", edge: "#5b1a2b", pip: "#1c1416" },
     wine: { face: "#5b1a2b", edge: "#2a0b14", pip: "#f3d9a6" },
   }[tone];
 

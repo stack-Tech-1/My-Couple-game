@@ -4,6 +4,8 @@ import { APP_DESCRIPTION, APP_NAME } from "@/lib/config";
 import { Logo, LogoMark } from "@/design/Logo";
 import { Icon, type IconName } from "@/design/icons";
 import { RoomPreview } from "@/components/landing/RoomPreview";
+import { DeletedNotice } from "@/components/landing/DeletedNotice";
+import { Suspense } from "react";
 import { CATEGORIES, CATEGORY_ORDER, GAMES, gamesIn } from "@/games/catalog";
 import { GameArt } from "@/games/GameArt";
 
@@ -31,6 +33,9 @@ const featured: Record<string, string> = {
 export default function Landing() {
   return (
     <div className="relative z-[1] overflow-x-clip">
+      <Suspense fallback={null}>
+        <DeletedNotice />
+      </Suspense>
       <header className="mx-auto flex max-w-6xl items-center justify-between px-4 py-5 sm:px-8">
         <Link href="/" aria-label={`${APP_NAME} home`} className="rounded-md">
           <Logo />

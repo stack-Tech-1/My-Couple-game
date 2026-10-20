@@ -27,7 +27,7 @@ export function Scoreline({
 
 function Side({ name, score, sub, on, dim, align }: { name: string; score?: ReactNode; sub?: ReactNode; on: boolean; dim: boolean; align?: "right" }) {
   return (
-    <div className={cn("min-w-0 transition-opacity", align === "right" && "text-right", dim && "opacity-60")}>
+    <div className={cn("min-w-0 transition-colors", align === "right" && "text-right", dim && "text-muted")}>
       <p className={cn("flex items-center gap-1.5 text-[0.85rem] font-semibold", align === "right" && "justify-end")}>
         {on ? <span className="h-2 w-2 rounded-full bg-accent" aria-hidden /> : null}
         <span className="truncate">{name}</span>

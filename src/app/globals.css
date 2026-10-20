@@ -1,12 +1,70 @@
 @import "tailwindcss";
 
 /* ------------------------------------------------------------------
+   Fonts: self-hosted (SIL OFL 1.1, see public/fonts/NOTICE.txt).
+   Versioned file names + explicit <link rel=preload> in the root layout, so the
+   display face arrives early. Fallback faces are metrics-matched (no layout shift).
+------------------------------------------------------------------- */
+@font-face {
+  font-family: "Fraunces";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("/fonts/fraunces-latin-v1.woff2") format("woff2");
+  unicode-range: u+00??,u+0131,u+0152-0153,u+02bb-02bc,u+02c6,u+02da,u+02dc,u+0304,u+0308,u+0329,u+2000-206f,u+20ac,u+2122,u+2191,u+2193,u+2212,u+2215,u+feff,u+fffd;
+}
+@font-face {
+  font-family: "Fraunces";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("/fonts/fraunces-latin-ext-v1.woff2") format("woff2");
+  unicode-range: u+0100-02ba,u+02bd-02c5,u+02c7-02cc,u+02ce-02d7,u+02dd-02ff,u+0304,u+0308,u+0329,u+1d00-1dbf,u+1e00-1e9f,u+1ef2-1eff,u+2020,u+20a0-20ab,u+20ad-20c4,u+2113,u+2c60-2c7f,u+a720-a7ff;
+}
+@font-face {
+  font-family: "Fraunces Fallback";
+  src: local("Times New Roman");
+  ascent-override: 84.71%;
+  descent-override: 22.09%;
+  line-gap-override: 0%;
+  size-adjust: 115.45%;
+}
+@font-face {
+  font-family: "Manrope";
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url("/fonts/manrope-latin-v1.woff2") format("woff2");
+  unicode-range: u+00??,u+0131,u+0152-0153,u+02bb-02bc,u+02c6,u+02da,u+02dc,u+0304,u+0308,u+0329,u+2000-206f,u+20ac,u+2122,u+2191,u+2193,u+2212,u+2215,u+feff,u+fffd;
+}
+@font-face {
+  font-family: "Manrope";
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url("/fonts/manrope-latin-ext-v1.woff2") format("woff2");
+  unicode-range: u+0100-02ba,u+02bd-02c5,u+02c7-02cc,u+02ce-02d7,u+02dd-02ff,u+0304,u+0308,u+0329,u+1d00-1dbf,u+1e00-1e9f,u+1ef2-1eff,u+2020,u+20a0-20ab,u+20ad-20c4,u+2113,u+2c60-2c7f,u+a720-a7ff;
+}
+@font-face {
+  font-family: "Manrope Fallback";
+  src: local("Arial");
+  ascent-override: 103.31%;
+  descent-override: 29.07%;
+  line-gap-override: 0%;
+  size-adjust: 103.19%;
+}
+
+
+/* ------------------------------------------------------------------
    Twain design tokens
    Raw palette lives on :root; semantic tokens are what components use.
    Themes: day (default), night, afterdark (spicy section).
 ------------------------------------------------------------------- */
 
 :root {
+  --font-fraunces: "Fraunces", "Fraunces Fallback";
+  --font-manrope: "Manrope", "Manrope Fallback";
+
   /* raw palette */
   --c-paper: #f6efe6;
   --c-paper-deep: #ece2d4;
@@ -30,7 +88,8 @@
   --line-strong: var(--c-ink);
   --fg: var(--c-ink);
   --fg-muted: var(--c-ink-soft);
-  --fg-on-accent: #fff8f1;
+  /* Ink on ember: ~5:1 (AA). White on ember is only ~3.4:1, so text on accent fills is always ink. */
+  --fg-on-accent: #1c1416;
   --accent: var(--c-ember);
   --accent-ink: #b5371d; /* AA-safe ember for text on paper */
   --wine: var(--c-wine);
@@ -40,7 +99,7 @@
   --sage-ink: #4f5e43;
   --focus: var(--c-ember);
   --glow: transparent;
-  --grain-opacity: 0.08;
+  --grain-opacity: 0.1;
 
   /* category accents: [fill, text-safe ink] */
   --cat-competitive: var(--c-ember);
@@ -104,7 +163,7 @@
   --cat-romantic-ink: #e28aa0;
   --cat-spicy-ink: #ff7a5c;
   --glow: rgba(232, 86, 58, 0.22);
-  --grain-opacity: 0.07;
+  --grain-opacity: 0.06;
   color-scheme: dark;
 }
 
@@ -161,7 +220,8 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Paper grain. One fixed layer, never intercepts input. */
+/* Paper grain. One fixed layer, never intercepts input. A pre-rendered 4 KB tile
+   (scripts/make-grain.mjs) instead of a live SVG filter + blend mode: same look, painted once. */
 body::before {
   content: "";
   position: fixed;
@@ -169,15 +229,14 @@ body::before {
   pointer-events: none;
   z-index: 100;
   opacity: var(--grain-opacity);
-  mix-blend-mode: multiply;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.11 0 0 0 0 0.08 0 0 0 0 0.09 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-image: url("/grain-dark.png");
+  background-size: 96px 96px;
   transition: opacity var(--theme-fade) var(--ease-out);
 }
 :root[data-theme="night"] body::before,
 :root[data-theme="afterdark"] body::before {
-  mix-blend-mode: screen;
+  background-image: url("/grain-light.png");
 }
-
 /* After-dark ambient glow */
 body::after {
   content: "";
@@ -273,4 +332,14 @@ body::after {
 .ludo-token:focus-visible circle:nth-of-type(2) {
   stroke: var(--focus);
   stroke-width: 4;
+}
+
+/* Landing preview: CSS-only motion (keeps framer-motion off the marketing pages). */
+@keyframes score-roll {
+  from { transform: translateY(100%); }
+  to { transform: none; }
+}
+@keyframes disc-drop {
+  from { transform: translateY(-40px); }
+  to { transform: none; }
 }

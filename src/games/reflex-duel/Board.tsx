@@ -126,7 +126,6 @@ export function ReflexBoard({ view, me, names, sendMove, clock, sound }: GamePro
           tap();
         }}
         onKeyDown={(e) => e.key === "Enter" && tap()}
-        aria-label={`${p.title}. ${p.sub}`}
         className="relative flex aspect-[4/5] w-full touch-none select-none flex-col items-center justify-center overflow-hidden rounded-[28px] border-[1.5px] border-line-strong sm:aspect-[5/4]"
         style={{ background: p.bg, color: p.fg, transition: phase === "go" ? "none" : "background-color 300ms" }}
       >

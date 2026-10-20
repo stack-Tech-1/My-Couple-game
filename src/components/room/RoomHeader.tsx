@@ -22,7 +22,7 @@ export function RoomHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-[color-mix(in_srgb,var(--bg)_92%,transparent)] backdrop-blur-sm">
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:px-8">
-        <Link href={`/room/${room.id}`} className="flex min-w-0 items-center gap-2.5 rounded-md" aria-label="Room home">
+        <Link href={`/room/${room.id}`} className="flex min-w-0 items-center gap-2.5 rounded-md" aria-label={`${room.name}: room home`}>
           <LogoMark size={26} />
           <span className="display truncate text-[1.25rem]">{room.name}</span>
         </Link>

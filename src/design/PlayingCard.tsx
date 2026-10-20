@@ -39,7 +39,9 @@ export function PlayingCard({
       type={onClick ? "button" : undefined}
       onClick={onClick}
       disabled={onClick ? disabled : undefined}
-      aria-label={label}
+      // Interactive cards are named by visually hidden text (the faces are decorative); static ones are images.
+      aria-label={onClick ? undefined : label}
+      role={onClick ? undefined : "img"}
       aria-pressed={onClick && selected !== undefined ? selected : undefined}
       className={cn("relative shrink-0 [perspective:900px] disabled:cursor-not-allowed", className)}
       style={{ width, height: width * ratio }}
@@ -48,6 +50,7 @@ export function PlayingCard({
       whileTap={onClick && !disabled && !reduce ? { scale: 0.97 } : undefined}
       transition={{ type: "spring", stiffness: 420, damping: 28 }}
     >
+      {onClick ? <span className="sr-only">{label}</span> : null}
       <motion.div
         className="relative h-full w-full"
         style={{ transformStyle: "preserve-3d" }}
@@ -56,12 +59,14 @@ export function PlayingCard({
         transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 160, damping: 18, mass: 1.2 }}
       >
         <div
+          aria-hidden
           className="absolute inset-0 overflow-hidden rounded-[10px] border-[1.5px] border-ink bg-[#fbf7f1] text-ink shadow-[0_2px_0_rgba(28,20,22,.35)]"
           style={{ backfaceVisibility: "hidden" }}
         >
           {front}
         </div>
         <div
+          aria-hidden
           className="absolute inset-0 overflow-hidden rounded-[10px] border-[1.5px] border-ink shadow-[0_2px_0_rgba(28,20,22,.35)]"
           style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
         >
