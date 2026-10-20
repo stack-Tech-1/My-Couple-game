@@ -1,6 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { APP_DESCRIPTION, APP_NAME, APP_TAGLINE, siteUrl } from "@/lib/config";
 import { ServiceWorker } from "@/components/ServiceWorker";
+import Script from "next/script";
+
+// Analytics are off unless explicitly configured. Only event names are ever sent (see lib/analytics).
+const plausibleDomain = process.env.NEXT_PUBLIC_ANALYTICS_PROVIDER === "plausible" ? process.env.NEXT_PUBLIC_ANALYTICS_DOMAIN : undefined;
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -39,6 +43,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             marketing pages ship almost no JavaScript. */}
         {children}
         <ServiceWorker />
+        {plausibleDomain ? <Script defer data-domain={plausibleDomain} src="https://plausible.io/js/script.tagged-events.js" strategy="afterInteractive" /> : null}
       </body>
     </html>
   );
