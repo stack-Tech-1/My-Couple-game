@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { GameLogic, Outcome, PlayerId, Players } from "@/games/_engine/types";
+import type { GameLogic, Outcome, PlayerId, PlayerList } from "@/games/_engine/types";
 import { makeRng, shuffle } from "@/games/_engine/rng";
 
 export const SHAPES = ["circle", "triangle", "cross", "square", "star"] as const;
@@ -48,17 +48,20 @@ export type LogEntry =
   | { by: PlayerId; kind: "play"; card: Card; called?: Shape }
   | { by: PlayerId; kind: "draw"; count: number; reason: "market" | "pick" | "general" | "penalty" }
   | { by: PlayerId; kind: "lastCard" }
+  /** Groups: General Market made everyone else pick one. */
+  | { by: PlayerId; kind: "generalAll" }
   | { by: null; kind: "reshuffle" };
 
 export type WhotState = {
-  players: Players;
+  players: PlayerList;
   seed: string;
   rngCursor: number;
   rules: WhotRules;
   hands: Record<PlayerId, Card[]>;
   market: Card[];
   pile: Card[];
-  turn: 0 | 1;
+  /** Index into players of whoever's turn it is. */
+  turn: number;
   pendingPick: number;
   pendingKind: 2 | 5 | null;
   requested: Shape | null;
@@ -68,17 +71,20 @@ export type WhotState = {
   /** Market finish mode (absent on older sessions = classic). `reshuffles` counts market refills. */
   finish?: { on: boolean; reshuffles: number };
   winner: PlayerId | "tie" | null;
-  firstTurn: 0 | 1;
+  firstTurn: number;
 };
 
 export type WhotMove = { type: "play"; cardId: number; shape?: Shape; lastCard?: boolean } | { type: "draw" };
 
 export type WhotView = {
-  players: Players;
+  players: PlayerList;
   me: PlayerId;
   hand: Card[];
   playable: number[];
+  /** Two players: your opponent's card count. */
   opponentCount: number;
+  /** Everyone's card count (groups). */
+  counts: Record<PlayerId, number>;
   top: Card;
   marketCount: number;
   turn: PlayerId;
@@ -107,7 +113,8 @@ const moveSchema = z.discriminatedUnion("type", [
 ]);
 
 const top = (s: WhotState) => s.pile[s.pile.length - 1]!;
-const other = (t: 0 | 1): 0 | 1 => (t === 0 ? 1 : 0);
+/** The seat k places after t (with two players, 1 place after is the other player, 2 is yourself). */
+const seat = (s: Pick<WhotState, "players">, t: number, k = 1) => (t + k) % s.players.length;
 
 export function canPlay(s: Pick<WhotState, "pile" | "pendingPick" | "pendingKind" | "requested" | "rules">, card: Card): boolean {
   if (s.pendingPick > 0) return s.rules.stackPicks && s.pendingKind !== null && card.n === s.pendingKind;
@@ -161,19 +168,20 @@ function settleDry(s: WhotState): WhotState {
   if (s.winner) return s;
   const finished = finishOn(s) && s.finish!.reshuffles >= 1 && s.market.length === 0;
   if (!s.marketDry && !finished) return s;
-  const [a, b] = s.players;
-  const va = handValue(s.hands[a]!, finishOn(s));
-  const vb = handValue(s.hands[b]!, finishOn(s));
-  return { ...s, winner: va === vb ? "tie" : va < vb ? a : b };
+  // Lowest hand wins; a shared lowest is a tie.
+  const values = s.players.map((p) => ({ p, v: handValue(s.hands[p]!, finishOn(s)) }));
+  const low = Math.min(...values.map((x) => x.v));
+  const lowest = values.filter((x) => x.v === low);
+  return { ...s, winner: lowest.length === 1 ? lowest[0]!.p : "tie" };
 }
 
 const trimLog = (log: LogEntry[]) => log.slice(-12);
 
-export const whot: GameLogic<WhotState, WhotMove, WhotView, WhotConfig> = {
+export const whot: GameLogic<WhotState, WhotMove, WhotView, WhotConfig, PlayerList> = {
   id: "whot",
   category: "competitive",
   minPlayers: 2,
-  maxPlayers: 2,
+  maxPlayers: 4,
   estimatedMinutes: 12,
   moveSchema,
   configSchema: configSchema as unknown as z.ZodType<WhotConfig>,
@@ -186,20 +194,21 @@ export const whot: GameLogic<WhotState, WhotMove, WhotView, WhotConfig> = {
         title: "Special cards",
         body: [
           "1, Hold On: play again.",
-          "2, Pick Two: your partner draws two.",
-          "5, Pick Three: your partner draws three.",
-          "8, Suspension: your partner misses a turn, so you play again.",
-          "14, General Market: your partner draws one from the market.",
-          "20, Whot: wild. Play it on anything and call the shape your partner must follow.",
+          "2, Pick Two: the next player draws two.",
+          "5, Pick Three: the next player draws three.",
+          "8, Suspension: the next player misses a turn (with two of you, you play again).",
+          "14, General Market: everyone else draws one from the market.",
+          "20, Whot: wild. Play it on anything and call the shape the next player must follow.",
         ],
       },
       { title: "House rules", body: ["Stacking picks, who moves after General Market, calling 'Last card' and hand size can all be changed in room settings."] },
+      { title: "Playing in a group", body: ["Three or four can play in a friend room. Play goes round in turn, and the first to empty their hand wins."] },
       { title: "If the market runs dry", body: ["Hands are counted. Lowest total wins: stars count double, Whot counts 20."] },
       {
         title: "Market finish mode",
         body: [
           "Choose it when you start. The first time the market runs out, the played cards are shuffled into a new market.",
-          "When the second market is nearly gone you'll get a warning. When it runs out, the game ends: both hands are counted at face value (Whot is 20) and the lowest total wins. Equal totals are a draw.",
+          "When the second market is nearly gone you'll get a warning. When it runs out, the game ends: every hand is counted at face value (Whot is 20) and the lowest total wins. Equal totals are a draw.",
         ],
       },
     ],
@@ -210,7 +219,7 @@ export const whot: GameLogic<WhotState, WhotMove, WhotView, WhotConfig> = {
     const marketFinish = config.marketFinish === true;
     const rng = makeRng(seed);
     const deck = shuffle(buildDeck(), rng);
-    const hands: Record<PlayerId, Card[]> = { [players[0]]: [], [players[1]]: [] };
+    const hands: Record<PlayerId, Card[]> = Object.fromEntries(players.map((p) => [p, []]));
     for (let i = 0; i < rules.handSize; i++) for (const p of players) hands[p]!.push(deck.pop()!);
     // Opening card must be a plain number; specials go back under the market.
     let opener = deck.pop()!;
@@ -218,9 +227,9 @@ export const whot: GameLogic<WhotState, WhotMove, WhotView, WhotConfig> = {
       deck.unshift(opener);
       opener = deck.pop()!;
     }
-    const first = config.firstPlayer ?? (rng.int(2) as 0 | 1);
+    const first = players.length === 2 ? (config.firstPlayer ?? rng.int(2)) : rng.int(players.length);
     return {
-      players,
+      players: [...players],
       seed,
       rngCursor: rng.cursor(),
       rules,
@@ -250,7 +259,6 @@ export const whot: GameLogic<WhotState, WhotMove, WhotView, WhotConfig> = {
 
   applyMove(s, move, by) {
     const me = s.turn;
-    const opp = s.players[other(me)];
 
     if (move.type === "draw") {
       const owed = s.pendingPick > 0 ? s.pendingPick : 1;
@@ -259,7 +267,7 @@ export const whot: GameLogic<WhotState, WhotMove, WhotView, WhotConfig> = {
         ...next,
         pendingPick: 0,
         pendingKind: null,
-        turn: other(me),
+        turn: seat(s, me),
         log: trimLog([...next.log, { by, kind: "draw", count: drawn, reason: s.pendingPick > 0 ? "pick" : "market" }]),
       });
     }
@@ -284,11 +292,14 @@ export const whot: GameLogic<WhotState, WhotMove, WhotView, WhotConfig> = {
       }
     }
 
-    let turn: 0 | 1 = other(me);
+    let turn = seat(s, me);
     switch (card.n) {
       case SPECIAL.holdOn:
-      case SPECIAL.suspension:
         turn = me;
+        break;
+      case SPECIAL.suspension:
+        // The next player misses their turn (two players: that's you again).
+        turn = seat(s, me, 2);
         break;
       case SPECIAL.pickTwo:
         next = { ...next, pendingPick: s.pendingPick + 2, pendingKind: 2 };
@@ -297,8 +308,13 @@ export const whot: GameLogic<WhotState, WhotMove, WhotView, WhotConfig> = {
         next = { ...next, pendingPick: s.pendingPick + 3, pendingKind: 5 };
         break;
       case SPECIAL.generalMarket: {
-        const r = draw(next, opp, 1);
-        next = { ...r.s, log: [...r.s.log, { by: opp, kind: "draw", count: r.drawn, reason: "general" }] };
+        // Everyone else picks one, in turn order.
+        const others = s.players.map((_, k) => s.players[seat(s, me, k + 1)]!).filter((p) => p !== by);
+        for (const p of others) {
+          const r = draw(next, p, 1);
+          next = s.players.length === 2 ? { ...r.s, log: [...r.s.log, { by: p, kind: "draw", count: r.drawn, reason: "general" }] } : r.s;
+        }
+        if (s.players.length > 2) next = { ...next, log: [...next.log, { by, kind: "generalAll" }] };
         if (s.rules.generalMarketHold) turn = me;
         break;
       }
@@ -313,7 +329,7 @@ export const whot: GameLogic<WhotState, WhotMove, WhotView, WhotConfig> = {
   },
 
   viewFor(s, player) {
-    const opp = s.players[0] === player ? s.players[1] : s.players[0];
+    const opp = s.players.find((p) => p !== player) ?? player;
     const hand = s.hands[player] ?? [];
     const myTurn = s.players[s.turn] === player && !s.winner;
     return {
@@ -322,9 +338,10 @@ export const whot: GameLogic<WhotState, WhotMove, WhotView, WhotConfig> = {
       hand,
       playable: myTurn ? hand.filter((c) => canPlay(s, c)).map((c) => c.id) : [],
       opponentCount: s.hands[opp]?.length ?? 0,
+      counts: Object.fromEntries(s.players.map((p) => [p, s.hands[p]?.length ?? 0])),
       top: top(s),
       marketCount: s.market.length,
-      turn: s.players[s.turn],
+      turn: s.players[s.turn]!,
       pendingPick: s.pendingPick,
       pendingKind: s.pendingKind,
       requested: s.requested,

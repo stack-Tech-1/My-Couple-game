@@ -198,6 +198,76 @@ describe("whot market finish mode", () => {
   });
 });
 
+describe("whot for a group", () => {
+  const G = ["ada", "bo", "cy"] as const;
+  /** Three players, Ada to play, hand-built hands. */
+  function rig3(over: Partial<WhotState> = {}): WhotState {
+    const base = g.initialState("seed", G, {}, ctx);
+    return {
+      ...base,
+      hands: {
+        ada: [c(40, "circle", 3), c(41, "circle", 8), c(44, "circle", 2), c(45, "circle", 14), c(46, "square", 5)],
+        bo: [c(42, "cross", 11), c(47, "star", 4)],
+        cy: [c(43, "star", 7), c(48, "cross", 13)],
+      },
+      market: [c(30, "triangle", 10), c(31, "circle", 11), c(32, "square", 13), c(33, "cross", 3), c(34, "star", 7)],
+      pile: [c(20, "circle", 4)],
+      turn: 0,
+      ...over,
+    };
+  }
+  const who = (s: WhotState) => s.players[s.turn];
+
+  it("deals everyone in and takes up to four", () => {
+    expect(g.maxPlayers).toBe(4);
+    const s = g.initialState("seed", ["a", "b", "c", "d"], { handSize: 5 }, ctx);
+    for (const p of ["a", "b", "c", "d"]) expect(s.hands[p]).toHaveLength(5);
+    expect(g.viewFor(s, "a").counts).toEqual({ a: 5, b: 5, c: 5, d: 5 });
+  });
+
+  it("goes round in turn", () => {
+    let s = play(rig3(), "ada", { type: "play", cardId: 40 });
+    expect(who(s)).toBe("bo");
+    s = play(s, "bo", { type: "draw" });
+    expect(who(s)).toBe("cy");
+    s = play(s, "cy", { type: "draw" });
+    expect(who(s)).toBe("ada");
+  });
+
+  it("Suspension skips the next player", () => {
+    const s = play(rig3(), "ada", { type: "play", cardId: 41 });
+    expect(who(s)).toBe("cy");
+  });
+
+  it("Pick Two hits the next player only", () => {
+    let s = play(rig3(), "ada", { type: "play", cardId: 44 });
+    expect(who(s)).toBe("bo");
+    expect(s.pendingPick).toBe(2);
+    s = play(s, "bo", { type: "draw" });
+    expect(s.hands.bo).toHaveLength(4);
+    expect(s.hands.cy).toHaveLength(2);
+    expect(who(s)).toBe("cy");
+  });
+
+  it("General Market makes everyone else pick one", () => {
+    const s = play(rig3(), "ada", { type: "play", cardId: 45 });
+    expect(s.hands.bo).toHaveLength(3);
+    expect(s.hands.cy).toHaveLength(3);
+    expect(who(s)).toBe("ada"); // General Market holds by default
+    expect(s.log.at(-1)).toMatchObject({ by: "ada", kind: "generalAll" });
+  });
+
+  it("first out wins; a dry market counts every hand, lowest wins, shared lowest is a tie", () => {
+    const out = play(rig3({ hands: { ada: [c(40, "circle", 3)], bo: [c(42, "cross", 11)], cy: [c(43, "star", 7)] } }), "ada", { type: "play", cardId: 40 });
+    expect(g.isOver(out)).toEqual({ over: true, winner: "ada" });
+
+    const dry = rig3({ market: [], pile: [c(20, "circle", 4)], hands: { ada: [c(46, "square", 5)], bo: [c(42, "cross", 3)], cy: [c(43, "cross", 3)] } });
+    const n = play(dry, "ada", { type: "draw" });
+    expect(g.isOver(n)).toEqual({ over: true, winner: "tie" });
+    expect(g.viewFor(n, "bo").tally).toEqual({ ada: 5, bo: 3, cy: 3 });
+  });
+});
+
 describe("whot privacy", () => {
   it("never shows the opponent's cards or the market order", () => {
     const s = rig({});

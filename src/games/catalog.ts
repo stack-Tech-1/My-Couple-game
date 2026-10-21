@@ -73,8 +73,8 @@ export type GameMeta = {
 export const GAMES: GameMeta[] = [
   // Competitive
   { id: "know-me-trivia", name: "Know Me Trivia", category: "competitive", estimatedMinutes: 10, scored: true, tagline: "Write questions about yourself. Watch them get it wrong." },
-  { id: "whot", name: "Whot", category: "competitive", estimatedMinutes: 12, scored: true, tagline: "Pick two. Pick three. General market. No mercy." },
-  { id: "ludo", name: "Ludo", category: "competitive", estimatedMinutes: 20, scored: true, tagline: "Roll a six and pretend you're not gloating." },
+  { id: "whot", name: "Whot", category: "competitive", estimatedMinutes: 12, scored: true, maxPlayers: 4, tagline: "Pick two. Pick three. General market. No mercy." },
+  { id: "ludo", name: "Ludo", category: "competitive", estimatedMinutes: 20, scored: true, maxPlayers: 4, tagline: "Roll a six and pretend you're not gloating." },
   { id: "ayo", name: "Ayo", category: "competitive", estimatedMinutes: 12, scored: true, tagline: "Sow, count, capture. The oldest trash talk there is." },
   { id: "word-duel", name: "Word Duel", category: "competitive", estimatedMinutes: 5, scored: true, maxPlayers: 8, tagline: "Same five letters. You only see their colours." },
   { id: "reflex-duel", name: "Reflex Duel", category: "competitive", estimatedMinutes: 3, scored: true, maxPlayers: 8, tagline: "Wait for it. Wait for it. Don't." },

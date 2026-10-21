@@ -157,7 +157,7 @@ export async function createSession(gameId: string, rawConfig: unknown, rematchO
     }
     // firstPlayer is an index into players; map it through the previous seat order.
     const prevFirst = prev.config.firstPlayer;
-    if (prevFirst === 0 || prevFirst === 1) {
+    if (prev.players.length === 2 && (prevFirst === 0 || prevFirst === 1)) {
       const prevFirstUser = prev.players[prevFirst];
       config = { ...config, firstPlayer: prevFirstUser === user.id ? 1 : 0 };
     }
@@ -167,7 +167,7 @@ export async function createSession(gameId: string, rawConfig: unknown, rematchO
   const seed = randomBytes(16).toString("hex");
   const state = logic.initialState(seed, players, config as never, { now: Date.now(), content: await getContentPack() });
   const firstTurn = (state as { turn?: unknown }).turn;
-  if (!("firstPlayer" in config) && (firstTurn === 0 || firstTurn === 1)) config = { ...config, firstPlayer: firstTurn };
+  if (players.length === 2 && !("firstPlayer" in config) && (firstTurn === 0 || firstTurn === 1)) config = { ...config, firstPlayer: firstTurn };
 
   const { data, error } = await supabaseAdmin().rpc("create_game_session", {
     p_room: mine.room_id,

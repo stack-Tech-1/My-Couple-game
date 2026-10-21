@@ -57,6 +57,7 @@ function describe(e: LogEntry, me: string, names: Record<string, string>): strin
   if (e.kind === "reshuffle") return "The market ran out, so the pile was reshuffled.";
   const who = e.by === me ? "You" : (names[e.by] ?? "They");
   if (e.kind === "lastCard") return `${who} called last card.`;
+  if (e.kind === "generalAll") return `${who} played General Market. Everyone else picked one.`;
   if (e.kind === "draw") {
     const what = e.count === 1 ? "a card" : `${e.count} cards`;
     if (e.reason === "general") return `General market: ${who.toLowerCase() === "you" ? "you" : who} picked ${what}.`;
@@ -75,8 +76,14 @@ export function WhotTable({ view, me, names, sendMove, pending, sound }: GamePro
   const [pickFor, setPickFor] = useState<Card | null>(null);
   const [lastCard, setLastCard] = useState(false);
   const myTurn = view.turn === me && !view.winner;
-  const partner = view.players[0] === me ? view.players[1] : view.players[0];
-  const partnerName = names[partner] ?? "Your partner";
+  const others = view.players.filter((p) => p !== me);
+  const group = others.length > 1;
+  const partner = others[0]!;
+  const nameOf = (p: string) => (p === me ? "You" : (names[p] ?? "Someone"));
+  const partnerName = nameOf(partner);
+  // Seats in play order, starting after me.
+  const myIndex = view.players.indexOf(me);
+  const around = view.players.map((_, k) => view.players[(myIndex + 1 + k) % view.players.length]!).filter((p) => p !== me);
   const playable = useMemo(() => new Set(view.playable), [view.playable]);
   const lastLog = view.log[view.log.length - 1];
   const needsLastCall = view.rules.announceLastCard && myTurn && view.hand.length === 2;
@@ -95,10 +102,10 @@ export function WhotTable({ view, me, names, sendMove, pending, sound }: GamePro
       : counted
         ? view.winner === me
           ? "Market's finished. Your hand is lighter: you win."
-          : `Market's finished. ${partnerName}'s hand is lighter.`
+          : `Market's finished. ${nameOf(view.winner)}'s hand is the lightest.`
         : view.winner === me
           ? "Check up! You're out."
-          : `${partnerName} is out. Check up.`
+          : `${nameOf(view.winner)} is out. Check up.`
     : myTurn
       ? view.pendingPick > 0
         ? view.rules.stackPicks && view.playable.length
@@ -107,13 +114,36 @@ export function WhotTable({ view, me, names, sendMove, pending, sound }: GamePro
         : view.requested
           ? `They want ${view.requested}.`
           : "Your turn."
-      : `${partnerName}'s turn…`;
+      : `${nameOf(view.turn)}'s turn…`;
 
   return (
     <LayoutGroup>
       <div className="mx-auto flex w-full max-w-[680px] flex-col gap-6">
+        {/* Everyone else's hands (groups): seats in play order, whoever's turn it is lit up */}
+        {group ? (
+          <ul className="grid grid-cols-3 gap-2" aria-label="Other players">
+            {around.map((p) => {
+              const n = view.counts[p] ?? 0;
+              const theirTurn = view.turn === p && !view.winner;
+              return (
+                <li key={p} className={cn("flex flex-col items-center gap-1.5 rounded-[16px] border-[1.5px] px-2 py-3", theirTurn ? "border-accent" : "border-line")}>
+                  <div className="flex h-[46px] items-end justify-center" role="img" aria-label={`${nameOf(p)} has ${n} cards`}>
+                    {Array.from({ length: Math.min(n, 8) }, (_, i) => (
+                      <div key={i} className="-mx-[9px] h-[44px] w-[31px] overflow-hidden rounded-[5px] border-[1.5px] border-ink" style={{ rotate: `${(i - (Math.min(n, 8) - 1) / 2) * -4}deg` }}>
+                        <CardBack />
+                      </div>
+                    ))}
+                  </div>
+                  <p className="max-w-full truncate text-[0.82rem] font-semibold">{nameOf(p)}</p>
+                  <p className="text-[0.75rem] text-muted">{n === 1 ? "1 card. Careful." : `${n} cards`}</p>
+                </li>
+              );
+            })}
+          </ul>
+        ) : null}
+
         {/* Partner's hand */}
-        <div className="flex flex-col items-center gap-2">
+        <div className={cn("flex flex-col items-center gap-2", group && "hidden")}>
           <div className="flex h-[78px] items-end justify-center" aria-label={`${partnerName} has ${view.opponentCount} cards`} role="img">
             {Array.from({ length: Math.min(view.opponentCount, 14) }, (_, i) => {
               const mid = (Math.min(view.opponentCount, 14) - 1) / 2;
@@ -206,12 +236,12 @@ export function WhotTable({ view, me, names, sendMove, pending, sound }: GamePro
           <section aria-label="Final count" className="rounded-[18px] border border-line bg-raised p-4">
             <p className="text-center text-[0.85rem] text-muted">
               {view.finish ? "Counted at face value (Whot is 20)." : "Stars count double, Whot is 20."}
-              {view.winner === "tie" ? " Both hands counted the same. Remarkable, honestly." : " Lowest total wins."}
+              {view.winner === "tie" ? (group ? " The lowest total was shared. A draw." : " Both hands counted the same. Remarkable, honestly.") : " Lowest total wins."}
             </p>
-            {[me, partner].map((p) => (
+            {[me, ...others].map((p) => (
               <div key={p} className="mt-3">
                 <p className="flex justify-between text-[0.9rem] font-semibold">
-                  <span>{p === me ? "You" : partnerName}</span>
+                  <span>{nameOf(p)}</span>
                   <span className="tabular">{view.tally![p]} points</span>
                 </p>
                 <p className="text-[0.85rem] text-muted">{view.finalHands![p]!.map(cardLabel).join(", ") || "No cards"}</p>

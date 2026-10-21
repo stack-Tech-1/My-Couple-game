@@ -1,10 +1,12 @@
 import { z } from "zod";
-import type { GameLogic, Outcome, PlayerId, Players } from "@/games/_engine/types";
+import type { GameLogic, Outcome, PlayerId, PlayerList } from "@/games/_engine/types";
 import { makeRng } from "@/games/_engine/rng";
 
 /**
  * Token progress is relative to its owner: -1 yard, 0..50 main track, 51..55 home
- * column, 56 home. Seat 0 starts at track square 0, seat 1 at 26 (opposite corners).
+ * column, 56 home. The board has four colours (corners), clockwise, starting on track
+ * squares 0, 13, 26 and 39. Two players sit opposite (colours 0 and 2); three or four
+ * take the colours in order.
  */
 export const YARD = -1;
 export const LAST_TRACK = 50;
@@ -32,13 +34,15 @@ export type LudoEvent =
   | { kind: "move"; by: PlayerId; token: number; from: number; to: number; captured?: { owner: PlayerId; token: number }[] };
 
 export type LudoState = {
-  players: Players;
+  players: PlayerList;
+  /** Board colour of each seat. Absent on older (two-player) sessions: [0, 2]. */
+  colours?: number[];
   seed: string;
   rngCursor: number;
   rules: LudoRules;
   tokens: Record<PlayerId, number[]>;
-  turn: 0 | 1;
-  firstTurn: 0 | 1;
+  turn: number;
+  firstTurn: number;
   phase: "roll" | "move";
   dice: number | null;
   rollId: number;
@@ -55,9 +59,14 @@ const moveSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("move"), token: z.number().int().min(0).max(3) }),
 ]);
 
-const other = (t: 0 | 1): 0 | 1 => (t === 0 ? 1 : 0);
+/** Where a colour's track starts, and a token's absolute track square. */
+export const colourStart = (colour: number) => colour * 13;
+export const absoluteFor = (colour: number, rel: number) => (colourStart(colour) + rel) % 52;
+/** Two-player seats (0 and 1 sit on colours 0 and 2). */
 export const absolute = (seat: 0 | 1, rel: number) => (START[seat] + rel) % 52;
-const seatOf = (s: LudoState, p: PlayerId): 0 | 1 => (s.players[0] === p ? 0 : 1);
+export const coloursFor = (n: number) => (n === 2 ? [0, 2] : Array.from({ length: n }, (_, i) => i));
+export const colourOf = (s: Pick<LudoState, "colours" | "players">, seat: number) => s.colours?.[seat] ?? coloursFor(s.players.length)[seat]!;
+const nextSeat = (s: LudoState) => (s.turn + 1) % s.players.length;
 
 export function target(rules: LudoRules, rel: number, dice: number): number | null {
   if (rel === HOME) return null;
@@ -69,24 +78,25 @@ export function target(rules: LudoRules, rel: number, dice: number): number | nu
 
 export function legalTokens(s: LudoState): number[] {
   if (s.phase !== "move" || s.dice === null || s.winner) return [];
-  const mine = s.tokens[s.players[s.turn]]!;
+  const mine = s.tokens[s.players[s.turn]!]!;
   return mine.flatMap((rel, i) => (target(s.rules, rel, s.dice!) !== null ? [i] : []));
 }
 
-export const ludo: GameLogic<LudoState, LudoMove, LudoView, LudoConfig> = {
+export const ludo: GameLogic<LudoState, LudoMove, LudoView, LudoConfig, PlayerList> = {
   id: "ludo",
   category: "competitive",
   minPlayers: 2,
-  maxPlayers: 2,
+  maxPlayers: 4,
   estimatedMinutes: 20,
   moveSchema,
   configSchema: configSchema as unknown as z.ZodType<LudoConfig>,
   rules: {
-    summary: "Race all four of your tokens around the board and into home before your partner does.",
+    summary: "Race all four of your tokens around the board and into home before anyone else does.",
     sections: [
       { title: "Getting out", body: ["Roll a six to bring a token out of your yard onto your start square."] },
       { title: "Moving", body: ["Roll, then pick a token to move that many squares. Sixes earn another roll.", "Three sixes in a row and your turn is over. Greed has consequences."] },
-      { title: "Capturing", body: ["Land exactly on your partner's token to send it back to their yard, and roll again.", "Start squares and stars are safe: nobody gets captured there."] },
+      { title: "Capturing", body: ["Land exactly on someone else's token to send it back to their yard, and roll again.", "Start squares and stars are safe: nobody gets captured there."] },
+      { title: "Three or four players", body: ["In a friend room, up to four can play, one colour each. Turns go round the board in order."] },
       { title: "Home", body: ["After a lap, turn up your coloured column. You need the exact roll to get home.", "First with all four home wins."] },
     ],
   },
@@ -94,13 +104,14 @@ export const ludo: GameLogic<LudoState, LudoMove, LudoView, LudoConfig> = {
   initialState(seed, players, config) {
     const rules = ludoRulesSchema.parse(config);
     const rng = makeRng(seed);
-    const first = config.firstPlayer ?? (rng.int(2) as 0 | 1);
+    const first = players.length === 2 ? (config.firstPlayer ?? rng.int(2)) : rng.int(players.length);
     return {
-      players,
+      players: [...players],
+      ...(players.length === 2 ? {} : { colours: coloursFor(players.length) }),
       seed,
       rngCursor: rng.cursor(),
       rules,
-      tokens: { [players[0]]: [YARD, YARD, YARD, YARD], [players[1]]: [YARD, YARD, YARD, YARD] },
+      tokens: Object.fromEntries(players.map((p) => [p, [YARD, YARD, YARD, YARD]])),
       turn: first,
       firstTurn: first,
       phase: "roll",
@@ -125,38 +136,42 @@ export const ludo: GameLogic<LudoState, LudoMove, LudoView, LudoConfig> = {
       const sixes = value === 6 ? s.sixes + 1 : 0;
       const base = { ...s, rngCursor: rng.cursor(), dice: value, rollId: s.rollId + 1 };
       if (s.rules.threeSixes && sixes === 3) {
-        return { ...base, phase: "roll", sixes: 0, turn: other(s.turn), last: { kind: "roll", by, value, forfeited: true } };
+        return { ...base, phase: "roll", sixes: 0, turn: nextSeat(s), last: { kind: "roll", by, value, forfeited: true } };
       }
       const next: LudoState = { ...base, phase: "move", sixes };
       if (legalTokens(next).length === 0) {
         // Nothing to move. A six still earns the re-roll; otherwise the turn passes.
-        return { ...next, phase: "roll", turn: value === 6 ? s.turn : other(s.turn), sixes: value === 6 ? sixes : 0, last: { kind: "roll", by, value, noMoves: true } };
+        return { ...next, phase: "roll", turn: value === 6 ? s.turn : nextSeat(s), sixes: value === 6 ? sixes : 0, last: { kind: "roll", by, value, noMoves: true } };
       }
       return { ...next, last: { kind: "roll", by, value } };
     }
 
-    const seat = seatOf(s, by);
-    const opp = s.players[other(seat)];
+    const seat = s.players.indexOf(by);
     const from = s.tokens[by]![move.token]!;
     const to = target(s.rules, from, s.dice!)!;
     const mine = [...s.tokens[by]!];
     mine[move.token] = to;
-    const theirs = [...s.tokens[opp]!];
+    const tokens: Record<PlayerId, number[]> = { ...s.tokens, [by]: mine };
 
+    // Landing on anyone else's token (off a safe square) sends it back to their yard.
     const captured: { owner: PlayerId; token: number }[] = [];
     if (to <= LAST_TRACK) {
-      const sq = absolute(seat, to);
+      const sq = absoluteFor(colourOf(s, seat), to);
       if (!SAFE.has(sq)) {
-        theirs.forEach((rel, i) => {
-          if (rel >= 0 && rel <= LAST_TRACK && absolute(other(seat), rel) === sq) {
-            theirs[i] = YARD;
-            captured.push({ owner: opp, token: i });
-          }
+        s.players.forEach((owner, oSeat) => {
+          if (owner === by) return;
+          const theirs = [...s.tokens[owner]!];
+          theirs.forEach((rel, i) => {
+            if (rel >= 0 && rel <= LAST_TRACK && absoluteFor(colourOf(s, oSeat), rel) === sq) {
+              theirs[i] = YARD;
+              captured.push({ owner, token: i });
+            }
+          });
+          tokens[owner] = theirs;
         });
       }
     }
 
-    const tokens = { ...s.tokens, [by]: mine, [opp]: theirs };
     const won = mine.every((r) => r === HOME);
     const bonus = s.rules.bonusRolls && (captured.length > 0 || (to === HOME && from !== HOME));
     const again = !won && (s.dice === 6 || bonus);
@@ -164,7 +179,7 @@ export const ludo: GameLogic<LudoState, LudoMove, LudoView, LudoConfig> = {
       ...s,
       tokens,
       phase: "roll",
-      turn: again ? s.turn : other(s.turn),
+      turn: again ? s.turn : nextSeat(s),
       sixes: again && s.dice === 6 ? s.sixes : 0,
       last: { kind: "move", by, token: move.token, from, to, ...(captured.length ? { captured } : {}) },
       winner: won ? by : null,

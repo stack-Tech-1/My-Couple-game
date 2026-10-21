@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { absolute, HOME, ludo as g, legalTokens, YARD, type LudoState } from "./logic";
+import { absolute, absoluteFor, colourOf, HOME, ludo as g, legalTokens, YARD, type LudoState } from "./logic";
 import { runMove, MoveRejected } from "@/games/_engine/runner";
 
 const P = ["ada", "bo"] as const;
@@ -100,6 +100,44 @@ describe("ludo", () => {
     const n = mv(s, "ada", { type: "move", token: 3 });
     expect(g.isOver(n)).toEqual({ over: true, winner: "ada" });
     expect(() => mv(n, "bo", { type: "roll" })).toThrow(MoveRejected);
+  });
+});
+
+describe("ludo for a group", () => {
+  const G = ["ada", "bo", "cy", "di"] as const;
+  it("gives each of four players their own corner and goes round in turn", () => {
+    const s = g.initialState("seed", G, {}, { now: 0 });
+    expect(s.colours).toEqual([0, 1, 2, 3]);
+    expect(G.map((_, seat) => absoluteFor(colourOf(s, seat), 0))).toEqual([0, 13, 26, 39]);
+    // Two players keep opposite corners.
+    expect(colourOf(g.initialState("seed", ["a", "b"], {}, { now: 0 }), 1)).toBe(2);
+    // A roll with nothing to move passes to the next seat.
+    let t = { ...s, turn: 0 };
+    for (const seed of "abcdefghijklmnop".split("")) {
+      const r = runMove(g, { ...t, seed }, { type: "roll" }, "ada", { now: 0 }).next as LudoState;
+      if (r.dice !== 6) {
+        expect(r.turn).toBe(1);
+        t = r;
+        break;
+      }
+    }
+    expect(t.turn).toBe(1);
+  });
+
+  it("captures any other player's token, not just one opponent's", () => {
+    const s = g.initialState("seed", ["ada", "bo", "cy"], {}, { now: 0 });
+    // Cy (colour 2) sits on absolute square 30 = Cy's rel 4. Ada (colour 0) is at rel 27 and rolls 3.
+    const rigged: LudoState = {
+      ...s,
+      turn: 0,
+      phase: "move",
+      dice: 3,
+      tokens: { ada: [27, YARD, YARD, YARD], bo: [YARD, YARD, YARD, YARD], cy: [4, YARD, YARD, YARD] },
+    };
+    const n = runMove(g, rigged, { type: "move", token: 0 }, "ada", { now: 0 }).next as LudoState;
+    expect(n.tokens.cy![0]).toBe(YARD);
+    expect(n.last).toMatchObject({ captured: [{ owner: "cy", token: 0 }] });
+    expect(n.turn).toBe(0); // capture earns another roll
   });
 });
 
