@@ -22,6 +22,9 @@ import { DeepQuestionsBoard } from "./deep-questions/Board";
 import { ComplimentBattleBoard } from "./compliment-battle/Board";
 import { TruthOrDareBoard, SpicyDiceBoard, HotSeatBoard, NeverHaveIBoard } from "./after-dark/Boards";
 import { QuizBoard } from "./quiz/Board";
+import { LoveStylesBoard } from "./love-styles/Board";
+import { SamePageBoard } from "./same-page/Board";
+import { DontLaughBoard } from "./dont-laugh/Board";
 
 /**
  * Client registry: game id -> component. Logic comes from the server-safe
@@ -54,6 +57,9 @@ const components: Record<string, ComponentType<GameProps<any, any>>> = {
   "naija-trivia": QuizBoard,
   "pidgin-palava": QuizBoard,
   "emoji-guess": QuizBoard,
+  "love-styles": LoveStylesBoard,
+  "same-page": SamePageBoard,
+  "dont-laugh": DontLaughBoard,
 };
 
 export function gameComponent(id: string) {

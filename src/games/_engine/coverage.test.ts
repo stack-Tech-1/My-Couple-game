@@ -8,6 +8,6 @@ const FEATURES = ["daily-question", "love-notes", "memory-lane", "date-night", "
 describe("library coverage", () => {
   it("every catalogued game is playable: a session game or a room feature, never a stub", () => {
     for (const g of GAMES) expect(!!GAME_LOGIC[g.id] || FEATURES.includes(g.id), g.id).toBe(true);
-    expect(GAMES).toHaveLength(31);
+    expect(GAMES).toHaveLength(34);
   });
 });

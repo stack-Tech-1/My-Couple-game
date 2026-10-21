@@ -18,12 +18,15 @@ import { deepQuestions } from "./deep-questions/logic";
 import { complimentBattle } from "./compliment-battle/logic";
 import { truthOrDare, spicyDice, hotSeat, neverHaveI } from "./after-dark/logic";
 import { riddles, naijaTrivia, pidginPalava, emojiGuess } from "./quiz/games";
+import { loveStyles } from "./love-styles/logic";
+import { samePage } from "./same-page/logic";
+import { dontLaugh } from "./dont-laugh/logic";
 
 /**
  * Server-safe registry of game logic (no React). The move API and tests use this.
  * Adding a game = one line here + one line in registry.tsx.
  */
-const all: AnyGameLogic[] = [connectFour, whot, ludo, ayo, wordDuel, reflexDuel, drawGuess, knowMeTrivia, splitClues, inSync, memoryMatch, beatTheClock, howWell, thisOrThat, storyChain, deepQuestions, complimentBattle, truthOrDare, spicyDice, hotSeat, neverHaveI, riddles, naijaTrivia, pidginPalava, emojiGuess];
+const all: AnyGameLogic[] = [connectFour, whot, ludo, ayo, wordDuel, reflexDuel, drawGuess, knowMeTrivia, splitClues, inSync, memoryMatch, beatTheClock, howWell, thisOrThat, storyChain, deepQuestions, complimentBattle, truthOrDare, spicyDice, hotSeat, neverHaveI, riddles, naijaTrivia, pidginPalava, emojiGuess, loveStyles, samePage, dontLaugh];
 
 export const GAME_LOGIC: Record<string, AnyGameLogic> = Object.fromEntries(all.map((g) => [g.id, g]));
 

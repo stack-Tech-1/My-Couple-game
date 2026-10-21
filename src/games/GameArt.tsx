@@ -177,6 +177,30 @@ const art: Record<string, (a: string) => ReactNode> = {
       <circle cx="120" cy="70" r="7" {...S} />
     </>
   ),
+  "dont-laugh": (a) => (
+    <>
+      <circle cx="80" cy="56" r="34" {...S} fill={a} />
+      <path d="M62 46h10M88 46h10" {...S} stroke="currentColor" strokeWidth={3} />
+      <path d="M64 70h32" {...S} strokeWidth={3} />
+      <path d="M118 30c4-6 10-6 12 0" {...S} />
+      <path d="M30 80c2 6 8 8 12 4" {...S} />
+    </>
+  ),
+  "love-styles": (a) => (
+    <>
+      <path d="M80 92S36 66 36 42c0-12 9-20 20-20 10 0 18 7 24 15 6-8 14-15 24-15 11 0 20 8 20 20 0 24-44 50-44 50z" {...S} />
+      <path d="M80 92S56 76 50 58h60c-6 18-30 34-30 34z" fill={a} />
+      <path d="M52 42h56" {...S} strokeWidth={1.4} opacity=".5" />
+    </>
+  ),
+  "same-page": (a) => (
+    <>
+      <path d="M80 30c-12-8-30-10-48-6v62c18-4 36-2 48 6z" {...S} />
+      <path d="M80 30c12-8 30-10 48-6v62c-18-4-36-2-48 6z" {...S} fill={a} />
+      <path d="M80 30v62" {...S} />
+      <path d="M42 46h26M42 58h22M92 46h26M92 58h22" {...S} strokeWidth={1.5} />
+    </>
+  ),
   "how-well": (a) => (
     <>
       <circle cx="62" cy="54" r="26" {...S} />

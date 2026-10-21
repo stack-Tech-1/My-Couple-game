@@ -78,6 +78,7 @@ export const GAMES: GameMeta[] = [
   { id: "riddles", name: "Riddle Me This", category: "competitive", estimatedMinutes: 6, scored: true, tagline: "Simple words, twisted answers. Get your mind out of the gutter." },
   { id: "naija-trivia", name: "Naija Trivia", category: "competitive", estimatedMinutes: 6, scored: true, tagline: "Festivals, places, books and history. How Naija are you?" },
   { id: "pidgin-palava", name: "Pidgin Palava", category: "competitive", estimatedMinutes: 4, scored: true, tagline: "Wetin e mean? Prove say you sabi." },
+  { id: "dont-laugh", name: "Don't Laugh", category: "competitive", estimatedMinutes: 8, scored: true, tagline: "Perform something ridiculous. They must keep a straight face." },
   { id: "emoji-guess", name: "Emoji Guess", category: "competitive", estimatedMinutes: 5, scored: true, tagline: "Afrobeats hits and Nollywood favourites, in emoji." },
   // Co-op
   { id: "split-clues", name: "Split Clues", category: "coop", estimatedMinutes: 15, scored: true, tagline: "You each hold half the answer. Talk it out." },
@@ -89,6 +90,8 @@ export const GAMES: GameMeta[] = [
   { id: "daily-question", name: "Daily Question", category: "personal", estimatedMinutes: 2, scored: false, tagline: "One question a day. No peeking until you both answer." },
   { id: "story-chain", name: "Story Chain", category: "personal", estimatedMinutes: 10, scored: false, tagline: "A story, one line each. It will go off the rails." },
   { id: "this-or-that", name: "This or That", category: "personal", estimatedMinutes: 4, scored: false, tagline: "Rapid fire. Then see where you match." },
+  { id: "love-styles", name: "Love Styles", category: "personal", estimatedMinutes: 5, scored: false, tagline: "How do you most like to be loved? Guess theirs too." },
+  { id: "same-page", name: "On the Same Page", category: "personal", estimatedMinutes: 6, scored: false, tagline: "Money, family, children, December. Are you in step?" },
   { id: "deep-questions", name: "Deep Questions", category: "personal", estimatedMinutes: 20, scored: false, tagline: "Start easy. Go somewhere real." },
   // Romantic
   { id: "love-notes", name: "Love Notes", category: "romantic", estimatedMinutes: 5, scored: false, tagline: "Write a letter. Seal it until the right day." },
