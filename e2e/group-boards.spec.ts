@@ -35,6 +35,13 @@ test("group boards: Whot for three, Ludo for four", async ({ browser }) => {
     const others = pa.getByRole("list", { name: "Other players" });
     await expect(others.getByText("Bo")).toBeVisible();
     await expect(others.getByText("Cy")).toBeVisible();
+    // Di isn't playing: the room home lists the game to watch, and the watch view hides every hand.
+    await pd.goto(`/room/${crew.id}`);
+    await pd.getByRole("link", { name: /Whot.*Watch/ }).click();
+    await expect(pd).toHaveURL(new RegExp(`/watch/${whotId}`));
+    await expect(pd.getByText(/^Live: /)).toBeVisible();
+    await expect(pd.getByText(/'s turn…$/)).toBeVisible();
+
     // Whoever's turn it is draws from the market; the turn moves to the next seat.
     const { data: ws } = await admin.from("game_secrets").select("state").eq("session_id", whotId).single();
     const turn = (ws!.state as { turn: number }).turn;
@@ -44,7 +51,13 @@ test("group boards: Whot for three, Ludo for four", async ({ browser }) => {
     const nextName = people.find((x) => x.id === order[(turn + 1) % 3])!;
     const nextLabel = ["Ada", "Bo", "Cy", "Di"][people.indexOf(nextName)]!;
     await expect(turnPage.getByText(`${nextLabel}'s turn…`)).toBeVisible();
+    // The watcher sees the move land, live.
+    await expect(pd.getByText(`${nextLabel}'s turn…`)).toBeVisible();
     if (shots) await pa.screenshot({ path: `${shots}/whot3.png`, fullPage: true });
+    if (shots) await pd.screenshot({ path: `${shots}/watch.png`, fullPage: true });
+    // Players get sent to play, not watch.
+    await pa.goto(`/room/${crew.id}/watch/${whotId}`);
+    await expect(pa).toHaveURL(new RegExp(`/play/${whotId}`));
 
     // Ludo for four.
     await pa.goto(`/room/${crew.id}/games/ludo`);

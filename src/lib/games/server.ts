@@ -71,6 +71,25 @@ export async function getSnapshot(sessionId: string): Promise<SessionSnapshot> {
   return { session, view: data.view, version: data.version as number, serverNow: Date.now(), ...(closing ? { closing } : {}) };
 }
 
+/**
+ * A friend-room member who isn't playing can watch: they get the game as an outsider sees it
+ * (no hands, letters, answers or secret words), recomputed from the server state on each request.
+ */
+export async function watchSnapshot(sessionId: string): Promise<SessionSnapshot & { watching: true }> {
+  const { supabase, user } = await requireUser();
+  // RLS returns the session only to members of its room.
+  const { data: row } = await supabase.from("game_sessions").select("*").eq("id", sessionId).maybeSingle();
+  const session = row as SessionRow | null;
+  if (!session) throw new ApiError(404, "That game has wandered off.");
+  const logic = GAME_LOGIC[session.game_id];
+  const { data: room } = await supabase.from("rooms").select("kind").eq("id", session.room_id).maybeSingle();
+  if (!logic || room?.kind !== "friends" || !isFriendGame(session.game_id)) throw new ApiError(404, "That game has wandered off.");
+  if (session.players.includes(user.id)) throw new ApiError(409, "You're playing this one.");
+  const { data: secret } = await supabaseAdmin().from("game_secrets").select("state").eq("session_id", sessionId).single();
+  if (!secret) throw new ApiError(404, "That game has wandered off.");
+  return { session, view: logic.viewFor(secret.state, user.id), version: session.version, serverNow: Date.now(), watching: true };
+}
+
 export async function createSession(gameId: string, rawConfig: unknown, rematchOf?: string, roomId?: string, opponent?: string, opponents?: string[]): Promise<SessionRow> {
   const { supabase, user } = await requireUser();
   const logic = GAME_LOGIC[gameId];

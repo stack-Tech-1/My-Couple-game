@@ -250,8 +250,8 @@ export function WhotTable({ view, me, names, sendMove, pending, sound }: GamePro
           </section>
         ) : null}
 
-        {/* My hand */}
-        <div>
+        {/* My hand (watchers have none) */}
+        <div className={cn(!view.players.includes(me) && "hidden")}>
           {needsLastCall ? (
             <div className="mb-3 flex justify-center">
               <button

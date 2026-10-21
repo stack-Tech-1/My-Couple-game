@@ -6,6 +6,9 @@ import { ActiveGames } from "@/components/room/ActiveGames";
 import { Library } from "@/components/room/Library";
 import { InstallPrompt } from "@/components/room/InstallPrompt";
 import { FRIEND_ROOM_SIZE } from "@/lib/room/types";
+import Link from "next/link";
+import { Icon } from "@/design/icons";
+import { gameMeta } from "@/games/catalog";
 
 /** Home of a friend room: who's here, the leaderboard, your games in progress, and the friend library. */
 export async function FriendRoomHome({ roomId }: { roomId: string }) {
@@ -17,6 +20,9 @@ export async function FriendRoomHome({ roomId }: { roomId: string }) {
   const owner = bundle.members.find((m) => m.profile.id === bundle.room.owner_id);
   const ranked = [...bundle.members].sort((a, b) => (board.totals[b.profile.id] ?? 0) - (board.totals[a.profile.id] ?? 0));
   const anyWins = ranked.some((m) => (board.totals[m.profile.id] ?? 0) > 0);
+  const nameOf = (id: string) => bundle.members.find((m) => m.profile.id === id)?.profile.display_name ?? "Someone";
+  // Games the others are playing right now, to watch.
+  const watchable = active.filter((s) => !s.players.includes(me) && gameMeta(s.game_id));
 
   return (
     <div className="pt-8 sm:pt-12">
@@ -28,6 +34,27 @@ export async function FriendRoomHome({ roomId }: { roomId: string }) {
         <p className="mt-4 text-muted">Want someone else in? {owner ? `${owner.profile.display_name} has the invite code.` : "The room's owner has the invite code."}</p>
       ) : null}
       <ActiveGames sessions={active} me={me} />
+      {watchable.length ? (
+        <section aria-labelledby="live-h" className="mt-8">
+          <h2 id="live-h" className="eyebrow text-muted">Live in this room</h2>
+          <ul className="mt-3 flex flex-col gap-2">
+            {watchable.map((s) => (
+              <li key={s.id}>
+                <Link href={`/room/${roomId}/watch/${s.id}`} className="flex items-center gap-3 rounded-[16px] border-[1.5px] border-line bg-raised px-4 py-3 hover:border-line-strong">
+                  <span className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-accent" aria-hidden />
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-semibold">{gameMeta(s.game_id)!.name}</span>
+                    <span className="block truncate text-[0.85rem] text-muted">{s.players.map(nameOf).join(" vs ")}</span>
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-[0.9rem] font-semibold">
+                    Watch <Icon name="eye" size={16} />
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       <div className="mt-14 grid gap-x-12 gap-y-14 lg:grid-cols-[1fr_2.2fr]">
         <section aria-labelledby="people-h">
