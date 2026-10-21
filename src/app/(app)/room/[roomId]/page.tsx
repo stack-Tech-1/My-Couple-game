@@ -7,6 +7,8 @@ import { Moments } from "@/components/room/Moments";
 import { Library } from "@/components/room/Library";
 import { Greeting } from "@/components/room/Greeting";
 import { InstallPrompt } from "@/components/room/InstallPrompt";
+import { NotifyPrompt } from "@/components/room/NotifyPrompt";
+import { vapidKeys } from "@/lib/push/server";
 import { ActiveGames } from "@/components/room/ActiveGames";
 import { activeSessions, scoreboard } from "@/lib/games/server";
 import { getDaily } from "@/lib/daily/server";
@@ -18,11 +20,12 @@ export default async function RoomHome({ params }: { params: Promise<{ roomId: s
   const { roomId } = await params;
   const bundle = await getMyRoom();
   if (!bundle) return null;
-  const [moments, board, active, daily] = await Promise.all([
+  const [moments, board, active, daily, keys] = await Promise.all([
     getRecentMoments(roomId),
     scoreboard(roomId),
     activeSessions(roomId),
     bundle.partner ? getDaily(roomId, bundle.me.profile.id) : Promise.resolve(null),
+    vapidKeys(),
   ]);
   const mine = board.totals[bundle.me.profile.id] ?? 0;
   const theirs = bundle.partner ? (board.totals[bundle.partner.profile.id] ?? 0) : 0;
@@ -32,6 +35,7 @@ export default async function RoomHome({ params }: { params: Promise<{ roomId: s
     <div className="pt-8 sm:pt-12">
       <Greeting />
       <InstallPrompt />
+      {paired ? <NotifyPrompt publicKey={keys?.publicKey ?? null} /> : null}
       {!paired ? <InvitePanel /> : null}
       <ActiveGames sessions={active} />
 

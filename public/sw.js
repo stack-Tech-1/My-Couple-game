@@ -3,7 +3,7 @@
  * - /_next/static: cache first (content-hashed, immutable).
  * - Everything else (API, Supabase, realtime, auth): never cached. Private data must stay live.
  */
-const VERSION = "amah-v1";
+const VERSION = "amah-v2";
 const OFFLINE = "/offline";
 
 self.addEventListener("install", (event) => {
@@ -45,4 +45,42 @@ self.addEventListener("fetch", (event) => {
       ),
     );
   }
+});
+/* Push notifications. The payload is JSON: { title, body, url, tag }. */
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = { body: event.data ? event.data.text() : "" };
+  }
+  const title = data.title || "Amah";
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body: data.body || "",
+      // The same tag replaces the previous notification (one per chat, one per game).
+      tag: data.tag || "amah",
+      // Quiet updates (a game moving on) replace the notification without buzzing again.
+      renotify: !!data.tag && !data.quiet,
+      icon: "/icons/192",
+      badge: "/icons/192",
+      data: { url: data.url || "/room" },
+    }),
+  );
+});
+
+/* Tapping a notification: reuse an open Amah window if there is one, else open a new one. */
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const target = new URL(event.notification.data?.url || "/room", self.location.origin).href;
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((wins) => {
+      for (const w of wins) {
+        if (new URL(w.url).origin === self.location.origin && "focus" in w) {
+          return w.focus().then((f) => (f && "navigate" in f ? f.navigate(target) : f));
+        }
+      }
+      return self.clients.openWindow(target);
+    }),
+  );
 });

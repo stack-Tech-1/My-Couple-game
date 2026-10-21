@@ -10,6 +10,7 @@ import { cn } from "@/lib/cn";
 import { CHAT_PAGE, chatMessageSchema, countUnread, describe, mergeMessages, type ChatMessage, type LocalMessage, type StickerMedia } from "@/lib/chat/types";
 import { extFor, PRIVATE_BUCKET, type Recording } from "@/lib/chat/media";
 import { ChatPanel } from "./ChatPanel";
+import { notifyChatMessage } from "@/lib/push/actions";
 import { useRoom } from "@/lib/realtime/RoomProvider";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import { playSound } from "@/lib/sound";
@@ -98,6 +99,15 @@ function ChatInner() {
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  // Opened from a message notification (?chat=1): show the chat, then tidy the address bar.
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("chat") !== "1") return;
+    setOpen(true);
+    url.searchParams.delete("chat");
+    window.history.replaceState(null, "", url.pathname + url.search + url.hash);
+  }, []);
 
   // Back from the background or a dropped connection: catch up.
   const wasLive = useRef(connection === "live");
@@ -250,6 +260,8 @@ function ChatInner() {
       if (!saved.success) return void refresh();
       setMessages((list) => mergeMessages(list, [saved.data]));
       broadcast("chat:msg", saved.data);
+      // A notification for the partner if they're away (the server checks).
+      void notifyChatMessage(saved.data.id);
     },
     [roomId, me, broadcast, refresh],
   );

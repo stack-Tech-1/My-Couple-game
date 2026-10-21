@@ -6,6 +6,8 @@ import { supabaseServer } from "@/lib/supabase/server";
 import { friendlyError } from "@/lib/errors";
 import { getMyRoom } from "@/lib/room/server";
 import type { ActionResult } from "@/lib/room/types";
+import { after } from "next/server";
+import { notifyPartner } from "@/lib/push/server";
 
 const fail = (e: unknown): { ok: false; error: string } => ({ ok: false, error: friendlyError(e) });
 const issue = (e: z.ZodError) => e.issues[0]?.message ?? "That didn't look right.";
@@ -41,6 +43,12 @@ export async function sendNote(input: unknown): Promise<ActionResult> {
       unlock_at: unlock?.toISOString() ?? null,
     });
     if (error) return fail(error);
+    const name = bundle.me.profile.display_name || "Your partner";
+    after(() =>
+      notifyPartner(roomId, me, "notes", unlock
+        ? { title: `${name} sealed a letter for you`, body: "It opens on a special day. No peeking.", url: `/room/${roomId}/games/love-notes`, tag: `note-${roomId}` }
+        : { title: `A letter from ${name}`, body: "Open it in Amah.", url: `/room/${roomId}/games/love-notes`, tag: `note-${roomId}` }),
+    );
     revalidatePath(`/room/${roomId}`, "layout");
     return { ok: true, data: null };
   } catch (e) {

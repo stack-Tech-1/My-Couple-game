@@ -7,6 +7,7 @@ import { Icon } from "@/design/icons";
 import { useRoom } from "@/lib/realtime/RoomProvider";
 import { gameMeta } from "@/games/catalog";
 import { Chat } from "@/components/chat/Chat";
+import { NudgeButton } from "./Nudge";
 
 export function RoomHeader({ feedbackUnread = 0 }: { feedbackUnread?: number }) {
   const { bundle, partnerPresence } = useRoom();
@@ -42,6 +43,7 @@ export function RoomHeader({ feedbackUnread = 0 }: { feedbackUnread?: number }) 
               </span>
             )}
           </div>
+          <NudgeButton />
           <Chat />
           <Link
             href={feedbackUnread ? `/room/${room.id}/settings#feedback` : `/room/${room.id}/settings`}

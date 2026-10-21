@@ -17,11 +17,13 @@ import { ReportDialog } from "@/components/safety/ReportDialog";
 import { BlockDialog } from "@/components/safety/BlockDialog";
 import { useDataSaver, type DataSaverPref } from "@/lib/dataSaver";
 import { FeedbackHub } from "@/components/feedback/FeedbackHub";
+import { NotificationSettings } from "@/components/room/NotificationSettings";
+import type { PushPrefs } from "@/lib/push/types";
 import type { FeedbackThread } from "@/lib/feedback/types";
 import { afterDarkOpen } from "@/lib/room/afterDark";
 import { setOptIn } from "@/lib/afterdark/actions";
 
-export function SettingsView({ announcementEmails, feedback }: { announcementEmails: boolean; feedback: { threads: FeedbackThread[]; unread: number } }) {
+export function SettingsView({ announcementEmails, feedback, push }: { announcementEmails: boolean; feedback: { threads: FeedbackThread[]; unread: number }; push: { publicKey: string | null; prefs: PushPrefs } }) {
   const { bundle } = useRoom();
   const router = useRouter();
   const { room, me, partner } = bundle;
@@ -115,6 +117,10 @@ export function SettingsView({ announcementEmails, feedback }: { announcementEma
           <Toggle checked={emails} onChange={toggleEmails} label="Announcement emails" description="Now and then: new games and important news. Sign-in emails always arrive." />
           <DataSaverSetting />
         </div>
+      </Section>
+
+      <Section title="Notifications" id="notifications">
+        <NotificationSettings publicKey={push.publicKey} prefs={push.prefs} />
       </Section>
 
       <Section title="House rules" id="house-rules">

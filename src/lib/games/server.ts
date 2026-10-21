@@ -8,6 +8,9 @@ import type { SessionRow, SessionSnapshot } from "./types";
 import { isSpicy } from "@/games/after-dark/logic";
 import { getGameFlags } from "./flags.server";
 import { getContentPack } from "@/lib/content/server";
+import { after } from "next/server";
+import { gameMeta } from "@/games/catalog";
+import { displayName, notifyPartner } from "@/lib/push/server";
 
 /** Both current members confirmed 18+ and opted in. The same gate the database uses. */
 async function spicyUnlocked(roomId: string): Promise<boolean> {
@@ -139,7 +142,19 @@ export async function createSession(gameId: string, rawConfig: unknown, rematchO
     p_rematch_of: rematchId ?? null,
   });
   if (error || !isRow(data)) throw new ApiError(500, "Couldn't set up the table. Try again?");
-  return data as SessionRow;
+  const created = data as SessionRow;
+  after(async () => {
+    const name = await displayName(user.id);
+    // After Dark never names the game outside the app.
+    const game = logic.category === "spicy" ? null : (gameMeta(gameId)?.name ?? "a game");
+    await notifyPartner(mine.room_id, user.id, "invites", {
+      title: rematchId ? `${name} wants a rematch` : `${name} wants to play`,
+      body: game ? `${game}. Tap to join.` : "Tap to join.",
+      url: `/room/${mine.room_id}/play/${created.id}`,
+      tag: `invite-${mine.room_id}`,
+    });
+  });
+  return created;
 }
 
 export async function submitMove(sessionId: string, rawMove: unknown): Promise<SessionSnapshot> {
@@ -195,6 +210,20 @@ export async function submitMove(sessionId: string, rawMove: unknown): Promise<S
     if (error) throw new ApiError(500, "Couldn't save that move. Try again?");
     if (isRow(data)) {
       const s = data;
+      if (s.status === "active") {
+        // One notification per game, quietly kept up to date, and only if they're away.
+        after(async () => {
+          const name = await displayName(user.id);
+          const game = isSpicy(initial.game_id) ? null : (gameMeta(initial.game_id)?.name ?? "your game");
+          await notifyPartner(initial.room_id, user.id, "turns", {
+            title: game ? `Your move in ${game}` : "Your move",
+            body: `${name} just played. Tap to carry on.`,
+            url: `/room/${initial.room_id}/play/${sessionId}`,
+            tag: `game-${sessionId}`,
+            quiet: true,
+          });
+        });
+      }
       return { session: s, view: logic.viewFor(result.next, user.id), version: s.version, serverNow: Date.now() };
     }
   }
