@@ -142,6 +142,62 @@ describe("whot endings", () => {
   });
 });
 
+describe("whot market finish mode", () => {
+  const fin = (reshuffles: number) => ({ finish: { on: true, reshuffles } });
+
+  it("is off by default and on when chosen", () => {
+    expect(g.initialState("s", P, {}, ctx).finish).toEqual({ on: false, reshuffles: 0 });
+    expect(g.initialState("s", P, { marketFinish: true }, ctx).finish).toEqual({ on: true, reshuffles: 0 });
+    expect(g.viewFor(g.initialState("s", P, { marketFinish: true }, ctx), "ada").finish).toEqual({ market: 1, warn: false });
+  });
+
+  it("reshuffles the first time the market runs out", () => {
+    const s = rig({ ...fin(0), market: [], pile: [c(20, "circle", 9), c(21, "cross", 9), c(22, "circle", 4)] });
+    const n = play(s, "ada", { type: "draw" });
+    expect(n.finish).toEqual({ on: true, reshuffles: 1 });
+    expect(g.isOver(n)).toEqual({ over: false });
+    expect(g.viewFor(n, "ada").finish).toEqual({ market: 2, warn: true });
+  });
+
+  it("ends the moment the second market runs out, counting face value (stars not doubled)", () => {
+    // Ada draws the last card of the second market.
+    const s = rig({ ...fin(1), market: [c(30, "star", 8)], ada: [c(40, "circle", 3)], bo: [c(42, "star", 5), c(43, "cross", 1)] });
+    const n = play(s, "ada", { type: "draw" });
+    // Ada: 3 + 8 = 11. Bo: 5 + 1 = 6 (classic would be 11).
+    expect(g.isOver(n)).toEqual({ over: true, winner: "bo" });
+    const v = g.viewFor(n, "ada");
+    expect(v).toMatchObject({ endedBy: "count", tally: { ada: 11, bo: 6 } });
+  });
+
+  it("never reshuffles a second time, even when a pick would need it", () => {
+    const s = rig({ ...fin(1), market: [c(30, "circle", 10)], pile: [c(20, "circle", 9), c(21, "cross", 9), c(22, "circle", 4)], pendingPick: 3, pendingKind: 5 });
+    const n = play(s, "ada", { type: "draw" });
+    expect(n.hands.ada).toHaveLength(3);
+    expect(n.log.some((l) => l.kind === "reshuffle")).toBe(false);
+    expect(g.isOver(n).over).toBe(true);
+  });
+
+  it("is a draw on equal totals, and Whot counts 20", () => {
+    const s = rig({ ...fin(1), market: [c(30, "circle", 2)], ada: [c(53, "whot", 20)], bo: [c(42, "cross", 11), c(43, "cross", 11)] });
+    const n = play(s, "ada", { type: "draw" });
+    expect(g.viewFor(n, "bo").tally).toEqual({ ada: 22, bo: 22 });
+    expect(g.isOver(n)).toEqual({ over: true, winner: "tie" });
+  });
+
+  it("warns only near the end of the second market", () => {
+    expect(g.viewFor(rig({ ...fin(1), market: Array.from({ length: 7 }, (_, i) => c(i, "circle", 1)) }), "ada").finish!.warn).toBe(false);
+    expect(g.viewFor(rig({ ...fin(1), market: Array.from({ length: 6 }, (_, i) => c(i, "circle", 1)) }), "ada").finish!.warn).toBe(true);
+    expect(g.viewFor(rig({ ...fin(0), market: [c(1, "circle", 1)] }), "ada").finish!.warn).toBe(false);
+  });
+
+  it("a player who empties their hand still wins outright", () => {
+    const s = rig({ ...fin(1), market: [], ada: [c(40, "circle", 3)] });
+    const n = play(s, "ada", { type: "play", cardId: 40 });
+    expect(g.isOver(n)).toEqual({ over: true, winner: "ada" });
+    expect(g.viewFor(n, "bo").endedBy).toBe("out");
+  });
+});
+
 describe("whot privacy", () => {
   it("never shows the opponent's cards or the market order", () => {
     const s = rig({});

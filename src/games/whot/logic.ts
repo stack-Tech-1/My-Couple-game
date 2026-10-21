@@ -37,7 +37,11 @@ export const whotRulesSchema = z.object({
 });
 export type WhotRules = z.infer<typeof whotRulesSchema>;
 
-const configSchema = whotRulesSchema.extend({ firstPlayer: z.union([z.literal(0), z.literal(1)]).optional() });
+const configSchema = whotRulesSchema.extend({
+  firstPlayer: z.union([z.literal(0), z.literal(1)]).optional(),
+  /** Market finish mode: the market is reshuffled once; when it runs out again, hands are counted. */
+  marketFinish: z.boolean().default(false),
+});
 export type WhotConfig = z.input<typeof configSchema>;
 
 export type LogEntry =
@@ -61,6 +65,8 @@ export type WhotState = {
   log: LogEntry[];
   /** Set when the market can't cover a draw: the game ends on a card count. */
   marketDry: boolean;
+  /** Market finish mode (absent on older sessions = classic). `reshuffles` counts market refills. */
+  finish?: { on: boolean; reshuffles: number };
   winner: PlayerId | "tie" | null;
   firstTurn: 0 | 1;
 };
@@ -84,7 +90,16 @@ export type WhotView = {
   winner: PlayerId | "tie" | null;
   /** Revealed only when the game is over (for the final tally). */
   finalHands: Record<PlayerId, Card[]> | null;
+  /** How it ended: someone ran out of cards, or the hands were counted. */
+  endedBy: "out" | "count" | null;
+  /** Hand totals when the game ended on a count. */
+  tally: Record<PlayerId, number> | null;
+  /** Market finish mode: which market this is, and whether it's nearly gone. */
+  finish: { market: 1 | 2; warn: boolean } | null;
 };
+
+/** In market finish mode, the warning shows when this many cards or fewer are left in the second market. */
+export const FINISH_WARN_AT = 6;
 
 const moveSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("play"), cardId: z.number().int().min(0).max(53), shape: z.enum(SHAPES).optional(), lastCard: z.boolean().optional() }),
@@ -102,10 +117,14 @@ export function canPlay(s: Pick<WhotState, "pile" | "pendingPick" | "pendingKind
   return card.shape === t.shape || card.n === t.n;
 }
 
-/** Points left in a hand, for the market-ran-dry tally. Stars count double; Whot is 20. */
-export function handValue(hand: Card[]): number {
-  return hand.reduce((sum, c) => sum + (c.shape === "star" ? c.n * 2 : c.n), 0);
+/**
+ * Points left in a hand, for the end-of-market tally. Classic: stars count double, Whot is 20.
+ * Market finish mode counts face value only (Whot is still 20).
+ */
+export function handValue(hand: Card[], faceValue = false): number {
+  return hand.reduce((sum, c) => sum + (c.shape === "star" && !faceValue ? c.n * 2 : c.n), 0);
 }
+const finishOn = (s: Pick<WhotState, "finish">) => s.finish?.on === true;
 
 /** Draws up to n cards, reshuffling the pile under the top card if the market runs out. */
 function draw(s: WhotState, who: PlayerId, n: number): { s: WhotState; drawn: number } {
@@ -115,13 +134,16 @@ function draw(s: WhotState, who: PlayerId, n: number): { s: WhotState; drawn: nu
   const log = [...s.log];
   const hand = [...s.hands[who]!];
   let drawn = 0;
+  let reshuffles = s.finish?.reshuffles ?? 0;
   for (let i = 0; i < n; i++) {
-    if (market.length === 0 && pile.length > 1) {
+    // Market finish mode refills the market only once.
+    if (market.length === 0 && pile.length > 1 && !(finishOn(s) && reshuffles >= 1)) {
       const rng = makeRng(s.seed, cursor);
       market = shuffle(pile.slice(0, -1), rng);
       cursor = rng.cursor();
       pile = pile.slice(-1);
       log.push({ by: null, kind: "reshuffle" });
+      reshuffles++;
     }
     const card = market.pop();
     if (!card) break;
@@ -129,16 +151,19 @@ function draw(s: WhotState, who: PlayerId, n: number): { s: WhotState; drawn: nu
     drawn++;
   }
   return {
-    s: { ...s, market, pile, rngCursor: cursor, log, hands: { ...s.hands, [who]: hand }, marketDry: drawn < n },
+    s: { ...s, market, pile, rngCursor: cursor, log, hands: { ...s.hands, [who]: hand }, marketDry: drawn < n, ...(s.finish ? { finish: { ...s.finish, reshuffles } } : {}) },
     drawn,
   };
 }
 
+/** Ends the game on a count: the market couldn't cover a draw, or (market finish) the second market ran out. */
 function settleDry(s: WhotState): WhotState {
-  if (!s.marketDry) return s;
+  if (s.winner) return s;
+  const finished = finishOn(s) && s.finish!.reshuffles >= 1 && s.market.length === 0;
+  if (!s.marketDry && !finished) return s;
   const [a, b] = s.players;
-  const va = handValue(s.hands[a]!);
-  const vb = handValue(s.hands[b]!);
+  const va = handValue(s.hands[a]!, finishOn(s));
+  const vb = handValue(s.hands[b]!, finishOn(s));
   return { ...s, winner: va === vb ? "tie" : va < vb ? a : b };
 }
 
@@ -152,6 +177,7 @@ export const whot: GameLogic<WhotState, WhotMove, WhotView, WhotConfig> = {
   estimatedMinutes: 12,
   moveSchema,
   configSchema: configSchema as unknown as z.ZodType<WhotConfig>,
+  rematchKeeps: ["marketFinish"],
   rules: {
     summary: "Match the card on top by shape or by number. First to empty their hand wins.",
     sections: [
@@ -169,11 +195,19 @@ export const whot: GameLogic<WhotState, WhotMove, WhotView, WhotConfig> = {
       },
       { title: "House rules", body: ["Stacking picks, who moves after General Market, calling 'Last card' and hand size can all be changed in room settings."] },
       { title: "If the market runs dry", body: ["Hands are counted. Lowest total wins: stars count double, Whot counts 20."] },
+      {
+        title: "Market finish mode",
+        body: [
+          "Choose it when you start. The first time the market runs out, the played cards are shuffled into a new market.",
+          "When the second market is nearly gone you'll get a warning. When it runs out, the game ends: both hands are counted at face value (Whot is 20) and the lowest total wins. Equal totals are a draw.",
+        ],
+      },
     ],
   },
 
   initialState(seed, players, config) {
     const rules = whotRulesSchema.parse(config);
+    const marketFinish = config.marketFinish === true;
     const rng = makeRng(seed);
     const deck = shuffle(buildDeck(), rng);
     const hands: Record<PlayerId, Card[]> = { [players[0]]: [], [players[1]]: [] };
@@ -200,6 +234,7 @@ export const whot: GameLogic<WhotState, WhotMove, WhotView, WhotConfig> = {
       requested: null,
       log: [],
       marketDry: false,
+      finish: { on: marketFinish, reshuffles: 0 },
       winner: null,
     };
   },
@@ -297,6 +332,11 @@ export const whot: GameLogic<WhotState, WhotMove, WhotView, WhotConfig> = {
       rules: s.rules,
       winner: s.winner,
       finalHands: s.winner ? s.hands : null,
+      endedBy: !s.winner ? null : s.winner !== "tie" && s.hands[s.winner]!.length === 0 ? "out" : "count",
+      tally: s.winner && (s.winner === "tie" || s.hands[s.winner]!.length > 0) ? Object.fromEntries(s.players.map((p) => [p, handValue(s.hands[p]!, finishOn(s))])) : null,
+      finish: finishOn(s)
+        ? { market: s.finish!.reshuffles >= 1 ? 2 : 1, warn: !s.winner && s.finish!.reshuffles >= 1 && s.market.length <= FINISH_WARN_AT }
+        : null,
     };
   },
 };

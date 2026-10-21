@@ -40,6 +40,8 @@ export interface GameLogic<State, Move, View = unknown, Config = Record<string, 
   /** Zod schema every incoming move is parsed with before anything else happens. */
   moveSchema: z.ZodType<Move>;
   configSchema?: z.ZodType<Config>;
+  /** Config keys a rematch carries over, such as a mode chosen when the game started. */
+  rematchKeeps?: string[];
   initialState(seed: string, players: Players, config: Config, ctx: MoveContext): State;
   validateMove(state: State, move: Move, by: PlayerId, ctx: MoveContext): boolean;
   applyMove(state: State, move: Move, by: PlayerId, ctx: MoveContext): State;

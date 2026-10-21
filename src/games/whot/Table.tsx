@@ -88,12 +88,17 @@ export function WhotTable({ view, me, names, sendMove, pending, sound }: GamePro
     setLastCard(false);
   };
 
+  const counted = view.endedBy === "count";
   const status = view.winner
     ? view.winner === "tie"
-      ? "Market's dry and it's a dead heat."
-      : view.winner === me
-        ? "Check up! You're out."
-        : `${partnerName} is out. Check up.`
+      ? "Market's finished, and it's a draw."
+      : counted
+        ? view.winner === me
+          ? "Market's finished. Your hand is lighter: you win."
+          : `Market's finished. ${partnerName}'s hand is lighter.`
+        : view.winner === me
+          ? "Check up! You're out."
+          : `${partnerName} is out. Check up.`
     : myTurn
       ? view.pendingPick > 0
         ? view.rules.stackPicks && view.playable.length
@@ -176,10 +181,44 @@ export function WhotTable({ view, me, names, sendMove, pending, sound }: GamePro
           </div>
         </div>
 
+        {view.finish && !view.winner ? (
+          <p
+            role={view.finish.warn ? "alert" : undefined}
+            className={cn(
+              "-mt-2 rounded-full px-4 py-1.5 text-center text-[0.85rem] font-semibold",
+              view.finish.warn ? "bg-accent text-on-accent" : "border border-line text-muted",
+            )}
+          >
+            {view.finish.warn
+              ? `Last market: ${view.marketCount} ${view.marketCount === 1 ? "card" : "cards"} left. When it runs out, hands are counted and the lowest wins.`
+              : view.finish.market === 1
+                ? "Market finish · first market"
+                : "Market finish · second market, the last one"}
+          </p>
+        ) : null}
+
         <div className="flex min-h-[3.6rem] flex-col items-center gap-1">
           <Status>{status}</Status>
           {lastLog ? <p className="text-center text-[0.88rem] text-muted">{describe(lastLog, me, names)}</p> : null}
         </div>
+
+        {view.finalHands && view.tally ? (
+          <section aria-label="Final count" className="rounded-[18px] border border-line bg-raised p-4">
+            <p className="text-center text-[0.85rem] text-muted">
+              {view.finish ? "Counted at face value (Whot is 20)." : "Stars count double, Whot is 20."}
+              {view.winner === "tie" ? " Both hands counted the same. Remarkable, honestly." : " Lowest total wins."}
+            </p>
+            {[me, partner].map((p) => (
+              <div key={p} className="mt-3">
+                <p className="flex justify-between text-[0.9rem] font-semibold">
+                  <span>{p === me ? "You" : partnerName}</span>
+                  <span className="tabular">{view.tally![p]} points</span>
+                </p>
+                <p className="text-[0.85rem] text-muted">{view.finalHands![p]!.map(cardLabel).join(", ") || "No cards"}</p>
+              </div>
+            ))}
+          </section>
+        ) : null}
 
         {/* My hand */}
         <div>
@@ -221,9 +260,6 @@ export function WhotTable({ view, me, names, sendMove, pending, sound }: GamePro
           <p className="mt-3 text-center text-[0.82rem] text-muted">{view.hand.length} cards · market {view.marketCount}</p>
         </div>
 
-        {view.finalHands && view.winner === "tie" ? (
-          <p className="text-center text-muted">Both hands counted the same. Remarkable, honestly.</p>
-        ) : null}
       </div>
 
       <Modal open={!!pickFor} onClose={() => setPickFor(null)} title="Call a shape" description={`${partnerName} has to follow it (or play a Whot).`}>

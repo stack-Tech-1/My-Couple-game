@@ -115,6 +115,12 @@ export async function createSession(gameId: string, rawConfig: unknown, rematchO
       const { data: existing } = await supabase.from("game_sessions").select("*").eq("rematch_of", prev.id).eq("status", "active").maybeSingle();
       if (existing) return existing as SessionRow;
       rematchId = prev.id;
+      // Keep the mode the last game was played in.
+      const kept = Object.fromEntries((logic.rematchKeeps ?? []).filter((k) => k in prev.config).map((k) => [k, prev.config[k]]));
+      if (Object.keys(kept).length && logic.configSchema) {
+        const p = logic.configSchema.safeParse({ ...config, ...kept });
+        if (p.success) config = p.data as Record<string, unknown>;
+      }
       // firstPlayer is an index into players; map it through the previous seat order.
       const prevFirst = prev.config.firstPlayer;
       if (prevFirst === 0 || prevFirst === 1) {
