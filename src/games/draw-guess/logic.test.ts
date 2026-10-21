@@ -50,9 +50,28 @@ describe("draw & guess", () => {
     d = mv(d, "bo", { type: "guess", text: "horse" });
     d = mv(d, "bo", { type: "guess", text: "girafe" });
     expect(d.guesses).toEqual([
-      { text: "horse", close: false },
-      { text: "girafe", close: true },
+      { text: "horse", close: false, by: "bo" },
+      { text: "girafe", close: true, by: "bo" },
     ]);
+  });
+
+  it("works for a group: drawer rotates, everyone who guesses scores, the word stays hidden", () => {
+    const G = ["ada", "bo", "cy"] as const;
+    let d = g.initialState("seed", G, {}, { now: 0 });
+    expect(d.rounds).toBe(6);
+    const drawer = drawerOf(d);
+    const [g1, g2] = G.filter((p) => p !== drawer);
+    d = runMove(g, d, { type: "choose", index: 0 }, drawer, { now: 0 }).next as DrawState;
+    d = runMove(g, d, { type: "guess", text: d.word! }, g1!, { now: 1000 }).next as DrawState;
+    // One down, one to go: the round carries on, and the right guess doesn't leak the word.
+    expect(d.round).toBe(1);
+    expect(JSON.stringify(g.viewFor(d, g2!))).not.toContain(d.word!);
+    expect(g.validateMove(d, { type: "guess", text: "again" }, g1!, { now: 1100 })).toBe(false);
+    d = runMove(g, d, { type: "guess", text: d.word! }, g2!, { now: 2000 }).next as DrawState;
+    expect(d.round).toBe(2);
+    expect(d.scores[drawer]).toBe(100);
+    expect(d.scores[g1!]).toBeGreaterThan(d.scores[g2!]!);
+    expect(drawerOf(d)).not.toBe(drawer);
   });
 
   it("a fast correct guess scores more, and the drawer scores too", () => {

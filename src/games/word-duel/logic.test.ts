@@ -77,7 +77,20 @@ describe("word duel", () => {
     const json = JSON.stringify(v);
     expect(json).not.toContain("bread");
     expect(json).not.toContain("brave");
-    expect(v.theirs).toEqual([["g", "g", "y", "x", "y"]]);
+    expect(v.others).toEqual([{ player: "bo", marks: [["g", "g", "y", "x", "y"]], solved: false }]);
     expect(v.target).toBeNull();
+  });
+
+  it("races a group: first to solve wins, everyone out of guesses is a tie", () => {
+    let s = g.initialState("seed", ["ada", "bo", "cy"], {}, ctx);
+    s = { ...s, target: "bread" };
+    s = guess(s, "cy", "brave");
+    expect(g.viewFor(s, "ada").others.map((o) => o.player)).toEqual(["bo", "cy"]);
+    s = guess(s, "bo", "bread");
+    expect(g.isOver(s)).toEqual({ over: true, winner: "bo" });
+
+    let t = { ...g.initialState("seed", ["ada", "bo", "cy"], {}, ctx), target: "bread" };
+    for (let i = 0; i < 6; i++) for (const p of ["ada", "bo", "cy"]) t = guess(t, p, "brave");
+    expect(g.isOver(t)).toEqual({ over: true, winner: "tie" });
   });
 });

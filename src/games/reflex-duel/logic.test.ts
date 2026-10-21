@@ -95,4 +95,22 @@ describe("reflex duel", () => {
   it("doesn't send the seed (which would predict the next signal) to clients", () => {
     expect(g.viewFor(armed(), "ada")).not.toHaveProperty("seed");
   });
+
+  it("works for a group: false starters drop out, the fastest clean tap wins", () => {
+    const G = ["ada", "bo", "cy"] as const;
+    let s = g.initialState("seed", G, {}, at(0));
+    for (const p of G) s = mv(s, p, { type: "ready" }, 0);
+    const go = s.goAt!;
+    s = mv(s, "cy", { type: "tap", ms: null }, go - 1000); // jumped
+    expect(s.results).toHaveLength(0); // ada and bo still racing
+    s = mv(s, "ada", { type: "tap", ms: 300 }, go + 300);
+    s = mv(s, "bo", { type: "tap", ms: 250 }, go + 250);
+    expect(s.results.at(-1)).toMatchObject({ winner: "bo", reason: "faster" });
+
+    // Everyone but one jumps: the last one standing takes it.
+    const go2 = s.goAt!;
+    s = mv(s, "ada", { type: "tap", ms: null }, go2 - 1000);
+    s = mv(s, "bo", { type: "tap", ms: null }, go2 - 900);
+    expect(s.results.at(-1)).toMatchObject({ winner: "cy", reason: "false-start" });
+  });
 });

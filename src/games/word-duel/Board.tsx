@@ -21,8 +21,10 @@ export function WordDuelBoard({ view, me, names, sendMove, pending, sound }: Gam
   const shake = useAnimation();
   const [typed, setTyped] = useState("");
   const [note, setNote] = useState<string | null>(null);
-  const partner = view.players[0] === me ? view.players[1] : view.players[0];
-  const partnerName = names[partner] ?? "Your partner";
+  const nameOf = (p: string) => names[p] ?? "Someone";
+  const winnerName = view.winner && view.winner !== "tie" ? nameOf(view.winner) : "";
+  const solvers = view.others.filter((o) => o.solved);
+  const stillGoing = view.others.filter((o) => !o.solved && o.marks.length < MAX_GUESSES);
   const solved = view.mine.some((g) => g.marks.every((m) => m === "g"));
   const out = solved || view.mine.length >= MAX_GUESSES || !!view.winner;
 
@@ -89,33 +91,37 @@ export function WordDuelBoard({ view, me, names, sendMove, pending, sound }: Gam
       ? `Nobody got it. It was ${view.target?.toUpperCase()}.`
       : view.winner === me
         ? "Cracked it first."
-        : `${partnerName} got there first.`
+        : `${winnerName} got there first.`
     : solved
       ? "Solved!"
       : out
-        ? `Out of guesses. Waiting on ${partnerName}…`
-        : view.theirsSolved
-          ? `${partnerName} solved it. Hurry.`
+        ? `Out of guesses. Waiting on ${stillGoing.map((o) => nameOf(o.player)).join(", ") || "the others"}…`
+        : solvers.length
+          ? `${nameOf(solvers[0]!.player)} solved it. Hurry.`
           : "Guess the word.";
 
   return (
     <div className="mx-auto flex w-full max-w-[520px] flex-col items-center gap-5">
-      {/* Partner progress: colours only */}
-      <div className="flex w-full items-center justify-between gap-4 rounded-[16px] border border-line bg-raised px-4 py-3">
-        <div>
-          <p className="text-[0.85rem] font-semibold">{partnerName}</p>
-          <p className="text-[0.78rem] text-muted">{view.theirsSolved ? "Solved" : `${view.theirs.length}/${MAX_GUESSES} guesses`}</p>
-        </div>
-        <div className="grid gap-[3px]" aria-label={`${partnerName}'s board: ${view.theirs.length} guesses, letters hidden`} role="img">
-          {Array.from({ length: MAX_GUESSES }, (_, r) => (
-            <div key={r} className="flex gap-[3px]">
-              {Array.from({ length: WORD_LEN }, (_, c) => {
-                const m = view.theirs[r]?.[c];
-                return <span key={c} className="h-[9px] w-[9px] rounded-[2px]" style={{ background: m ? FILL[m].bg : "var(--bg-sunk)" }} />;
-              })}
+      {/* Everyone else's progress: colours only */}
+      <div className={view.others.length > 1 ? "grid w-full grid-cols-2 gap-2 sm:grid-cols-3" : "w-full"}>
+        {view.others.map((o) => (
+          <div key={o.player} className="flex w-full items-center justify-between gap-3 rounded-[16px] border border-line bg-raised px-4 py-3">
+            <div className="min-w-0">
+              <p className="truncate text-[0.85rem] font-semibold">{nameOf(o.player)}</p>
+              <p className="text-[0.78rem] text-muted">{o.solved ? "Solved" : `${o.marks.length}/${MAX_GUESSES} guesses`}</p>
             </div>
-          ))}
-        </div>
+            <div className="grid shrink-0 gap-[3px]" aria-label={`${nameOf(o.player)}'s board: ${o.marks.length} guesses, letters hidden`} role="img">
+              {Array.from({ length: MAX_GUESSES }, (_, r) => (
+                <div key={r} className="flex gap-[3px]">
+                  {Array.from({ length: WORD_LEN }, (_, c) => {
+                    const m = o.marks[r]?.[c];
+                    return <span key={c} className={view.others.length > 1 ? "h-[6px] w-[6px] rounded-[1px]" : "h-[9px] w-[9px] rounded-[2px]"} style={{ background: m ? FILL[m].bg : "var(--bg-sunk)" }} />;
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* My board */}

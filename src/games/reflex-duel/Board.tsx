@@ -10,8 +10,13 @@ import { ROUND_TIMEOUT_MS, WINS_NEEDED, type ReflexMove, type ReflexView, type R
 type Phase = "lobby" | "wait" | "go" | "tapped" | "done";
 
 export function ReflexBoard({ view, me, names, sendMove, clock, sound }: GameProps<ReflexView, ReflexMove>) {
-  const partner = view.players[0] === me ? view.players[1] : view.players[0];
-  const partnerName = names[partner] ?? "Your partner";
+  const others = view.players.filter((p) => p !== me);
+  const two = others.length === 1;
+  const partner = others[0]!;
+  const nameOf = (p: string) => names[p] ?? "Someone";
+  const partnerName = two ? nameOf(partner) : "everyone";
+  const notReady = others.filter((p) => !view.ready[p]);
+  const notTapped = others.filter((p) => !view.taps[p]);
   const myTap = view.taps[me];
   const [fired, setFired] = useState(false);
   const shownAt = useRef<number | null>(null);
@@ -90,7 +95,13 @@ export function ReflexBoard({ view, me, names, sendMove, clock, sound }: GamePro
       bg: "var(--bg-raised)",
       fg: "var(--fg)",
       title: view.ready[me] ? "Ready." : "Tap when you're ready",
-      sub: view.ready[me] ? `Waiting for ${partnerName}…` : view.ready[partner] ? `${partnerName} is ready and staring at you.` : "Best of seven. Phones down flat helps.",
+      sub: view.ready[me]
+        ? `Waiting for ${two ? partnerName : notReady.map(nameOf).join(", ")}…`
+        : two && view.ready[partner]
+          ? `${partnerName} is ready and staring at you.`
+          : !two && notReady.length < others.length
+            ? `${others.length - notReady.length} of ${others.length} are ready.`
+            : `First to ${WINS_NEEDED} rounds. Phones down flat helps.`,
     },
     wait: { bg: "#5b1a2b", fg: "#f3d9a6", title: "Wait for it…", sub: "Don't you dare." },
     go: { bg: "#e8563a", fg: "#fff8f1", title: "Now!", sub: "" },
@@ -98,19 +109,19 @@ export function ReflexBoard({ view, me, names, sendMove, clock, sound }: GamePro
       bg: "var(--bg-raised)",
       fg: "var(--fg)",
       title: mine === "early" || myTap?.kind === "early" ? "Too soon!" : `${typeof mine === "number" ? mine : myTap?.kind === "tap" ? myTap.ms : ""} ms`,
-      sub: mine === "early" || myTap?.kind === "early" ? "That's a false start." : `Waiting for ${partnerName}…`,
+      sub: mine === "early" || myTap?.kind === "early" ? "That's a false start." : `Waiting for ${two ? partnerName : notTapped.map(nameOf).join(", ") || "everyone"}…`,
     },
-    done: { bg: "var(--bg-raised)", fg: "var(--fg)", title: view.winner === me ? "Fastest hands in the house." : `${partnerName} takes it.`, sub: "" },
+    done: { bg: "var(--bg-raised)", fg: "var(--fg)", title: view.winner === me ? "Fastest hands in the house." : `${nameOf(view.winner ?? partner)} takes it.`, sub: "" },
   };
   const p = panel[phase];
 
   return (
     <div className="mx-auto flex w-full max-w-[560px] flex-col gap-5">
-      <div className="grid grid-cols-2 gap-4">
-        {[me, partner].map((pid) => (
-          <div key={pid} className={cn(pid === partner && "text-right")}>
-            <p className="text-[0.85rem] font-semibold">{pid === me ? "You" : partnerName}</p>
-            <div className={cn("mt-1.5 flex gap-1.5", pid === partner && "justify-end")} aria-label={`${view.score[pid]} of ${WINS_NEEDED} rounds`} role="img">
+      <div className={cn("grid gap-4", two ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-4")}>
+        {[me, ...others].map((pid) => (
+          <div key={pid} className={cn(two && pid === partner && "text-right")}>
+            <p className="truncate text-[0.85rem] font-semibold">{pid === me ? "You" : nameOf(pid)}</p>
+            <div className={cn("mt-1.5 flex gap-1.5", two && pid === partner && "justify-end")} aria-label={`${view.score[pid]} of ${WINS_NEEDED} rounds`} role="img">
               {Array.from({ length: WINS_NEEDED }, (_, i) => (
                 <span key={i} className="h-3.5 w-3.5 rounded-full border-[1.5px] border-line-strong transition-colors" style={{ background: i < view.score[pid]! ? "var(--accent)" : "transparent" }} />
               ))}
@@ -162,7 +173,7 @@ function LastRound({ r, me, names }: { r: RoundResult; me: string; names: Record
     r.reason === "replay"
       ? "Last round's a replay."
       : r.reason === "false-start"
-        ? `${who(ids.find((p) => p !== r.winner)!)} jumped early. Point to ${who(r.winner!).toLowerCase() === "you" ? "you" : who(r.winner!)}.`
+        ? `${ids.filter((p) => r.taps[p]?.kind === "early").map(who).join(" and ")} jumped early. Point to ${who(r.winner!).toLowerCase() === "you" ? "you" : who(r.winner!)}.`
         : r.reason === "no-show"
           ? `${who(r.winner!)} took it by default.`
           : `${who(r.winner!)} won it: ${ids.map((p) => `${who(p)} ${fmt(p)}`).join(" · ")}`;

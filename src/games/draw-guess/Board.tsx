@@ -3,7 +3,7 @@
 import { useCallback, useState, type FormEvent } from "react";
 import type { GameProps } from "@/games/_engine/types";
 import { Button } from "@/design/Button";
-import { Scoreline, Status, TimerBar, useCountdown, useTickAtDeadline } from "@/games/_ui";
+import { listNames, Scores, Status, TimerBar, useCountdown, useTickAtDeadline } from "@/games/_ui";
 import { cn } from "@/lib/cn";
 import { CHOOSE_MS, type DrawMove, type DrawView } from "./logic";
 import { Sketchpad } from "./Canvas";
@@ -12,9 +12,12 @@ const BANDS = ["Easy", "Medium", "Hard"];
 
 export function DrawGuessBoard({ view, me, names, sendMove, broadcast, clock, pending, sound }: GameProps<DrawView, DrawMove>) {
   const [text, setText] = useState("");
-  const partner = view.players[0] === me ? view.players[1] : view.players[0];
-  const partnerName = names[partner] ?? "Your partner";
+  const two = view.players.length === 2;
+  const nameOf = (p: string) => (p === me ? "You" : (names[p] ?? "Someone"));
+  const drawerName = nameOf(view.drawer);
   const drawing = view.drawer === me;
+  const iSolved = view.solvers.includes(me);
+  const guessers = view.players.filter((p) => p !== view.drawer);
   const left = useCountdown(view.winner ? null : view.deadline, clock);
   const total = view.phase === "choosing" ? CHOOSE_MS : view.drawMs;
 
@@ -30,11 +33,12 @@ export function DrawGuessBoard({ view, me, names, sendMove, broadcast, clock, pe
   };
 
   const last = view.history.at(-1);
+  const solvers = (r: NonNullable<typeof last>) => r.solvers ?? (r.guessed ? view.players.filter((p) => p !== r.drawer) : []);
   const lastLine = last
     ? last.guessed
-      ? `Round ${last.round}: “${last.word}”. ${last.drawer === me ? partnerName : "You"} got it (+${last.points}).`
+      ? `Round ${last.round}: “${last.word}”. ${listNames(solvers(last), names, me).replace(/^you/, "You")} got it (+${last.points}).`
       : last.passed
-        ? `Round ${last.round}: “${last.word}”. ${last.drawer === me ? "You" : partnerName} passed.`
+        ? `Round ${last.round}: “${last.word}”. ${nameOf(last.drawer)} passed.`
         : `Round ${last.round}: “${last.word}”. Time ran out.`
     : null;
 
@@ -43,22 +47,20 @@ export function DrawGuessBoard({ view, me, names, sendMove, broadcast, clock, pe
       ? "A tie. Equally talented, or equally terrible."
       : view.winner === me
         ? "You win. Gallery-worthy."
-        : `${partnerName} wins.`
+        : `${nameOf(view.winner)} wins.`
     : view.phase === "choosing"
       ? drawing
         ? "Pick something to draw."
-        : `${partnerName} is picking a word…`
+        : `${drawerName} is picking a word…`
       : drawing
         ? `Draw: ${view.word}`
-        : "What is it?";
+        : iSolved
+          ? "You got it. Waiting for the others…"
+          : "What is it?";
 
   return (
     <div className="mx-auto flex w-full max-w-[640px] flex-col gap-4">
-      <Scoreline
-        left={{ name: names[me] ?? "You", score: view.scores[me], sub: drawing ? "drawing" : "guessing" }}
-        right={{ name: partnerName, score: view.scores[partner], sub: drawing ? "guessing" : "drawing" }}
-        active={null}
-      />
+      <Scores players={view.players} me={me} names={names} scores={view.scores} active={two ? null : view.drawer} />
       <div className="flex items-center justify-between text-[0.85rem] text-muted">
         <span>
           Round {view.round} of {view.rounds}
@@ -94,20 +96,26 @@ export function DrawGuessBoard({ view, me, names, sendMove, broadcast, clock, pe
           round={view.round}
           drawing={drawing && view.phase === "drawing" && !view.winner}
           broadcast={broadcast}
-          label={drawing ? `Your canvas. Draw ${view.word ?? ""}` : `${partnerName}'s drawing`}
+          label={drawing ? `Your canvas. Draw ${view.word ?? ""}` : `${drawerName}'s drawing`}
         />
       )}
 
       {drawing && view.phase === "drawing" && !view.winner ? (
         <div className="flex items-center justify-between gap-3">
-          <p className="text-[0.88rem] text-muted">{view.guesses.length ? `${partnerName} has guessed ${view.guesses.length} times.` : `${partnerName} is staring at it.`}</p>
+          <p className="text-[0.88rem] text-muted">
+            {two
+              ? view.guesses.length
+                ? `${nameOf(guessers[0]!)} has guessed ${view.guesses.length} times.`
+                : `${nameOf(guessers[0]!)} is staring at it.`
+              : `${view.solvers.length} of ${guessers.length} have got it.`}
+          </p>
           <Button variant="ghost" size="sm" onClick={() => void sendMove({ type: "pass" })}>
             Pass
           </Button>
         </div>
       ) : null}
 
-      {!drawing && view.phase === "drawing" && !view.winner ? (
+      {!drawing && !iSolved && view.phase === "drawing" && !view.winner ? (
         <form onSubmit={guess} className="flex gap-2">
           <label htmlFor="dg-guess" className="sr-only">
             Your guess
@@ -131,9 +139,15 @@ export function DrawGuessBoard({ view, me, names, sendMove, broadcast, clock, pe
       {view.guesses.length ? (
         <ul className="flex flex-wrap gap-2" aria-label="Guesses so far">
           {view.guesses.slice(-12).map((g, i) => (
-            <li key={i} className={cn("rounded-full border px-3 py-1 text-[0.85rem]", g.close ? "border-brass bg-[color-mix(in_srgb,var(--brass)_18%,transparent)] font-semibold" : "border-line text-muted line-through")}>
-              {g.text}
-              {g.close ? " · so close" : ""}
+            <li
+              key={i}
+              className={cn(
+                "rounded-full border px-3 py-1 text-[0.85rem]",
+                g.correct ? "border-sage-ink font-semibold text-sage-ink" : g.close ? "border-brass bg-[color-mix(in_srgb,var(--brass)_18%,transparent)] font-semibold" : "border-line text-muted line-through",
+              )}
+            >
+              {g.correct ? `${nameOf(g.by!)} got it!` : `${!two && g.by ? `${nameOf(g.by)}: ` : ""}${g.text}`}
+              {g.close && !g.correct ? " · so close" : ""}
             </li>
           ))}
         </ul>

@@ -50,6 +50,25 @@ test("group games: three friends play Most Likely To and Riddles together", asyn
     const { data: done1 } = await admin.from("game_sessions").select("status, outcome").eq("id", ml).single();
     expect(done1).toMatchObject({ status: "finished", outcome: "complete" });
 
+    // Word Duel for three: Bo guesses wrong, Ada cracks it; everyone sees who won.
+    await pa.goto(`/room/${crew.id}`);
+    const wd = await startWithEveryone("word-duel");
+    const { data: wsec } = await admin.from("game_secrets").select("state").eq("session_id", wd).single();
+    const target = (wsec!.state as { target: string }).target;
+    for (const p of pages) {
+      await p.waitForLoadState("networkidle");
+      await expect(p.getByRole("button", { name: "Enter" })).toBeEnabled();
+    }
+    const typeWord = async (page: Page, w: string) => {
+      for (const ch of w) await page.keyboard.press(ch);
+      await page.keyboard.press("Enter");
+    };
+    await typeWord(pb, target === "crane" ? "slate" : "crane");
+    await expect(pa.getByText("1/6 guesses")).toBeVisible();
+    await typeWord(pa, target);
+    await expect(pa.locator("#result-title")).toHaveText("You won.");
+    await expect(pc.getByText("Ada got there first.")).toBeVisible();
+
     // Riddles for three: the answer waits until all three have picked.
     await pa.goto(`/room/${crew.id}`);
     const rid = await startWithEveryone("riddles");

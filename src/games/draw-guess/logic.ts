@@ -1,5 +1,6 @@
 import { z } from "zod";
-import type { GameLogic, Outcome, PlayerId, Players } from "@/games/_engine/types";
+import type { GameLogic, Outcome, PlayerId, PlayerList } from "@/games/_engine/types";
+import { topOf } from "@/games/quiz/logic";
 import { makeRng } from "@/games/_engine/rng";
 import { DRAW_WORDS } from "@/content/draw-words";
 
@@ -13,23 +14,26 @@ export const drawConfigSchema = z.object({
 });
 export type DrawConfig = z.input<typeof drawConfigSchema>;
 
-export type GuessEntry = { text: string; close: boolean };
-export type RoundRecord = { round: number; drawer: PlayerId; word: string; guessed: boolean; points: number; passed?: boolean };
+/** `by` is who guessed (groups). A right guess is shown as `correct` with its text hidden from the others. */
+export type GuessEntry = { text: string; close: boolean; by?: PlayerId; correct?: boolean };
+export type RoundRecord = { round: number; drawer: PlayerId; word: string; guessed: boolean; points: number; passed?: boolean; solvers?: PlayerId[] };
 
 export type DrawState = {
-  players: Players;
+  players: PlayerList;
   seed: string;
   rngCursor: number;
   rounds: number;
   drawMs: number;
   round: number;
-  firstDrawer: 0 | 1;
+  firstDrawer: number;
   phase: "choosing" | "drawing";
   options: string[];
   word: string | null;
   deadline: number;
   startedAt: number | null;
   guesses: GuessEntry[];
+  /** Groups: who has guessed it this round, and what they scored. */
+  solved?: { by: PlayerId; points: number }[];
   scores: Record<PlayerId, number>;
   history: RoundRecord[];
   winner: PlayerId | "tie" | null;
@@ -42,7 +46,7 @@ export type DrawMove =
   | { type: "tick" };
 
 export type DrawView = {
-  players: Players;
+  players: PlayerList;
   me: PlayerId;
   drawer: PlayerId;
   round: number;
@@ -56,6 +60,8 @@ export type DrawView = {
   deadline: number;
   drawMs: number;
   guesses: GuessEntry[];
+  /** Who has already guessed it this round. */
+  solvers: PlayerId[];
   scores: Record<PlayerId, number>;
   history: RoundRecord[];
   winner: PlayerId | "tie" | null;
@@ -99,7 +105,10 @@ export function nearlyEqual(a: string, b: string): boolean {
 }
 
 export const drawerOf = (s: Pick<DrawState, "players" | "firstDrawer" | "round">): PlayerId =>
-  s.players[((s.firstDrawer + s.round - 1) % 2) as 0 | 1];
+  s.players[(s.firstDrawer + s.round - 1) % s.players.length]!;
+
+/** Rounds for a group: everyone draws twice (up to 5 players), or once (6 or more). */
+export const groupRounds = (n: number) => (n <= 5 ? n * 2 : n);
 
 function dealOptions(s: DrawState): { options: string[]; rngCursor: number } {
   const rng = makeRng(s.seed, s.rngCursor);
@@ -114,52 +123,56 @@ function dealOptions(s: DrawState): { options: string[]; rngCursor: number } {
   return { options: [pick(DRAW_WORDS.easy), pick(DRAW_WORDS.medium), pick(DRAW_WORDS.hard)], rngCursor: rng.cursor() };
 }
 
-function endRound(s: DrawState, now: number, result: { guessed: boolean; guesserPoints: number; passed?: boolean }): DrawState {
+/** Ends the round: every right guesser keeps their points, and the drawer scores if anyone got it. */
+function endRound(s: DrawState, now: number, result: { passed?: boolean } = {}): DrawState {
   const drawer = drawerOf(s);
-  const guesser = s.players[0] === drawer ? s.players[1] : s.players[0];
+  const solved = s.solved ?? [];
   const scores = { ...s.scores };
-  if (result.guessed) {
-    scores[guesser] = scores[guesser]! + result.guesserPoints;
-    scores[drawer] = scores[drawer]! + DRAWER_POINTS;
-  }
+  for (const g of solved) scores[g.by] = scores[g.by]! + g.points;
+  if (solved.length) scores[drawer] = scores[drawer]! + DRAWER_POINTS;
   const history = [
     ...s.history,
-    { round: s.round, drawer, word: s.word!, guessed: result.guessed, points: result.guessed ? result.guesserPoints : 0, ...(result.passed ? { passed: true } : {}) },
+    {
+      round: s.round,
+      drawer,
+      word: s.word!,
+      guessed: solved.length > 0,
+      points: solved.reduce((n, g) => n + g.points, 0),
+      solvers: solved.map((g) => g.by),
+      ...(result.passed ? { passed: true } : {}),
+    },
   ];
-  if (s.round >= s.rounds) {
-    const [a, b] = s.players;
-    return { ...s, scores, history, winner: scores[a] === scores[b] ? "tie" : scores[a]! > scores[b]! ? a : b };
-  }
-  const next: DrawState = { ...s, scores, history, round: s.round + 1, phase: "choosing", word: null, guesses: [], startedAt: null, deadline: now + CHOOSE_MS };
+  if (s.round >= s.rounds) return { ...s, scores, history, solved: [], winner: topOf(scores) };
+  const next: DrawState = { ...s, scores, history, solved: [], round: s.round + 1, phase: "choosing", word: null, guesses: [], startedAt: null, deadline: now + CHOOSE_MS };
   return { ...next, ...dealOptions(next) };
 }
 
-export const drawGuess: GameLogic<DrawState, DrawMove, DrawView, DrawConfig> = {
+export const drawGuess: GameLogic<DrawState, DrawMove, DrawView, DrawConfig, PlayerList> = {
   id: "draw-guess",
   category: "competitive",
   minPlayers: 2,
-  maxPlayers: 2,
+  maxPlayers: 8,
   estimatedMinutes: 10,
   moveSchema,
   configSchema: drawConfigSchema as unknown as z.ZodType<DrawConfig>,
   rules: {
-    summary: "Take turns drawing a secret word while your partner races the clock to guess it.",
+    summary: "Take turns drawing a secret word while everyone else races the clock to guess it.",
     sections: [
       { title: "Drawing", body: ["Pick one of three words: easy, medium or hard. Then draw it. No letters, no numbers, no cheating."] },
       { title: "Guessing", body: ["Type as many guesses as you like. We'll tell you when you're one letter off."] },
-      { title: "Points", body: ["The faster the right guess, the more the guesser scores (up to 300).", "The artist gets 100 for being understood. Bad art costs both of you."] },
+      { title: "Points", body: ["The faster the right guess, the more the guesser scores (up to 300). In a group, everyone who gets it scores.", "The artist gets 100 for being understood. Bad art costs everyone."] },
     ],
   },
 
   initialState(seed, players, config, ctx) {
     const cfg = drawConfigSchema.parse(config);
     const rng = makeRng(seed);
-    const first = cfg.firstPlayer ?? (rng.int(2) as 0 | 1);
+    const first = players.length === 2 ? (cfg.firstPlayer ?? rng.int(2)) : rng.int(players.length);
     const base: DrawState = {
-      players,
+      players: [...players],
       seed,
       rngCursor: rng.cursor(),
-      rounds: cfg.rounds,
+      rounds: players.length === 2 ? cfg.rounds : groupRounds(players.length),
       drawMs: cfg.drawSeconds * 1000,
       round: 1,
       firstDrawer: first,
@@ -169,7 +182,8 @@ export const drawGuess: GameLogic<DrawState, DrawMove, DrawView, DrawConfig> = {
       deadline: ctx.now + CHOOSE_MS,
       startedAt: null,
       guesses: [],
-      scores: { [players[0]]: 0, [players[1]]: 0 },
+      solved: [],
+      scores: Object.fromEntries(players.map((p) => [p, 0])),
       history: [],
       winner: null,
     };
@@ -185,30 +199,33 @@ export const drawGuess: GameLogic<DrawState, DrawMove, DrawView, DrawConfig> = {
       case "pass":
         return s.phase === "drawing" && by === drawer;
       case "guess":
-        return s.phase === "drawing" && by !== drawer && ctx.now <= s.deadline + 1500 && s.guesses.length < 60;
+        return s.phase === "drawing" && by !== drawer && !(s.solved ?? []).some((g) => g.by === by) && ctx.now <= s.deadline + 1500 && s.guesses.length < 120;
       case "tick":
         return ctx.now >= s.deadline;
     }
   },
 
-  applyMove(s, move, _by, ctx) {
+  applyMove(s, move, by, ctx) {
     switch (move.type) {
       case "choose":
         return { ...s, phase: "drawing", word: s.options[move.index]!, options: [], startedAt: ctx.now, deadline: ctx.now + s.drawMs };
       case "pass":
-        return endRound(s, ctx.now, { guessed: false, guesserPoints: 0, passed: true });
+        return endRound(s, ctx.now, { passed: true });
       case "tick":
         // Out of time picking: we pick the easy one for you. Out of time drawing: round over.
         if (s.phase === "choosing") return { ...s, phase: "drawing", word: s.options[0]!, options: [], startedAt: ctx.now, deadline: ctx.now + s.drawMs };
-        return endRound(s, ctx.now, { guessed: false, guesserPoints: 0 });
+        return endRound(s, ctx.now);
       case "guess": {
         const g = normalise(move.text);
         const target = normalise(s.word!);
         if (g === target || g === `${target}s` || `${g}s` === target) {
           const left = Math.max(0, s.deadline - ctx.now);
-          return endRound(s, ctx.now, { guessed: true, guesserPoints: 100 + Math.round((left / s.drawMs) * 200) });
+          const solved = [...(s.solved ?? []), { by, points: 100 + Math.round((left / s.drawMs) * 200) }];
+          const next = { ...s, solved, guesses: [...s.guesses, { text: "", close: false, by, correct: true }] };
+          // The round ends once every guesser has it.
+          return solved.length >= s.players.length - 1 ? endRound(next, ctx.now) : next;
         }
-        return { ...s, guesses: [...s.guesses, { text: move.text.slice(0, 40), close: nearlyEqual(g, target) }] };
+        return { ...s, guesses: [...s.guesses, { text: move.text.slice(0, 40), close: nearlyEqual(g, target), by }] };
       }
     }
   },
@@ -233,6 +250,7 @@ export const drawGuess: GameLogic<DrawState, DrawMove, DrawView, DrawConfig> = {
       deadline: s.deadline,
       drawMs: s.drawMs,
       guesses: s.guesses,
+      solvers: (s.solved ?? []).map((g) => g.by),
       scores: s.scores,
       history: s.history,
       winner: s.winner,

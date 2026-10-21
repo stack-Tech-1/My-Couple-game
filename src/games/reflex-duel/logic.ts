@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { GameLogic, Outcome, PlayerId, Players } from "@/games/_engine/types";
+import type { GameLogic, Outcome, PlayerId, PlayerList } from "@/games/_engine/types";
 import { makeRng } from "@/games/_engine/rng";
 
 export const WINS_NEEDED = 4; // best of 7
@@ -17,7 +17,7 @@ export type RoundResult = {
 };
 
 export type ReflexState = {
-  players: Players;
+  players: PlayerList;
   seed: string;
   rngCursor: number;
   phase: "lobby" | "armed";
@@ -53,40 +53,57 @@ function resolve(s: ReflexState, now: number, result: Omit<RoundResult, "n" | "t
   if (result.winner) score[result.winner] = score[result.winner]! + 1;
   const results = [...s.results, { ...result, n: s.round, taps: s.taps }].slice(-12);
   const champion = s.players.find((p) => score[p]! >= WINS_NEEDED) ?? null;
-  const empty = { [s.players[0]]: null, [s.players[1]]: null };
+  const empty = Object.fromEntries(s.players.map((p) => [p, null]));
   if (champion) return { ...s, score, results, winner: champion, goAt: null, taps: empty };
   const { goAt, rngCursor } = nextGoAt(s, now, 1800);
   return { ...s, score, results, round: s.round + 1, goAt, rngCursor, taps: empty };
 }
 
-export const reflexDuel: GameLogic<ReflexState, ReflexMove, ReflexView> = {
+/**
+ * Settles the round once nobody else can change it. Two players: a false start hands the point over
+ * at once. Groups: a false start knocks you out of the round; the fastest clean tap wins once every
+ * clean player has tapped, or the last one standing wins if everyone else jumped.
+ */
+function settle(s: ReflexState, now: number): ReflexState {
+  const early = s.players.filter((p) => s.taps[p]?.kind === "early");
+  const clean = s.players.filter((p) => s.taps[p]?.kind !== "early");
+  if (!clean.length) return resolve(s, now, { winner: null, reason: "replay" });
+  if (clean.length === 1 && early.length) return resolve(s, now, { winner: clean[0]!, reason: "false-start" });
+  if (!clean.every((p) => s.taps[p])) return s;
+  const times = clean.map((p) => ({ p, ms: (s.taps[p] as { ms: number }).ms }));
+  const best = Math.min(...times.map((t) => t.ms));
+  const fastest = times.filter((t) => t.ms === best);
+  return resolve(s, now, fastest.length === 1 ? { winner: fastest[0]!.p, reason: "faster" } : { winner: null, reason: "replay" });
+}
+
+export const reflexDuel: GameLogic<ReflexState, ReflexMove, ReflexView, Record<string, never>, PlayerList> = {
   id: "reflex-duel",
   category: "competitive",
   minPlayers: 2,
-  maxPlayers: 2,
+  maxPlayers: 8,
   estimatedMinutes: 3,
   moveSchema,
   rules: {
     summary: "Wait for the screen to change, then tap. Fastest finger takes the round. First to four wins.",
     sections: [
       { title: "Each round", body: ["The screen holds dark for a random few seconds. When it flashes, tap anywhere (or hit space).", "Your time is measured on your own phone, so a slow connection won't cost you."] },
-      { title: "False starts", body: ["Tap before the flash and your partner takes the point. Both jump the gun? Replay."] },
+      { title: "False starts", body: ["Tap before the flash and you're out of the round. Two players: your opponent takes the point. Everyone jumps the gun? Replay."] },
       { title: "Winning", body: ["Best of seven: first to four rounds."] },
     ],
   },
 
   initialState(seed, players) {
-    const empty = { [players[0]]: null, [players[1]]: null };
+    const each = <T,>(v: T) => Object.fromEntries(players.map((p) => [p, v])) as Record<PlayerId, T>;
     return {
-      players,
+      players: [...players],
       seed,
       rngCursor: 0,
       phase: "lobby",
-      ready: { [players[0]]: false, [players[1]]: false },
+      ready: each(false),
       round: 1,
       goAt: null,
-      taps: empty,
-      score: { [players[0]]: 0, [players[1]]: 0 },
+      taps: each<Tap | null>(null),
+      score: each(0),
       results: [],
       winner: null,
     };
@@ -108,27 +125,20 @@ export const reflexDuel: GameLogic<ReflexState, ReflexMove, ReflexView> = {
       return { ...s, ready, phase: "armed", goAt, rngCursor };
     }
 
-    const opp = s.players[0] === by ? s.players[1] : s.players[0];
-
     if (move.type === "tick") {
+      // Time's up: anyone who hasn't tapped is out of this round.
       const tapped = s.players.filter((p) => s.taps[p]?.kind === "tap");
-      return resolve(s, ctx.now, tapped.length === 1 ? { winner: tapped[0]!, reason: "no-show" } : { winner: null, reason: "replay" });
+      if (!tapped.length) return resolve(s, ctx.now, { winner: null, reason: "replay" });
+      const times = tapped.map((p) => ({ p, ms: (s.taps[p] as { ms: number }).ms }));
+      const best = Math.min(...times.map((t) => t.ms));
+      const fastest = times.filter((t) => t.ms === best);
+      return resolve(s, ctx.now, fastest.length === 1 ? { winner: fastest[0]!.p, reason: tapped.length === 1 ? "no-show" : "faster" } : { winner: null, reason: "replay" });
     }
 
     // A tap. The server's own clock decides gross false starts; the client's flag covers the rest.
     const early = move.ms === null || ctx.now < s.goAt! - EARLY_GRACE_MS || move.ms < MIN_HUMAN_MS;
     const tap: Tap = early ? { kind: "early" } : { kind: "tap", ms: Math.round(Math.min(move.ms!, MAX_MS)) };
-    const next = { ...s, taps: { ...s.taps, [by]: tap } };
-
-    if (tap.kind === "early") {
-      // A false start ends the round at once, unless the partner already false-started too.
-      return resolve(next, ctx.now, s.taps[opp]?.kind === "early" ? { winner: null, reason: "replay" } : { winner: opp, reason: "false-start" });
-    }
-    const other = s.taps[opp];
-    if (!other) return next;
-    if (other.kind === "early") return next; // already resolved; unreachable in practice
-    if (other.ms === tap.ms) return resolve(next, ctx.now, { winner: null, reason: "replay" });
-    return resolve(next, ctx.now, { winner: tap.ms < other.ms ? by : opp, reason: "faster" });
+    return settle({ ...s, taps: { ...s.taps, [by]: tap } }, ctx.now);
   },
 
   isOver(s): Outcome {

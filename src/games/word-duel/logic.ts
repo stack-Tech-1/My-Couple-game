@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { GameLogic, Outcome, PlayerId, Players } from "@/games/_engine/types";
+import type { GameLogic, Outcome, PlayerId, PlayerList } from "@/games/_engine/types";
 import { makeRng } from "@/games/_engine/rng";
 import { ANSWERS } from "@/content/words/answers5";
 import { PACKED } from "@/content/words/valid5";
@@ -40,7 +40,7 @@ export function mark(guess: string, target: string): Mark[] {
 }
 
 export type WordDuelState = {
-  players: Players;
+  players: PlayerList;
   target: string;
   guesses: Record<PlayerId, Guess[]>;
   winner: PlayerId | "tie" | null;
@@ -49,12 +49,11 @@ export type WordDuelState = {
 export type WordDuelMove = { guess: string };
 
 export type WordDuelView = {
-  players: Players;
+  players: PlayerList;
   me: PlayerId;
   mine: Guess[];
-  /** Your partner's board: colours only, never letters. */
-  theirs: Mark[][];
-  theirsSolved: boolean;
+  /** Everyone else's boards: colours only, never letters. */
+  others: { player: PlayerId; marks: Mark[][]; solved: boolean }[];
   winner: PlayerId | "tie" | null;
   /** Revealed only once the game is over. */
   target: string | null;
@@ -71,24 +70,24 @@ const moveSchema = z.object({
 const solved = (gs: Guess[]) => gs.some((g) => g.marks.every((m) => m === "g"));
 const done = (gs: Guess[]) => solved(gs) || gs.length >= MAX_GUESSES;
 
-export const wordDuel: GameLogic<WordDuelState, WordDuelMove, WordDuelView> = {
+export const wordDuel: GameLogic<WordDuelState, WordDuelMove, WordDuelView, Record<string, never>, PlayerList> = {
   id: "word-duel",
   category: "competitive",
   minPlayers: 2,
-  maxPlayers: 2,
+  maxPlayers: 8,
   estimatedMinutes: 5,
   moveSchema,
   rules: {
-    summary: "Same secret five-letter word, two boards, six guesses each. First to crack it wins.",
+    summary: "Same secret five-letter word, six guesses each. First to crack it wins.",
     sections: [
       { title: "Guessing", body: ["Type any real five-letter word.", "Green: right letter, right spot. Gold: in the word, wrong spot. Grey: not in it."] },
-      { title: "The race", body: ["You can see your partner's colours as they go, but never their letters.", "The first to solve it wins. If you both run out of guesses, it's a tie."] },
+      { title: "The race", body: ["You can see everyone else's colours as they go, but never their letters.", "The first to solve it wins. If everyone runs out of guesses, it's a tie."] },
     ],
   },
 
   initialState(seed, players) {
     const rng = makeRng(seed);
-    return { players, target: ANSWERS[rng.int(ANSWERS.length)]!, guesses: { [players[0]]: [], [players[1]]: [] }, winner: null };
+    return { players: [...players], target: ANSWERS[rng.int(ANSWERS.length)]!, guesses: Object.fromEntries(players.map((p) => [p, []])), winner: null };
   },
 
   validateMove(s, move, by) {
@@ -112,13 +111,11 @@ export const wordDuel: GameLogic<WordDuelState, WordDuelMove, WordDuelView> = {
   },
 
   viewFor(s, player) {
-    const opp = s.players[0] === player ? s.players[1] : s.players[0];
     return {
       players: s.players,
       me: player,
       mine: s.guesses[player] ?? [],
-      theirs: (s.guesses[opp] ?? []).map((g) => g.marks),
-      theirsSolved: solved(s.guesses[opp] ?? []),
+      others: s.players.filter((p) => p !== player).map((p) => ({ player: p, marks: (s.guesses[p] ?? []).map((g) => g.marks), solved: solved(s.guesses[p] ?? []) })),
       winner: s.winner,
       target: s.winner ? s.target : null,
     };
