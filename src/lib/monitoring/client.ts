@@ -1,14 +1,16 @@
 "use client";
 
 /**
- * Browser error tracking. The SDK is fetched only after the page has loaded, and only when a DSN
- * is configured, so nobody downloads it on the landing page's critical path.
+ * Browser error tracking. The SDK is fetched only after the page has loaded, and only on the live
+ * site, so nobody downloads it on the landing page's critical path.
  */
+import { SENTRY_ON } from "./config";
+
 type SentryModule = typeof import("@sentry/nextjs");
 let ready: Promise<SentryModule | null> | null = null;
 
 export function loadSentry(): Promise<SentryModule | null> {
-  if (!process.env.NEXT_PUBLIC_SENTRY_DSN) return Promise.resolve(null);
+  if (!SENTRY_ON) return Promise.resolve(null);
   ready ??= Promise.all([import("@sentry/nextjs"), import("./scrub")])
     .then(([Sentry, { baseOptions }]) => {
       Sentry.init(baseOptions);

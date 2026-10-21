@@ -151,7 +151,7 @@ export default function Privacy() {
           <tr>
             <td>Sentry</td>
             <td>Error reports, so we can fix problems</td>
-            <td>United States</td>
+            <td>Germany (EU)</td>
           </tr>
           <tr>
             <td>Your browser&apos;s push service (Google, Apple, Mozilla or Microsoft)</td>
@@ -167,7 +167,7 @@ export default function Privacy() {
 
       <h2>7. International transfers</h2>
       <p>
-        Our providers store and process data outside Nigeria, mainly in the European Union and the United States. Under the NDPA (Part VIII), we only transfer
+        Our providers store and process data outside Nigeria, mainly in the European Union, and in some cases the United States. Under the NDPA (Part VIII), we only transfer
         personal data abroad where the destination provides adequate protection or where appropriate safeguards are in place. These include our providers&apos;
         data processing agreements and standard contractual clauses, together with their security certifications. You can ask us for more detail at {mail}.
       </p>

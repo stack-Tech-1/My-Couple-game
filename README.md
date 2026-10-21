@@ -117,7 +117,7 @@ migrations.
 | `SMTP_USER`, `SMTP_PASS` | optional, **server only** | Turn on announcement emails. With Gmail: the address and a 16-character App Password. |
 | `SMTP_HOST`, `SMTP_PORT`, `EMAIL_FROM` | optional | Another SMTP provider (defaults `smtp.gmail.com`, `465`) and the From line. |
 | `EMAIL_LINK_SECRET` | optional, server only | Signs unsubscribe links. Defaults to the service role key; set it if you ever rotate that key and want old links to keep working. |
-| `NEXT_PUBLIC_SENTRY_DSN` | optional | Turns on error tracking (Sentry). Safe to expose. Off when empty. |
+| `NEXT_PUBLIC_SENTRY_DSN` | optional | Use a different Sentry project (the default is built in, `src/lib/monitoring/config.ts`). Error tracking runs on the live site only; `NEXT_PUBLIC_SENTRY_ENABLED=1` forces it on elsewhere. |
 
 `.env.local` is git-ignored. **Never put real keys in `.env.example`**: it is committed.
 
@@ -425,7 +425,7 @@ their room.
 - **Google OAuth.** Configure it if you want it; the button works once the provider is enabled.
 - **Analytics.** Choose whether to enable it; it only ever sends event names, never content.
 - **Age.** Amah is 18+ for everyone: confirmed at onboarding and stored with the Terms version.
-- **Error tracking.** Set `NEXT_PUBLIC_SENTRY_DSN` (Sentry → Settings → Projects → Client Keys).
+- **Error tracking.** Sentry (EU region) is on for the live site; the project's DSN is in `src/lib/monitoring/config.ts`.
   Reports are scrubbed of emails, IPs, tokens and typed text before they leave the device.
 - **Fonts.** Fraunces and Manrope are bundled under the SIL Open Font License; see
   `public/fonts/NOTICE.txt`.

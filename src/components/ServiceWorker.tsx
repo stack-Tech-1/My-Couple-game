@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { loadSentry } from "@/lib/monitoring/client";
+import { SENTRY_ON } from "@/lib/monitoring/config";
 
 /** Registers the service worker in production builds only (dev caching would just get in the way). */
 export function ServiceWorker() {
@@ -19,7 +20,7 @@ export function ServiceWorker() {
 
   // Error tracking starts once the page is idle (and only if configured), off the critical path.
   useEffect(() => {
-    if (!process.env.NEXT_PUBLIC_SENTRY_DSN) return;
+    if (!SENTRY_ON) return;
     const start = () => void loadSentry();
     const ric = (window as Window & { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback;
     if (ric) ric(start);

@@ -1,4 +1,5 @@
 import type { ErrorEvent, EventHint } from "@sentry/nextjs";
+import { SENTRY_DSN, SENTRY_ON } from "./config";
 
 /**
  * Error reports must not carry personal data (see the Privacy Policy): no emails, no IPs, no
@@ -27,10 +28,10 @@ export function scrubEvent(event: ErrorEvent, _hint?: EventHint): ErrorEvent | n
   return event;
 }
 
-export const SENTRY_DSN = process.env.NEXT_PUBLIC_SENTRY_DSN;
+
 export const baseOptions = {
   dsn: SENTRY_DSN,
-  enabled: !!SENTRY_DSN,
+  enabled: SENTRY_ON,
   environment: process.env.AMAH_ENV || process.env.VERCEL_ENV || process.env.NODE_ENV,
   sendDefaultPii: false,
   // Errors only: no performance tracing or session replay (keeps it free-tier friendly and light).
