@@ -60,9 +60,9 @@ describe("errors and catalog", () => {
     expect(friendlyError(new Error("room is full"))).toMatch(/crowd/);
     expect(friendlyError(new Error("???"))).toMatch(/sideways/);
   });
-  it("ships all 27 games with unique ids in known categories", () => {
-    expect(GAMES).toHaveLength(27);
-    expect(new Set(GAMES.map((g) => g.id)).size).toBe(27);
+  it("ships all 31 games with unique ids in known categories", () => {
+    expect(GAMES).toHaveLength(31);
+    expect(new Set(GAMES.map((g) => g.id)).size).toBe(31);
     for (const g of GAMES) expect(CATEGORIES[g.category]).toBeDefined();
   });
 });

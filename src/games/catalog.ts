@@ -75,6 +75,10 @@ export const GAMES: GameMeta[] = [
   { id: "reflex-duel", name: "Reflex Duel", category: "competitive", estimatedMinutes: 3, scored: true, tagline: "Wait for it. Wait for it. Don't." },
   { id: "connect-four", name: "Connect Four", category: "competitive", estimatedMinutes: 6, scored: true, tagline: "Four in a row, and a lifetime of grudges." },
   { id: "draw-guess", name: "Draw & Guess", category: "competitive", estimatedMinutes: 10, scored: true, tagline: "It's a horse. Obviously it's a horse." },
+  { id: "riddles", name: "Riddle Me This", category: "competitive", estimatedMinutes: 6, scored: true, tagline: "Simple words, twisted answers. Get your mind out of the gutter." },
+  { id: "naija-trivia", name: "Naija Trivia", category: "competitive", estimatedMinutes: 6, scored: true, tagline: "Festivals, places, books and history. How Naija are you?" },
+  { id: "pidgin-palava", name: "Pidgin Palava", category: "competitive", estimatedMinutes: 4, scored: true, tagline: "Wetin e mean? Prove say you sabi." },
+  { id: "emoji-guess", name: "Emoji Guess", category: "competitive", estimatedMinutes: 5, scored: true, tagline: "Afrobeats hits and Nollywood favourites, in emoji." },
   // Co-op
   { id: "split-clues", name: "Split Clues", category: "coop", estimatedMinutes: 15, scored: true, tagline: "You each hold half the answer. Talk it out." },
   { id: "in-sync", name: "In Sync", category: "coop", estimatedMinutes: 5, scored: true, tagline: "Say the same word at the same time. Eventually." },

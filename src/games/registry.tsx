@@ -21,6 +21,7 @@ import { StoryChainBoard } from "./story-chain/Board";
 import { DeepQuestionsBoard } from "./deep-questions/Board";
 import { ComplimentBattleBoard } from "./compliment-battle/Board";
 import { TruthOrDareBoard, SpicyDiceBoard, HotSeatBoard, NeverHaveIBoard } from "./after-dark/Boards";
+import { QuizBoard } from "./quiz/Board";
 
 /**
  * Client registry: game id -> component. Logic comes from the server-safe
@@ -49,6 +50,10 @@ const components: Record<string, ComponentType<GameProps<any, any>>> = {
   "spicy-dice": SpicyDiceBoard,
   "hot-seat": HotSeatBoard,
   "never-have-i": NeverHaveIBoard,
+  riddles: QuizBoard,
+  "naija-trivia": QuizBoard,
+  "pidgin-palava": QuizBoard,
+  "emoji-guess": QuizBoard,
 };
 
 export function gameComponent(id: string) {

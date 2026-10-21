@@ -140,6 +140,43 @@ const art: Record<string, (a: string) => ReactNode> = {
       <path d="M72 18h16M80 18v8" {...S} />
     </>
   ),
+  riddles: (a) => (
+    <>
+      <path d="M62 40c0-12 8-18 18-18s18 6 18 16c0 12-18 14-18 26v4" {...S} strokeWidth={3} />
+      <circle cx="80" cy="84" r="4" fill="currentColor" />
+      <path d="M108 22l4 8 8 4-8 4-4 8-4-8-8-4 8-4z" fill={a} />
+      <path d="M40 60l3 6 6 3-6 3-3 6-3-6-6-3 6-3z" fill={a} opacity=".8" />
+    </>
+  ),
+  "naija-trivia": (a) => (
+    <>
+      <rect x="34" y="24" width="30" height="62" fill={a} />
+      <rect x="64" y="24" width="30" height="62" {...S} />
+      <rect x="94" y="24" width="30" height="62" fill={a} />
+      <rect x="34" y="24" width="90" height="62" {...S} />
+      <circle cx="79" cy="55" r="11" {...S} fill="var(--bg-raised)" />
+      <text x="74.5" y="60" fontSize="13" fontWeight="800" fill="currentColor">?</text>
+    </>
+  ),
+  "pidgin-palava": (a) => (
+    <>
+      <path d="M28 30h56v34H54l-12 10V64H28z" {...S} />
+      <path d="M132 46H82v32h30l12 10V78h8z" {...S} fill={a} />
+      <path d="M40 44h32M40 52h20" {...S} strokeWidth={1.6} />
+      <text x="94" y="68" fontSize="12" fontWeight="800" fill="var(--bg-raised)">abeg</text>
+    </>
+  ),
+  "emoji-guess": (a) => (
+    <>
+      <circle cx="58" cy="54" r="24" {...S} fill={a} />
+      <circle cx="50" cy="48" r="3" fill="currentColor" />
+      <circle cx="66" cy="48" r="3" fill="currentColor" />
+      <path d="M46 60c6 8 18 8 24 0" {...S} />
+      <path d="M100 74V34l26-6v40" {...S} />
+      <circle cx="94" cy="76" r="7" {...S} />
+      <circle cx="120" cy="70" r="7" {...S} />
+    </>
+  ),
   "how-well": (a) => (
     <>
       <circle cx="62" cy="54" r="26" {...S} />
