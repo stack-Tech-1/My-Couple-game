@@ -148,7 +148,7 @@ export function GameHost({ initial }: { initial: SessionSnapshot }) {
     lastStatus.current = session.status;
   }, [session.status, session.winner, me, sound]);
 
-  const sendMove = useCallback(
+  const submitMove = useCallback(
     async (move: unknown, opts?: { silent?: boolean }) => {
       const s = store.getState();
       if (s.session.status !== "active") return;
@@ -177,6 +177,17 @@ export function GameHost({ initial }: { initial: SessionSnapshot }) {
       }
     },
     [sessionId, store, resync, send, sample],
+  );
+  // The player has already been told (a toast) when a move fails, and boards that need to react
+  // catch it themselves. Marking the promise handled stops a dropped connection from being reported
+  // to error tracking as an unhandled error; callers that await it still get the rejection.
+  const sendMove = useCallback(
+    (move: unknown, opts?: { silent?: boolean }) => {
+      const p = submitMove(move, opts);
+      p.catch(() => {});
+      return p;
+    },
+    [submitMove],
   );
 
   // Belt and braces: the partner's "moved" ping triggers a refetch if Postgres Changes lagged.
