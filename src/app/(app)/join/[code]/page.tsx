@@ -39,7 +39,7 @@ export default async function JoinPage({ params }: { params: Promise<{ code: str
       <>
         <h1 className="display text-[clamp(2.6rem,9vw,4rem)]">You&apos;re already in.</h1>
         <p className="mt-4 text-muted">You&apos;re a member of <b className="text-fg">{invite.room_name}</b>.</p>
-        <Link href={`/room/${invite.room_id}`} className={button}>Go to the room</Link>
+        <Link prefetch={false} href={`/room/${invite.room_id}`} className={button}>Go to the room</Link>
       </>
     );
   } else if (invite.kind === "couple" && couple) {
@@ -49,7 +49,7 @@ export default async function JoinPage({ params }: { params: Promise<{ code: str
         <p className="mt-4 text-muted">
           You&apos;re in <b className="text-fg">{couple.name}</b>, and you can only be in one couple room at a time. To join {invite.inviter_name || "this room"}, leave your current couple room first from its settings.
         </p>
-        <Link href={`/room/${couple.id}`} className={button}>Back to my room</Link>
+        <Link prefetch={false} href={`/room/${couple.id}`} className={button}>Back to my room</Link>
       </>
     );
   } else if (invite.kind === "friends" && friendRooms >= MAX_FRIEND_ROOMS) {
@@ -57,7 +57,7 @@ export default async function JoinPage({ params }: { params: Promise<{ code: str
       <>
         <h1 className="display text-[clamp(2.6rem,9vw,4rem)]">Your hands are full.</h1>
         <p className="mt-4 text-muted">You&apos;re in {MAX_FRIEND_ROOMS} friend rooms already, which is the most. Leave one from its settings to make space for {invite.room_name}.</p>
-        <Link href="/room" className={button}>Back to my rooms</Link>
+        <Link prefetch={false} href="/room" className={button}>Back to my rooms</Link>
       </>
     );
   } else if (invite.is_full) {
@@ -87,7 +87,7 @@ export default async function JoinPage({ params }: { params: Promise<{ code: str
   return (
     <div className="mx-auto flex min-h-dvh max-w-xl flex-col px-4 py-5 sm:px-8">
       <div className="flex items-center justify-between">
-        <Link href="/"><Logo /></Link>
+        <Link prefetch={false} href="/"><Logo /></Link>
         <ThemeToggle />
       </div>
       <div className="flex flex-1 flex-col justify-center py-12">{body}</div>

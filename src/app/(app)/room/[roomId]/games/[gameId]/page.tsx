@@ -36,7 +36,7 @@ export default async function GamePage({ params }: { params: Promise<{ roomId: s
         <Icon name="moon" size={30} className="mx-auto text-muted" />
         <h1 className="display mt-4 text-[2.4rem]">{game.name} is taking a break.</h1>
         <p className="mt-3 text-muted">We&apos;re giving it some attention behind the scenes. Everything else is open.</p>
-        <Link href={game.category === "spicy" ? `/room/${roomId}/after-dark` : `/room/${roomId}`} className="mt-8 inline-flex h-11 items-center gap-2 rounded-full border-[1.5px] border-line-strong px-5 font-semibold hover:bg-fg hover:text-bg">
+        <Link prefetch={false} href={game.category === "spicy" ? `/room/${roomId}/after-dark` : `/room/${roomId}`} className="mt-8 inline-flex h-11 items-center gap-2 rounded-full border-[1.5px] border-line-strong px-5 font-semibold hover:bg-fg hover:text-bg">
           <Icon name="arrowLeft" size={18} /> Back
         </Link>
       </div>
@@ -51,7 +51,7 @@ export default async function GamePage({ params }: { params: Promise<{ roomId: s
     return (
       <AfterDarkShell hasPin={ad.me.hasPin}>
         <div className="@container mx-auto max-w-3xl pt-8">
-          <Link href={`/room/${roomId}/after-dark`} className="inline-flex items-center gap-1.5 text-[0.9rem] font-semibold text-muted hover:text-fg">
+          <Link prefetch={false} href={`/room/${roomId}/after-dark`} className="inline-flex items-center gap-1.5 text-[0.9rem] font-semibold text-muted hover:text-fg">
             <Icon name="arrowLeft" size={16} /> After dark
           </Link>
           <h1 className="display mt-6 text-[clamp(2.4rem,8vw,3.6rem)]">{game.name}</h1>
@@ -80,7 +80,7 @@ export default async function GamePage({ params }: { params: Promise<{ roomId: s
 
   return (
     <div className="pt-8">
-      <Link href={`/room/${roomId}`} className="inline-flex items-center gap-1.5 text-[0.9rem] font-semibold text-muted hover:text-fg">
+      <Link prefetch={false} href={`/room/${roomId}`} className="inline-flex items-center gap-1.5 text-[0.9rem] font-semibold text-muted hover:text-fg">
         <Icon name="arrowLeft" size={16} /> Library
       </Link>
       <div className="mt-8 grid items-center gap-10 md:grid-cols-[1fr_1fr]">

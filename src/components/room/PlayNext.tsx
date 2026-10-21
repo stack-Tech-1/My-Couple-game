@@ -37,7 +37,7 @@ export function PlayNext() {
           <h3 className="display text-[2.2rem]">{game.name}</h3>
           <p className="mt-1 text-muted">{game.tagline}</p>
         </div>
-        <Link
+        <Link prefetch={false}
           href={`/room/${bundle.room.id}/games/${game.id}`}
           aria-label={`Play ${game.name}`}
           className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent transition-transform hover:scale-105"

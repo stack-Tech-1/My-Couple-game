@@ -80,7 +80,7 @@ export function SettingsView({ announcementEmails, feedback, push }: { announcem
 
   return (
     <div className="mx-auto max-w-2xl pt-8">
-      <Link href={`/room/${room.id}`} className="inline-flex items-center gap-1.5 text-[0.9rem] font-semibold text-muted hover:text-fg">
+      <Link prefetch={false} href={`/room/${room.id}`} className="inline-flex items-center gap-1.5 text-[0.9rem] font-semibold text-muted hover:text-fg">
         <Icon name="arrowLeft" size={16} /> Room
       </Link>
       <h1 className="display mt-6 text-[clamp(2.6rem,8vw,3.8rem)]">Settings</h1>
@@ -117,7 +117,7 @@ export function SettingsView({ announcementEmails, feedback, push }: { announcem
             ? "Switch rooms from the room name at the top of the screen."
             : "Got a best friend or a group chat that needs a rematch? A friend room fits up to eight people, with Whot, Ludo, Ayo and more. Your couple room stays just for the two of you."}
         </p>
-        <Link href="/room/new" className="inline-flex items-center gap-1.5 font-semibold underline underline-offset-4">
+        <Link prefetch={false} href="/room/new" className="inline-flex items-center gap-1.5 font-semibold underline underline-offset-4">
           Start or join a friend room <Icon name="arrowRight" size={16} />
         </Link>
       </Section>
@@ -179,7 +179,7 @@ export function SettingsView({ announcementEmails, feedback, push }: { announcem
             />
           </div>
         ) : null}
-        <Link href={`/room/${room.id}/after-dark`} className="mt-4 inline-flex items-center gap-1.5 font-semibold underline underline-offset-4">
+        <Link prefetch={false} href={`/room/${room.id}/after-dark`} className="mt-4 inline-flex items-center gap-1.5 font-semibold underline underline-offset-4">
           {me.member.spicy_opt_in ? "Manage After Dark" : "How After Dark works"} <Icon name="arrowRight" size={16} />
         </Link>
       </Section>
@@ -202,7 +202,7 @@ export function SettingsView({ announcementEmails, feedback, push }: { announcem
       <Section title="Help & feedback" id="feedback">
         <p className="mb-5 text-muted">Found a bug, have an idea, or a question you think everyone should play? Tell us. A real person reads every message.</p>
         <FeedbackHub userId={me.profile.id} threads={feedback.threads} unread={feedback.unread} spicyOpen={afterDarkOpen(bundle)} />
-        <Link href={`/room/${room.id}?tour=1`} className="mt-6 inline-flex items-center gap-1.5 font-semibold underline underline-offset-4">
+        <Link prefetch={false} href={`/room/${room.id}?tour=1`} className="mt-6 inline-flex items-center gap-1.5 font-semibold underline underline-offset-4">
           Replay the welcome tour <Icon name="arrowRight" size={16} />
         </Link>
       </Section>

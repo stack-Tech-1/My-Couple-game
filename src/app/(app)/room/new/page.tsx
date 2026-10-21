@@ -26,7 +26,7 @@ export default async function NewRoomPage() {
         <span className="flex items-center gap-2">
         <ThemeToggle />
         {home ? (
-          <Link href={`/room/${home}`} className="inline-flex items-center gap-1.5 text-[0.9rem] font-semibold text-muted hover:text-fg">
+          <Link prefetch={false} href={`/room/${home}`} className="inline-flex items-center gap-1.5 text-[0.9rem] font-semibold text-muted hover:text-fg">
             <Icon name="arrowLeft" size={16} /> Back
           </Link>
         ) : null}

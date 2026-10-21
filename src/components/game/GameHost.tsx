@@ -135,7 +135,7 @@ export function GameHost({ initial }: { initial: SessionSnapshot }) {
   // Fallback polling while realtime is down and the game is live.
   useEffect(() => {
     if (connection === "live" || session.status !== "active") return;
-    const t = setInterval(resync, 4000);
+    const t = setInterval(resync, 8000);
     return () => clearInterval(t);
   }, [connection, session.status, resync]);
 
@@ -203,7 +203,7 @@ export function GameHost({ initial }: { initial: SessionSnapshot }) {
   // Slow safety poll while the game is live, in case both realtime paths dropped a beat.
   useEffect(() => {
     if (session.status !== "active") return;
-    const t = setInterval(() => document.visibilityState === "visible" && void resync(), 15000);
+    const t = setInterval(() => document.visibilityState === "visible" && void resync(), 45000);
     return () => clearInterval(t);
   }, [session.status, resync]);
 
@@ -235,7 +235,7 @@ export function GameHost({ initial }: { initial: SessionSnapshot }) {
   return (
     <div className={session.status === "active" ? "pt-6" : "pb-56 pt-6"}>
       <div className="mb-8 flex items-center justify-between gap-4">
-        <Link href={`/room/${session.room_id}`} className="inline-flex items-center gap-1.5 text-[0.9rem] font-semibold text-muted hover:text-fg">
+        <Link prefetch={false} href={`/room/${session.room_id}`} className="inline-flex items-center gap-1.5 text-[0.9rem] font-semibold text-muted hover:text-fg">
           <Icon name="arrowLeft" size={16} /> Room
         </Link>
         <div className="text-center">

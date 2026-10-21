@@ -44,7 +44,7 @@ export async function FriendRoomHome({ roomId }: { roomId: string }) {
           <ul className="mt-3 flex flex-col gap-2">
             {watchable.map((s) => (
               <li key={s.id}>
-                <Link href={`/room/${roomId}/watch/${s.id}`} className="flex items-center gap-3 rounded-[16px] border-[1.5px] border-line bg-raised px-4 py-3 hover:border-line-strong">
+                <Link prefetch={false} href={`/room/${roomId}/watch/${s.id}`} className="flex items-center gap-3 rounded-[16px] border-[1.5px] border-line bg-raised px-4 py-3 hover:border-line-strong">
                   <span className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-accent" aria-hidden />
                   <span className="min-w-0 flex-1">
                     <span className="block font-semibold">{gameMeta(s.game_id)!.name}</span>

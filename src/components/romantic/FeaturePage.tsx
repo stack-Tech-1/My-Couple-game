@@ -29,7 +29,7 @@ export async function FeaturePage({ gameId, roomId, bundle }: { gameId: string; 
 
   return (
     <div className="@container mx-auto max-w-3xl pt-8">
-      <Link href={`/room/${roomId}`} className="inline-flex items-center gap-1.5 text-[0.9rem] font-semibold text-muted hover:text-fg">
+      <Link prefetch={false} href={`/room/${roomId}`} className="inline-flex items-center gap-1.5 text-[0.9rem] font-semibold text-muted hover:text-fg">
         <Icon name="arrowLeft" size={16} /> Library
       </Link>
       {gameId === "daily-question" ? null : (

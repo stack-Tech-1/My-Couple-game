@@ -75,7 +75,7 @@ export function FeedbackItem({ f }: { f: AdminFeedback }) {
         <span className="text-muted">{when(f.created_at)}</span>
         <span className="text-muted">·</span>
         {link ? (
-          <Link href={link} className="font-semibold hover:underline">
+          <Link prefetch={false} href={link} className="font-semibold hover:underline">
             {f.email}
           </Link>
         ) : (
@@ -204,7 +204,7 @@ export function ReportItem({ r }: { r: AdminReport }) {
         <dt className="text-muted">Reported</dt>
         <dd>
           {reported ? (
-            <Link href={reported} className="font-semibold hover:underline">
+            <Link prefetch={false} href={reported} className="font-semibold hover:underline">
               {r.reported_email}
             </Link>
           ) : (
@@ -228,7 +228,7 @@ export function ReportItem({ r }: { r: AdminReport }) {
           </Button>
         ))}
         {reported ? (
-          <Link href={reported} className="inline-flex h-9 items-center rounded-full px-4 text-[0.85rem] font-semibold text-accent-ink hover:bg-sunk">
+          <Link prefetch={false} href={reported} className="inline-flex h-9 items-center rounded-full px-4 text-[0.85rem] font-semibold text-accent-ink hover:bg-sunk">
             Suspend or delete…
           </Link>
         ) : null}

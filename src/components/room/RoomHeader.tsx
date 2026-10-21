@@ -44,7 +44,7 @@ export function RoomHeader({ feedbackUnread = 0 }: { feedbackUnread?: number }) 
           </div>
           {friendsRoom ? null : <NudgeButton />}
           <Chat />
-          <Link
+          <Link prefetch={false}
             href={feedbackUnread ? `/room/${room.id}/settings#feedback` : `/room/${room.id}/settings`}
             data-tour="settings"
             aria-label={feedbackUnread ? "Room settings, new reply from the Amah team" : "Room settings"}

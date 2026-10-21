@@ -38,15 +38,15 @@ export default function Landing() {
         <DeletedNotice />
       </Suspense>
       <header className="mx-auto flex max-w-6xl items-center justify-between px-4 py-5 sm:px-8">
-        <Link href="/" aria-label={`${APP_NAME} home`} className="rounded-md">
+        <Link prefetch={false} href="/" aria-label={`${APP_NAME} home`} className="rounded-md">
           <Logo />
         </Link>
         <nav className="flex items-center gap-2">
           <ThemeToggle />
-          <Link href="/sign-in" className="rounded-full px-4 py-2 text-[0.92rem] font-semibold hover:bg-sunk">
+          <Link prefetch={false} href="/sign-in" className="rounded-full px-4 py-2 text-[0.92rem] font-semibold hover:bg-sunk">
             Sign in
           </Link>
-          <Link
+          <Link prefetch={false}
             href="/sign-in?intent=create"
             className="rounded-full bg-fg px-4 py-2 text-[0.92rem] font-semibold text-bg hover:opacity-90"
           >
@@ -70,7 +70,7 @@ export default function Landing() {
               rematch, a friend room fits up to eight. Everyone plays from their own phone, live.
             </p>
             <div className="mt-9 flex flex-wrap items-center gap-3">
-              <Link
+              <Link prefetch={false}
                 href="/sign-in?intent=create"
                 className="inline-flex h-14 items-center gap-2 rounded-full bg-accent px-7 text-[1.05rem] font-semibold text-on-accent shadow-[inset_0_-2px_0_rgba(0,0,0,.18)] hover:brightness-105"
               >
@@ -267,7 +267,7 @@ export default function Landing() {
             <h2 className="display max-w-3xl text-[clamp(2.6rem,7vw,5rem)]">
               Tonight&apos;s plans: <span className="text-accent-ink">beat them at Whot.</span>
             </h2>
-            <Link
+            <Link prefetch={false}
               href="/sign-in?intent=create"
               className="inline-flex h-14 shrink-0 items-center gap-2 rounded-full bg-fg px-7 text-[1.05rem] font-semibold text-bg hover:opacity-90"
             >
@@ -283,9 +283,9 @@ export default function Landing() {
             <LogoMark size={22} /> Made for two. © {new Date().getFullYear()} {APP_NAME}
           </span>
           <nav className="flex flex-wrap gap-5">
-            <Link href="/terms" className="hover:text-fg">Terms</Link>
-            <Link href="/privacy" className="hover:text-fg">Privacy</Link>
-            <Link href="/adults" className="hover:text-fg">18+ notice</Link>
+            <Link prefetch={false} href="/terms" className="hover:text-fg">Terms</Link>
+            <Link prefetch={false} href="/privacy" className="hover:text-fg">Privacy</Link>
+            <Link prefetch={false} href="/adults" className="hover:text-fg">18+ notice</Link>
           </nav>
         </div>
       </footer>

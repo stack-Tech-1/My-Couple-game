@@ -7,7 +7,7 @@ export function LegalPage({ title, updated, summary, children }: { title: string
   return (
     <div className="relative z-[1] mx-auto max-w-2xl px-4 pb-24 pt-6 sm:px-8">
       <div className="flex items-center justify-between">
-        <Link href="/" className="inline-block rounded-md">
+        <Link prefetch={false} href="/" className="inline-block rounded-md">
           <Logo />
         </Link>
         <ThemeToggle />

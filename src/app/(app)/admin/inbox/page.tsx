@@ -28,7 +28,7 @@ export default async function AdminInbox({ searchParams }: { searchParams: Promi
 
       <nav aria-label="Inbox sections" className="mt-8 flex flex-wrap gap-2 border-b border-line pb-3">
         {TABS.map((t) => (
-          <Link
+          <Link prefetch={false}
             key={t.key}
             href={`/admin/inbox?tab=${t.key}`}
             aria-current={t.key === tab.key ? "page" : undefined}
@@ -41,7 +41,7 @@ export default async function AdminInbox({ searchParams }: { searchParams: Promi
       </nav>
       <nav aria-label="Status" className="mt-3 flex flex-wrap gap-1.5">
         {tab.statuses.map(([s, label]) => (
-          <Link
+          <Link prefetch={false}
             key={s}
             href={`/admin/inbox?tab=${tab.key}&status=${s}`}
             aria-current={s === status ? "true" : undefined}

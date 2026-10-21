@@ -40,7 +40,7 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
 
       <nav aria-label="Filter users" className="mt-4 flex flex-wrap gap-2">
         {USER_FILTERS.map((f) => (
-          <Link
+          <Link prefetch={false}
             key={f}
             href={href({ filter: f, page: 0 })}
             aria-current={f === filter ? "true" : undefined}
@@ -85,7 +85,7 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
                   </td>
                   <td className="px-4 py-3">
                     {u.partner_id ? (
-                      <Link href={href({ q: u.partner_email ?? "", filter: "all", page: 0 })} className="hover:underline">
+                      <Link prefetch={false} href={href({ q: u.partner_email ?? "", filter: "all", page: 0 })} className="hover:underline">
                         <span className="font-semibold">{u.partner_name || "No name yet"}</span>
                         <span className="block text-muted">{u.partner_email}</span>
                       </Link>
@@ -97,7 +97,7 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
                   <td className="whitespace-nowrap px-4 py-3 tabular-nums">{day(u.created_at)}</td>
                   <td className="whitespace-nowrap px-4 py-3 tabular-nums">{day(u.last_active)}</td>
                   <td className="px-4 py-3 text-right">
-                    <Link href={`${href({ email: u.email })}#manage`} className="font-semibold text-accent-ink hover:underline" aria-label={`Manage ${u.email}`}>
+                    <Link prefetch={false} href={`${href({ email: u.email })}#manage`} className="font-semibold text-accent-ink hover:underline" aria-label={`Manage ${u.email}`}>
                       Manage
                     </Link>
                   </td>
@@ -118,7 +118,7 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
       {pages > 1 ? (
         <nav aria-label="Pages" className="mt-4 flex items-center justify-between text-[0.88rem]">
           {page > 0 ? (
-            <Link href={href({ page: page - 1 })} className="font-semibold hover:underline">
+            <Link prefetch={false} href={href({ page: page - 1 })} className="font-semibold hover:underline">
               ← Newer
             </Link>
           ) : (
@@ -128,7 +128,7 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
             Page {page + 1} of {pages}
           </span>
           {page + 1 < pages ? (
-            <Link href={href({ page: page + 1 })} className="font-semibold hover:underline">
+            <Link prefetch={false} href={href({ page: page + 1 })} className="font-semibold hover:underline">
               Older →
             </Link>
           ) : (

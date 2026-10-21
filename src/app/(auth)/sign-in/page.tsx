@@ -41,7 +41,7 @@ export default async function SignIn({ searchParams }: { searchParams: Promise<R
   return (
     <div className="relative z-[1] mx-auto flex min-h-dvh max-w-6xl flex-col px-4 py-5 sm:px-8">
       <div className="flex items-center justify-between">
-        <Link href="/" className="rounded-md">
+        <Link prefetch={false} href="/" className="rounded-md">
           <Logo />
         </Link>
         <ThemeToggle />

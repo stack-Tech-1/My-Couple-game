@@ -99,7 +99,7 @@ export function ResultSheet({ session, me, names }: { session: SessionRow; me: s
             </button>
           </div>
           <div className="flex gap-3">
-            <Link href={`/room/${session.room_id}`} className="inline-flex h-12 items-center rounded-full px-5 font-semibold hover:bg-sunk">Library</Link>
+            <Link prefetch={false} href={`/room/${session.room_id}`} className="inline-flex h-12 items-center rounded-full px-5 font-semibold hover:bg-sunk">Library</Link>
             <Button size="lg" variant="accent" icon="refresh" loading={busy} onClick={rematch}>Rematch</Button>
           </div>
         </div>

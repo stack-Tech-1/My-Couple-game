@@ -16,7 +16,7 @@ export default function Adults() {
       <h2>How it stays locked</h2>
       <ul>
         <li>After Dark is closed by default. It opens only when <strong>both</strong> people in a room have, each on their own phone, confirmed they are {MIN_AGE} or older and chosen to opt in.</li>
-        <li>Opting in is also your explicit consent for Amah to store your After Dark choices. These can reveal information about your sex life, which Nigerian data protection law treats as sensitive. See our <Link href="/privacy" className="underline underline-offset-2">Privacy Policy</Link>.</li>
+        <li>Opting in is also your explicit consent for Amah to store your After Dark choices. These can reveal information about your sex life, which Nigerian data protection law treats as sensitive. See our <Link prefetch={false} href="/privacy" className="underline underline-offset-2">Privacy Policy</Link>.</li>
         <li>Each of you can set a PIN, so the section stays closed if someone else picks up your phone. Discreet mode blurs the screen when you look away, and quick exit leaves instantly.</li>
         <li>
           Each of you sets a heat limit, and games only use cards up to the lower of the two. <strong>Warm</strong> is romantic, <strong>Hot</strong> is suggestive, and{" "}

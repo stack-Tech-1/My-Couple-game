@@ -39,7 +39,7 @@ export default async function AdminContent({ searchParams }: { searchParams: Pro
               <ul className="mt-2 flex gap-1 lg:flex-col">
                 {KIND_ORDER.filter((k) => KINDS[k].group === g).map((k) => (
                   <li key={k}>
-                    <Link
+                    <Link prefetch={false}
                       href={`/admin/content?kind=${k}`}
                       aria-current={k === kind ? "page" : undefined}
                       className={cn("block whitespace-nowrap rounded-[10px] px-3 py-1.5 text-[0.9rem] font-semibold", k === kind ? "bg-fg text-bg" : "text-muted hover:bg-sunk hover:text-fg")}

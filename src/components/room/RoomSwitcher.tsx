@@ -39,7 +39,7 @@ export function RoomSwitcher() {
 
   if (rooms.length < 2) {
     return (
-      <Link href={`/room/${room.id}`} data-tour="room" className="flex min-w-0 items-center gap-2.5 rounded-md" aria-label={`${room.name}: room home`}>
+      <Link prefetch={false} href={`/room/${room.id}`} data-tour="room" className="flex min-w-0 items-center gap-2.5 rounded-md" aria-label={`${room.name}: room home`}>
         {title}
       </Link>
     );
@@ -63,7 +63,7 @@ export function RoomSwitcher() {
           <ul className="max-h-[60vh] overflow-y-auto py-1.5">
             {rooms.map((r) => (
               <li key={r.id}>
-                <Link
+                <Link prefetch={false}
                   role="menuitem"
                   href={`/room/${r.id}`}
                   onClick={() => setOpen(false)}
@@ -82,7 +82,7 @@ export function RoomSwitcher() {
               </li>
             ))}
           </ul>
-          <Link role="menuitem" href="/room/new" onClick={() => setOpen(false)} className="flex items-center gap-3 border-t border-line px-4 py-3 font-semibold hover:bg-sunk">
+          <Link prefetch={false} role="menuitem" href="/room/new" onClick={() => setOpen(false)} className="flex items-center gap-3 border-t border-line px-4 py-3 font-semibold hover:bg-sunk">
             <Icon name="plus" size={18} /> New room, or join one
           </Link>
         </div>

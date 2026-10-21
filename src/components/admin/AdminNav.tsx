@@ -21,12 +21,12 @@ export function AdminNav({ inbox = 0 }: { inbox?: number }) {
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-[color-mix(in_srgb,var(--bg)_92%,transparent)] backdrop-blur-sm">
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:px-8">
-        <Link href="/admin" className="flex items-center gap-2.5 rounded-md">
+        <Link prefetch={false} href="/admin" className="flex items-center gap-2.5 rounded-md">
           <LogoMark size={26} />
           <span className="display text-[1.25rem]">Amah</span>
           <span className="rounded-full bg-fg px-2 py-0.5 text-[0.68rem] font-bold uppercase tracking-wide text-bg">Admin</span>
         </Link>
-        <Link href="/room" className="ml-auto flex items-center gap-1.5 text-[0.85rem] font-semibold text-muted hover:text-fg">
+        <Link prefetch={false} href="/room" className="ml-auto flex items-center gap-1.5 text-[0.85rem] font-semibold text-muted hover:text-fg">
           My room <Icon name="arrowRight" size={14} />
         </Link>
       </div>
@@ -34,7 +34,7 @@ export function AdminNav({ inbox = 0 }: { inbox?: number }) {
         {LINKS.map((l) => {
           const active = l.href === "/admin" ? path === "/admin" : path.startsWith(l.href);
           return (
-            <Link
+            <Link prefetch={false}
               key={l.href}
               href={l.href}
               aria-current={active ? "page" : undefined}

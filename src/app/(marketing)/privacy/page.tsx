@@ -236,8 +236,8 @@ export default function Privacy() {
 
       <h2>14. Contact</h2>
       <p>
-        {OPERATOR.name}, {OPERATOR.address}. Email: {mail}. See also our <Link href="/terms" className="underline underline-offset-2">Terms of Service</Link> and{" "}
-        <Link href="/adults" className="underline underline-offset-2">18+ notice</Link>.
+        {OPERATOR.name}, {OPERATOR.address}. Email: {mail}. See also our <Link prefetch={false} href="/terms" className="underline underline-offset-2">Terms of Service</Link> and{" "}
+        <Link prefetch={false} href="/adults" className="underline underline-offset-2">18+ notice</Link>.
       </p>
     </LegalPage>
   );

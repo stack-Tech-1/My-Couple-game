@@ -46,7 +46,7 @@ export function GettingStarted({ roomId, items }: { roomId: string; items: Start
       <ul className="mt-3 flex flex-col gap-1">
         {items.map((it) => (
           <li key={it.label}>
-            <Link
+            <Link prefetch={false}
               href={it.href}
               onClick={(e) => {
                 if (it.href !== "#chat") return;

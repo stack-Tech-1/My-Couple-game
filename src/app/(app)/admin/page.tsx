@@ -49,7 +49,7 @@ export default async function AdminOverview({ searchParams }: { searchParams: Pr
         {/* One filter row, above everything it scopes. */}
         <nav aria-label="Date range" className="flex rounded-full border border-line bg-raised p-1">
           {RANGES.map((r) => (
-            <Link
+            <Link prefetch={false}
               key={r}
               href={`/admin?days=${r}`}
               aria-current={r === days ? "true" : undefined}

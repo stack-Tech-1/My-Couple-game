@@ -16,7 +16,7 @@ export function ActiveGames({ sessions, me }: { sessions: SessionRow[]; me?: str
         const meta = gameMeta(s.game_id);
         if (!meta) return null;
         return (
-          <Link
+          <Link prefetch={false}
             key={s.id}
             href={`/room/${s.room_id}/play/${s.id}`}
             className="flex shrink-0 items-center gap-3 rounded-full border-[1.5px] border-line-strong bg-raised py-2 pl-4 pr-2 hover:bg-sunk"

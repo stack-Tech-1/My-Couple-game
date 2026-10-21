@@ -26,7 +26,7 @@ export default function Terms() {
       <p>
         These Terms are an agreement between you and <strong>{OPERATOR.name}</strong> ({OPERATOR.registration}, {OPERATOR.address}) (&ldquo;we&rdquo;,
         &ldquo;us&rdquo;), which runs Amah. By creating an account or using Amah you agree to these Terms and to our{" "}
-        <Link href="/privacy" className="underline underline-offset-2">Privacy Policy</Link>. If you don&apos;t agree, please don&apos;t use Amah.
+        <Link prefetch={false} href="/privacy" className="underline underline-offset-2">Privacy Policy</Link>. If you don&apos;t agree, please don&apos;t use Amah.
       </p>
 
       <h2>1. Who can use Amah</h2>
@@ -63,7 +63,7 @@ export default function Terms() {
         <li>After Dark contains suggestive content for adults. At the Fire heat level, which both of you must choose, some cards are sexually explicit. It is off by default and opens only when <strong>both</strong> members of a room have each confirmed they are {MIN_AGE}+ and chosen to opt in on their own device.</li>
         <li>Consent matters more than any game. Either of you can skip any card, end any game, or switch After Dark off at any time, and that locks it for both of you. No one is ever required to do anything.</li>
         <li>Content in After Dark is meant for two consenting adults in a relationship. Do not use it to pressure anyone, and do not record or share what happens without your partner&apos;s consent.</li>
-        <li>See our <Link href="/adults" className="underline underline-offset-2">18+ notice</Link>.</li>
+        <li>See our <Link prefetch={false} href="/adults" className="underline underline-offset-2">18+ notice</Link>.</li>
       </ul>
 
       <h2>5. Your content</h2>

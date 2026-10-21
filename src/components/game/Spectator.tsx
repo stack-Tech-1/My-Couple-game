@@ -72,7 +72,7 @@ export function Spectator({ initial }: { initial: SessionSnapshot }) {
   return (
     <div className="pb-24 pt-6">
       <div className="mb-6 flex items-center justify-between gap-4">
-        <Link href={`/room/${session.room_id}`} className="inline-flex items-center gap-1.5 text-[0.9rem] font-semibold text-muted hover:text-fg">
+        <Link prefetch={false} href={`/room/${session.room_id}`} className="inline-flex items-center gap-1.5 text-[0.9rem] font-semibold text-muted hover:text-fg">
           <Icon name="arrowLeft" size={16} /> Room
         </Link>
         <div className="text-center">

@@ -50,7 +50,7 @@ export function AfterDarkHub({ state: server }: { state: AfterDarkState }) {
 
   return (
     <div className="relative z-[1] mx-auto max-w-3xl pt-8">
-      <Link href={`/room/${bundle.room.id}`} className="inline-flex items-center gap-1.5 text-[0.9rem] font-semibold text-muted hover:text-fg">
+      <Link prefetch={false} href={`/room/${bundle.room.id}`} className="inline-flex items-center gap-1.5 text-[0.9rem] font-semibold text-muted hover:text-fg">
         <Icon name="arrowLeft" size={16} /> Room
       </Link>
       <p className="eyebrow mt-8 text-accent-ink">After dark · 18+</p>
@@ -64,7 +64,7 @@ export function AfterDarkHub({ state: server }: { state: AfterDarkState }) {
       {state.unlocked ? (
         <section aria-label="Games" className="mt-10 grid grid-cols-2 gap-3 @2xl:grid-cols-3">
           {gamesIn("spicy").filter((g) => !isOff(g.id)).map((g) => (
-            <Link key={g.id} href={`/room/${bundle.room.id}/games/${g.id}`} className="group flex flex-col rounded-[18px] border border-line bg-raised p-4 transition-colors hover:border-line-strong">
+            <Link prefetch={false} key={g.id} href={`/room/${bundle.room.id}/games/${g.id}`} className="group flex flex-col rounded-[18px] border border-line bg-raised p-4 transition-colors hover:border-line-strong">
               <GameArt id={g.id} accent="var(--accent)" className="mx-auto h-20 w-auto text-fg" />
               <p className="mt-3 font-bold leading-tight">{g.name}</p>
               <p className="mt-1 text-[0.82rem] text-muted">{g.tagline}</p>
