@@ -9,6 +9,9 @@ import { Greeting } from "@/components/room/Greeting";
 import { InstallPrompt } from "@/components/room/InstallPrompt";
 import { NotifyPrompt } from "@/components/room/NotifyPrompt";
 import { vapidKeys } from "@/lib/push/server";
+import { getLastWeek, getProgress } from "@/lib/progress/server";
+import { UsPanel } from "@/components/room/UsPanel";
+import { WeeklyRecap } from "@/components/room/WeeklyRecap";
 import { ActiveGames } from "@/components/room/ActiveGames";
 import { activeSessions, scoreboard } from "@/lib/games/server";
 import { getDaily } from "@/lib/daily/server";
@@ -20,12 +23,14 @@ export default async function RoomHome({ params }: { params: Promise<{ roomId: s
   const { roomId } = await params;
   const bundle = await getMyRoom();
   if (!bundle) return null;
-  const [moments, board, active, daily, keys] = await Promise.all([
+  const [moments, board, active, daily, keys, progress, week] = await Promise.all([
     getRecentMoments(roomId),
     scoreboard(roomId),
     activeSessions(roomId),
     bundle.partner ? getDaily(roomId, bundle.me.profile.id) : Promise.resolve(null),
     vapidKeys(),
+    bundle.partner ? getProgress(roomId) : Promise.resolve(null),
+    bundle.partner ? getLastWeek(roomId) : Promise.resolve(null),
   ]);
   const mine = board.totals[bundle.me.profile.id] ?? 0;
   const theirs = bundle.partner ? (board.totals[bundle.partner.profile.id] ?? 0) : 0;
@@ -42,9 +47,13 @@ export default async function RoomHome({ params }: { params: Promise<{ roomId: s
       <div className="mt-10 grid gap-x-12 gap-y-10 lg:grid-cols-[1.25fr_1fr]">
         <div className="flex flex-col gap-10">
           <HeadToHead mine={mine} theirs={theirs} />
+          {progress ? <UsPanel roomId={roomId} stats={progress} /> : null}
           {daily ? <DailyQuestion daily={daily} /> : null}
+          {week ? <WeeklyRecap week={week} /> : null}
         </div>
-        <PlayNext />
+        <div className="lg:sticky lg:top-24 lg:self-start">
+          <PlayNext />
+        </div>
       </div>
 
       <div className="mt-14 grid gap-x-12 gap-y-14 lg:grid-cols-[1fr_2.2fr]">
