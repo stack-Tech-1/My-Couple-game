@@ -10,6 +10,8 @@ export type Profile = {
   onboarded_at: string | null;
   /** The person's theme, on every room and device (set on their account). */
   theme?: "day" | "night" | "auto";
+  /** Welcome tour: start it, offer it, or already seen. */
+  tour?: "auto" | "ask" | "done";
 };
 
 export type Member = {

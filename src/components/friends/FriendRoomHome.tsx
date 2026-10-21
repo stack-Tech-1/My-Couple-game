@@ -1,4 +1,6 @@
-import { getRoom } from "@/lib/room/server";
+import { getRoom, startChecklist } from "@/lib/room/server";
+import { WelcomeTour } from "@/components/room/WelcomeTour";
+import { GettingStarted } from "@/components/room/GettingStarted";
 import { activeSessions, scoreboard } from "@/lib/games/server";
 import { Avatar } from "@/design/Avatar";
 import { InvitePanel } from "@/components/room/InvitePanel";
@@ -14,7 +16,7 @@ import { gameMeta } from "@/games/catalog";
 export async function FriendRoomHome({ roomId }: { roomId: string }) {
   const bundle = await getRoom(roomId);
   if (!bundle) return null;
-  const [board, active] = await Promise.all([scoreboard(roomId), activeSessions(roomId)]);
+  const [board, active, checklist] = await Promise.all([scoreboard(roomId), activeSessions(roomId), startChecklist(bundle)]);
   const me = bundle.me.profile.id;
   const isOwner = bundle.room.owner_id === me;
   const owner = bundle.members.find((m) => m.profile.id === bundle.room.owner_id);
@@ -33,6 +35,8 @@ export async function FriendRoomHome({ roomId }: { roomId: string }) {
       {!isOwner && bundle.members.length < FRIEND_ROOM_SIZE ? (
         <p className="mt-4 text-muted">Want someone else in? {owner ? `${owner.profile.display_name} has the invite code.` : "The room's owner has the invite code."}</p>
       ) : null}
+      <GettingStarted roomId={roomId} items={checklist} />
+      <WelcomeTour />
       <ActiveGames sessions={active} me={me} />
       {watchable.length ? (
         <section aria-labelledby="live-h" className="mt-8">
@@ -58,7 +62,7 @@ export async function FriendRoomHome({ roomId }: { roomId: string }) {
 
       <div className="mt-14 grid gap-x-12 gap-y-14 lg:grid-cols-[1fr_2.2fr]">
         <section aria-labelledby="people-h">
-          <h2 id="people-h" className="eyebrow border-t-[1.5px] border-line-strong pt-5 text-muted">{anyWins ? "Who's winning" : "Who's here"}</h2>
+          <h2 id="people-h" data-tour="people" className="eyebrow border-t-[1.5px] border-line-strong pt-5 text-muted">{anyWins ? "Who's winning" : "Who's here"}</h2>
           <ol className="mt-5 flex flex-col gap-3">
             {ranked.map((m, i) => (
               <li key={m.profile.id} className="flex items-center gap-3">

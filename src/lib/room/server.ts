@@ -16,7 +16,7 @@ export const getMyProfile = cache(async (): Promise<Profile | null> => {
   const user = await getUser();
   if (!user) return null;
   const supabase = await supabaseServer();
-  const { data } = await supabase.from("profiles").select("id, display_name, avatar_key, avatar_hue, onboarded_at, theme").eq("id", user.id).maybeSingle();
+  const { data } = await supabase.from("profiles").select("id, display_name, avatar_key, avatar_hue, onboarded_at, theme, tour").eq("id", user.id).maybeSingle();
   return (data as Profile | null) ?? null;
 });
 
@@ -59,7 +59,7 @@ export const getRoom = cache(async (roomId: string): Promise<RoomBundle | null> 
   const member = members.find((m) => m.user_id === user.id);
   if (!room || !member) return null;
 
-  const { data: profiles } = await supabase.from("profiles").select("id, display_name, avatar_key, avatar_hue, onboarded_at, theme").in("id", members.map((m) => m.user_id));
+  const { data: profiles } = await supabase.from("profiles").select("id, display_name, avatar_key, avatar_hue, onboarded_at, theme, tour").in("id", members.map((m) => m.user_id));
   const byId = new Map(((profiles ?? []) as Profile[]).map((p) => [p.id, p]));
   const people = members.flatMap((m) => {
     const profile = byId.get(m.user_id);
@@ -99,4 +99,32 @@ export async function getRecentMoments(roomId: string, limit = 12): Promise<Mome
   const supabase = await supabaseServer();
   const { data } = await supabase.from("moments").select("*").eq("room_id", roomId).order("created_at", { ascending: false }).limit(limit);
   return (data ?? []) as Moment[];
+}
+
+/** The Getting started list for a room home: what this person has done here so far. */
+export async function startChecklist(bundle: RoomBundle): Promise<{ label: string; done: boolean; href: string }[]> {
+  const supabase = await supabaseServer();
+  const roomId = bundle.room.id;
+  const me = bundle.me.profile.id;
+  const count = async (q: PromiseLike<{ count: number | null }>) => ((await q).count ?? 0) > 0;
+  const [played, chatted, answered] = await Promise.all([
+    count(supabase.from("game_sessions").select("id", { count: "exact", head: true }).eq("room_id", roomId).contains("players", [me])),
+    count(supabase.from("chat_messages").select("id", { count: "exact", head: true }).eq("room_id", roomId).eq("sender_id", me)),
+    bundle.room.kind === "couple"
+      ? count(supabase.from("daily_answers").select("user_id", { count: "exact", head: true }).eq("room_id", roomId).eq("user_id", me))
+      : Promise.resolve(true),
+  ]);
+  if (bundle.room.kind === "friends") {
+    return [
+      { label: "Invite your friends", done: bundle.members.length > 1, href: bundle.room.owner_id === me ? "#invite-h" : "#people-h" },
+      { label: "Play a game with someone", done: played, href: "#library-h" },
+      { label: "Say hi in the group chat", done: chatted, href: "#chat" },
+    ];
+  }
+  return [
+    { label: "Invite your person", done: !!bundle.partner, href: "#invite-h" },
+    { label: "Play your first game", done: played, href: "#library-h" },
+    { label: "Answer the Daily Question", done: answered, href: "#daily-h" },
+    { label: "Send them a message", done: chatted, href: "#chat" },
+  ];
 }

@@ -46,6 +46,7 @@ export function RoomHeader({ feedbackUnread = 0 }: { feedbackUnread?: number }) 
           <Chat />
           <Link
             href={feedbackUnread ? `/room/${room.id}/settings#feedback` : `/room/${room.id}/settings`}
+            data-tour="settings"
             aria-label={feedbackUnread ? "Room settings, new reply from the Amah team" : "Room settings"}
             className="relative flex h-10 w-10 items-center justify-center rounded-full hover:bg-sunk"
           >

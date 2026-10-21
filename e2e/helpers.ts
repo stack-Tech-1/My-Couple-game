@@ -63,8 +63,9 @@ export async function pairedRoom(names: [string, string]) {
   const cb = await clientAs(b.email);
   const now = new Date().toISOString();
   const agreed = { adult_confirmed_at: now, terms_version: TERMS_VERSION, terms_accepted_at: now };
-  await ca.from("profiles").update({ display_name: names[0], avatar_key: "fig", avatar_hue: 12, onboarded_at: now, ...agreed }).eq("id", a.id);
-  await cb.from("profiles").update({ display_name: names[1], avatar_key: "moon", avatar_hue: 200, onboarded_at: now, ...agreed }).eq("id", b.id);
+  // tour: "done" keeps the welcome tour out of the way; its own test turns it back on.
+  await ca.from("profiles").update({ display_name: names[0], avatar_key: "fig", avatar_hue: 12, onboarded_at: now, tour: "done", ...agreed }).eq("id", a.id);
+  await cb.from("profiles").update({ display_name: names[1], avatar_key: "moon", avatar_hue: 200, onboarded_at: now, tour: "done", ...agreed }).eq("id", b.id);
   const { data: room, error } = await ca.rpc("create_room", { room_name: "E2E" });
   if (error) throw error;
   const { error: joinErr } = await cb.rpc("join_room", { code: room.invite_code });
@@ -77,7 +78,7 @@ export async function onboardedUser(name: string, avatar = "fig") {
   const u = await makeUser(name.toLowerCase());
   const c = await clientAs(u.email);
   const now = new Date().toISOString();
-  await c.from("profiles").update({ display_name: name, avatar_key: avatar, avatar_hue: 40, onboarded_at: now, adult_confirmed_at: now, terms_version: TERMS_VERSION, terms_accepted_at: now }).eq("id", u.id);
+  await c.from("profiles").update({ display_name: name, avatar_key: avatar, avatar_hue: 40, onboarded_at: now, tour: "done", adult_confirmed_at: now, terms_version: TERMS_VERSION, terms_accepted_at: now }).eq("id", u.id);
   return { ...u, c };
 }
 

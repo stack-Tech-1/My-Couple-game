@@ -117,6 +117,13 @@ function ChatInner() {
     window.history.replaceState(null, "", url.pathname + url.search + url.hash);
   }, []);
 
+  // Opened from elsewhere on the page (the Getting started list).
+  useEffect(() => {
+    const openChat = () => setOpen(true);
+    window.addEventListener("amah:open-chat", openChat);
+    return () => window.removeEventListener("amah:open-chat", openChat);
+  }, []);
+
   // Back from the background or a dropped connection: catch up.
   const wasLive = useRef(connection === "live");
   useEffect(() => {
@@ -333,7 +340,7 @@ function ChatInner() {
   const sender = preview ? (people[preview.sender_id] ?? partner) : partner;
 
   return (
-    <div className="relative">
+    <div className="relative" data-tour="chat">
       <button
         ref={buttonRef}
         type="button"

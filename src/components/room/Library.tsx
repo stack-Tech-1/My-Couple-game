@@ -17,7 +17,7 @@ export function Library() {
 
   return (
     <section aria-labelledby="library-h">
-      <h2 id="library-h" className="eyebrow border-t-[1.5px] border-line-strong pt-5 text-muted">The library</h2>
+      <h2 id="library-h" data-tour="library" className="eyebrow border-t-[1.5px] border-line-strong pt-5 text-muted">The library</h2>
       <div className="mt-6 space-y-14">
         {CATEGORY_ORDER.map((c) => {
           const cat = CATEGORIES[c];

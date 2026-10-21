@@ -75,7 +75,7 @@ export function InvitePanel() {
           </div>
         </div>
       </div>
-      <div className="flex flex-wrap gap-3 border-t border-line bg-raised px-6 py-4 sm:px-8">
+      <div data-tour="invite" className="flex flex-wrap gap-3 border-t border-line bg-raised px-6 py-4 sm:px-8">
         <Button variant="accent" icon="link" onClick={share}>Send the invite</Button>
         <Button variant="outline" icon="copy" onClick={copy}>Copy link</Button>
         <Button

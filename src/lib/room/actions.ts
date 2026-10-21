@@ -287,3 +287,12 @@ export async function setBlocked(userId: unknown, blocked: boolean): Promise<Act
   revalidatePath("/room", "layout");
   return { ok: true, data: null };
 }
+
+/** The welcome tour was finished, skipped or declined: don't show it again (Settings can replay it). */
+export async function finishTour(): Promise<ActionResult> {
+  const user = await getUser();
+  if (!user) return fail("not signed in");
+  const { error } = await (await supabaseServer()).from("profiles").update({ tour: "done" }).eq("id", user.id);
+  if (error) return fail(error);
+  return { ok: true, data: null };
+}

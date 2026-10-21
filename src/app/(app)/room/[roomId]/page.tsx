@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
-import { getRoom, getRecentMoments } from "@/lib/room/server";
+import { getRoom, getRecentMoments, startChecklist } from "@/lib/room/server";
+import { WelcomeTour } from "@/components/room/WelcomeTour";
+import { GettingStarted } from "@/components/room/GettingStarted";
 import { FriendRoomHome } from "@/components/friends/FriendRoomHome";
 import { InvitePanel } from "@/components/room/InvitePanel";
 import { HeadToHead } from "@/components/room/HeadToHead";
@@ -27,7 +29,7 @@ export default async function RoomHome({ params }: { params: Promise<{ roomId: s
   const bundle = await getRoom(roomId);
   if (!bundle) return null;
   if (bundle.room.kind === "friends") return <FriendRoomHome roomId={roomId} />;
-  const [moments, board, active, daily, keys, progress, week, together] = await Promise.all([
+  const [moments, board, active, daily, keys, progress, week, together, checklist] = await Promise.all([
     getRecentMoments(roomId),
     scoreboard(roomId),
     activeSessions(roomId),
@@ -36,6 +38,7 @@ export default async function RoomHome({ params }: { params: Promise<{ roomId: s
     bundle.partner ? getProgress(roomId) : Promise.resolve(null),
     bundle.partner ? getLastWeek(roomId) : Promise.resolve(null),
     bundle.partner ? getTogether(roomId) : Promise.resolve(null),
+    startChecklist(bundle),
   ]);
   const mine = board.totals[bundle.me.profile.id] ?? 0;
   const theirs = bundle.partner ? (board.totals[bundle.partner.profile.id] ?? 0) : 0;
@@ -47,6 +50,8 @@ export default async function RoomHome({ params }: { params: Promise<{ roomId: s
       <InstallPrompt />
       {paired ? <NotifyPrompt publicKey={keys?.publicKey ?? null} /> : null}
       {!paired ? <InvitePanel /> : null}
+      <GettingStarted roomId={roomId} items={checklist} />
+      <WelcomeTour />
       <ActiveGames sessions={active} />
 
       <div className="mt-10 grid gap-x-12 gap-y-10 lg:grid-cols-[1.25fr_1fr]">

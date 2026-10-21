@@ -33,6 +33,22 @@ test("two partners pair up and play Connect Four live", async ({ browser }) => {
     await expect(pa).toHaveURL(/\/room\/[0-9a-f-]{36}$/);
     await expect(pa.getByText("Your room is ready. It's missing someone.")).toBeVisible();
 
+    // A brand-new person gets the welcome tour once, on their room home. Ada walks through it.
+    const tour = pa.getByRole("dialog", { name: "This is your room" });
+    await expect(tour).toBeVisible();
+    await tour.getByRole("button", { name: "Next" }).click();
+    await expect(pa.getByRole("dialog", { name: "Invite your person" })).toBeVisible();
+    for (let i = 0; i < 6; i++) {
+      const done = pa.getByRole("button", { name: "Done" });
+      if (await done.isVisible()) break;
+      await pa.getByRole("button", { name: "Next" }).click();
+    }
+    await pa.getByRole("button", { name: "Done" }).click();
+    await expect(pa.getByRole("dialog", { name: /Settings/ })).toHaveCount(0);
+    await expect.poll(async () => (await admin.from("profiles").select("tour").eq("id", a.id).single()).data?.tour).toBe("done");
+    // The Getting started list is there, with nothing ticked yet.
+    await expect(pa.getByText("0 of 4 done")).toBeVisible();
+
     const { data: m } = await admin.from("room_members").select("room_id").eq("user_id", a.id).single();
     const { data: room } = await admin.from("rooms").select("id, invite_code").eq("id", m!.room_id).single();
     const code = room!.invite_code as string;
@@ -47,6 +63,7 @@ test("two partners pair up and play Connect Four live", async ({ browser }) => {
     await expect(pb.getByText(/saved you a seat in/)).toBeVisible();
     await pb.getByRole("button", { name: "Take the seat" }).click();
     await expect(pb).toHaveURL(new RegExp(`/room/${room!.id}$`));
+    await pb.getByRole("button", { name: "Skip tour" }).click();
 
     // Pairing retires the code and Ada's room updates live (no reload).
     const { data: paired } = await admin.from("rooms").select("invite_code, paired_at").eq("id", room!.id).single();

@@ -202,6 +202,9 @@ export function SettingsView({ announcementEmails, feedback, push }: { announcem
       <Section title="Help & feedback" id="feedback">
         <p className="mb-5 text-muted">Found a bug, have an idea, or a question you think everyone should play? Tell us. A real person reads every message.</p>
         <FeedbackHub userId={me.profile.id} threads={feedback.threads} unread={feedback.unread} spicyOpen={afterDarkOpen(bundle)} />
+        <Link href={`/room/${room.id}?tour=1`} className="mt-6 inline-flex items-center gap-1.5 font-semibold underline underline-offset-4">
+          Replay the welcome tour <Icon name="arrowRight" size={16} />
+        </Link>
       </Section>
 
       <Section title="Account">

@@ -39,14 +39,14 @@ export function RoomSwitcher() {
 
   if (rooms.length < 2) {
     return (
-      <Link href={`/room/${room.id}`} className="flex min-w-0 items-center gap-2.5 rounded-md" aria-label={`${room.name}: room home`}>
+      <Link href={`/room/${room.id}`} data-tour="room" className="flex min-w-0 items-center gap-2.5 rounded-md" aria-label={`${room.name}: room home`}>
         {title}
       </Link>
     );
   }
 
   return (
-    <div ref={ref} className="relative min-w-0">
+    <div ref={ref} data-tour="room" className="relative min-w-0">
       <button
         type="button"
         aria-haspopup="menu"
