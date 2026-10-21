@@ -16,10 +16,10 @@ export const DRAW_WORDS = {
     "anchor", "astronaut", "backpack", "barbecue", "beehive", "binoculars", "birthday", "bowling", "campfire",
     "carousel", "chandelier", "compass", "crocodile", "dinosaur", "dragon", "dreamcatcher", "elevator", "ferris wheel",
     "fireworks", "flamingo", "giraffe", "hammock", "headphones", "hedgehog", "helicopter", "hot air balloon",
-    "igloo", "jellyfish", "kangaroo", "lawnmower", "lipstick", "mermaid", "microphone", "parachute", "peacock",
+    "jellyfish", "kangaroo", "football", "lipstick", "mermaid", "microphone", "parachute", "peacock",
     "penguin", "piano", "pirate", "popcorn", "rollercoaster", "sailboat", "scarecrow", "seesaw", "skateboard",
-    "sloth", "submarine", "sushi", "swing", "telescope", "tornado", "treasure", "unicorn", "waffle", "waterfall",
-    "windmill", "wizard",
+    "sloth", "submarine", "meat pie", "swing", "telescope", "tornado", "treasure", "unicorn", "UI's main gate", "waterfall",
+    "windmill", "wizard", "bottle of Coke", "skeleton",
   ],
   hard: [
     "jet lag", "brain freeze", "first date", "honeymoon", "breakfast in bed", "slow dance", "road trip", "sleepwalking",

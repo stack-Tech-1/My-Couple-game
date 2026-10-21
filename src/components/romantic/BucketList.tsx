@@ -70,7 +70,7 @@ export function BucketList({ items }: { items: BucketItem[] }) {
           <label htmlFor="bucket-title" className="sr-only">
             Something to do together
           </label>
-          <input id="bucket-title" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} placeholder="See the northern lights…" className="h-12 min-w-0 flex-1 rounded-full border-[1.5px] border-line bg-bg px-5 focus:border-line-strong focus:outline-none" />
+          <input id="bucket-title" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} placeholder="Watch the sunset at Bower's Tower, Ibadan…" className="h-12 min-w-0 flex-1 rounded-full border-[1.5px] border-line bg-bg px-5 focus:border-line-strong focus:outline-none" />
           <Button type="submit" variant="accent" loading={pending} disabled={!title.trim()}>
             Add
           </Button>

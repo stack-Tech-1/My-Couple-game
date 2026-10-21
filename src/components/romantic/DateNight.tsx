@@ -19,7 +19,7 @@ const WHERE: { key: Where; label: string }[] = [
   { key: "out", label: "Going out" },
   { key: "distance", label: "Long-distance" },
 ];
-const BUDGET = ["Free", "Under £20", "Treat yourselves"];
+const BUDGET = ["Free", "Under ₦20,000", "Treat yourselves"];
 const spinEvent = z.object({ seed: z.string().max(40), where: z.enum(["any", "home", "out", "distance"]), budget: z.number().int().min(0).max(2) });
 
 /** `ideas` comes from the server (built-ins plus admin additions), identical on both phones. */
