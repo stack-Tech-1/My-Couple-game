@@ -26,12 +26,13 @@ export function Onboarding({ profile, startAt, next }: { profile: Profile; start
   const [mode, setMode] = useState<"create" | "join">(next?.startsWith("/join/") ? "join" : "create");
   const [roomName, setRoomName] = useState("");
   const [code, setCode] = useState("");
+  const [agreed, setAgreed] = useState(false);
 
   function submitYou(e: FormEvent) {
     e.preventDefault();
     setError(null);
     start(async () => {
-      const res = await saveProfile({ display_name: name, avatar_key: motif, avatar_hue: hue });
+      const res = await saveProfile({ display_name: name, avatar_key: motif, avatar_hue: hue }, agreed);
       if (!res.ok) return setError(res.error);
       track("onboarding_profile_saved");
       if (next) return router.push(next);
@@ -115,8 +116,17 @@ export function Onboarding({ profile, startAt, next }: { profile: Profile; start
               </div>
             </fieldset>
 
+            <label className="mt-8 flex cursor-pointer items-start gap-3 rounded-[14px] border-[1.5px] border-line bg-raised p-4">
+              <input type="checkbox" required checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--accent)]" />
+              <span className="text-[0.92rem] leading-snug">
+                I&apos;m 18 or older, and I agree to the{" "}
+                <a href="/terms" target="_blank" className="font-semibold underline underline-offset-2">Terms</a> and{" "}
+                <a href="/privacy" target="_blank" className="font-semibold underline underline-offset-2">Privacy Policy</a>.
+              </span>
+            </label>
+
             {error ? <p role="alert" className="mt-6 font-medium text-accent-ink">{error}</p> : null}
-            <Button type="submit" size="lg" className="mt-auto w-full sm:mt-12" loading={pending} iconRight="arrowRight">
+            <Button type="submit" size="lg" className="mt-auto w-full sm:mt-12" loading={pending} iconRight="arrowRight" disabled={!agreed}>
               {next ? "Continue to your invite" : "Next: your room"}
             </Button>
           </motion.form>

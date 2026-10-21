@@ -98,6 +98,13 @@ export function AfterDarkHub({ state: server }: { state: AfterDarkState }) {
             disabled={!state.me.ageConfirmed}
             onChange={(v) => run({ optIn: v }, () => setOptIn(v))}
           />
+          {!state.me.optIn ? (
+            <p className="-mt-1 pb-3 text-[0.8rem] leading-relaxed text-muted">
+              Switching this on is your explicit consent for Amah to store your After Dark choices, like your heat limit, custom cards and picks. These can reveal
+              things about your sex life, which the law treats as sensitive. Switch it off any time to withdraw.{" "}
+              <a href="/privacy" target="_blank" className="underline underline-offset-2">Privacy Policy</a>
+            </p>
+          ) : null}
           <div className="py-4">
             <p className="font-semibold">My heat limit</p>
             <p className="text-[0.85rem] text-muted">Games use the lower of your two limits. You&apos;ll never be shown your partner&apos;s.</p>

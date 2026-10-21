@@ -19,7 +19,26 @@ export function useStickerSrc(media: StickerMedia): string | null {
   return src;
 }
 
-export function StickerImage({ media, size = 132, className }: { media: StickerMedia; size?: number; className?: string }) {
+export function StickerImage({ media, size = 132, className, deferred }: { media: StickerMedia; size?: number; className?: string; deferred?: boolean }) {
+  // Follows `deferred` as it changes (the data-saver setting loads after the first render).
+  const [revealed, setRevealed] = useState(false);
+  if (deferred && !revealed) {
+    return (
+      <button
+        type="button"
+        onClick={() => setRevealed(true)}
+        className={cn("flex flex-col items-center justify-center gap-1 rounded-[14px] border-[1.5px] border-dashed border-line text-[0.75rem] font-semibold text-muted hover:text-fg", className)}
+        style={{ width: size, height: size }}
+      >
+        Sticker
+        <span className="font-normal">Tap to show</span>
+      </button>
+    );
+  }
+  return <LoadedSticker media={media} size={size} className={className} />;
+}
+
+function LoadedSticker({ media, size, className }: { media: StickerMedia; size: number; className?: string }) {
   const src = useStickerSrc(media);
   return src ? (
     // eslint-disable-next-line @next/next/no-img-element -- signed, short-lived URLs; next/image would cache them

@@ -11,3 +11,6 @@ test-results/
 .vercel
 .netlify
 supabase/.temp/.tmp*
+
+# Reference photos of published card decks: copyrighted, never committed
+card-photos/

@@ -15,9 +15,9 @@ export default defineConfig({
     // A synthetic microphone (a beeping tone) so voice notes can be recorded without hardware.
     launchOptions: { args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"] },
   },
-  // Production build: realistic timings, no on-demand route compiles.
+  // Production build against the TEST project (.env.test.local): realistic timings, never live data.
   // E2E_NO_SERVER=1 skips it entirely, for database-only specs.
   ...(process.env.E2E_NO_SERVER
     ? {}
-    : { webServer: { command: "npx next build && npx next start -p 3100", url: "http://localhost:3100", reuseExistingServer: !!process.env.E2E_REUSE, timeout: 400_000 } }),
+    : { webServer: { command: "node scripts/with-env.mjs .env.test.local -- \"npx next build && npx next start -p 3100\"", url: "http://localhost:3100", reuseExistingServer: !!process.env.E2E_REUSE, timeout: 400_000 } }),
 });

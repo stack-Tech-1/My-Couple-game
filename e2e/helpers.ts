@@ -1,12 +1,26 @@
 import fs from "node:fs";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { TERMS_VERSION } from "../src/lib/legal";
 
-export function loadEnv(): Record<string, string> {
+function readEnv(file: string): Record<string, string> {
   const env: Record<string, string> = {};
-  for (const line of fs.readFileSync(".env.local", "utf8").split(/\r?\n/)) {
+  if (!fs.existsSync(file)) return env;
+  for (const line of fs.readFileSync(file, "utf8").split(/\r?\n/)) {
     const m = line.match(/^\s*([A-Z_][A-Z0-9_]*)\s*=\s*(.*)\s*$/);
     if (m) env[m[1]!] = m[2]!.replace(/^["']|["']$/g, "");
   }
+  return env;
+}
+
+/**
+ * Tests run against the TEST project only (.env.test.local). They create and delete users,
+ * flip global switches and post announcements, so pointing them at the live project is refused.
+ */
+export function loadEnv(): Record<string, string> {
+  const env = readEnv(".env.test.local");
+  if (!env.NEXT_PUBLIC_SUPABASE_URL) throw new Error(".env.test.local is missing: e2e tests only run against the test project.");
+  const live = readEnv(".env.local").NEXT_PUBLIC_SUPABASE_URL;
+  if (live && live === env.NEXT_PUBLIC_SUPABASE_URL) throw new Error(".env.test.local points at the LIVE project. Refusing to run.");
   return env;
 }
 
@@ -48,8 +62,9 @@ export async function pairedRoom(names: [string, string]) {
   const ca = await clientAs(a.email);
   const cb = await clientAs(b.email);
   const now = new Date().toISOString();
-  await ca.from("profiles").update({ display_name: names[0], avatar_key: "fig", avatar_hue: 12, onboarded_at: now }).eq("id", a.id);
-  await cb.from("profiles").update({ display_name: names[1], avatar_key: "moon", avatar_hue: 200, onboarded_at: now }).eq("id", b.id);
+  const agreed = { adult_confirmed_at: now, terms_version: TERMS_VERSION, terms_accepted_at: now };
+  await ca.from("profiles").update({ display_name: names[0], avatar_key: "fig", avatar_hue: 12, onboarded_at: now, ...agreed }).eq("id", a.id);
+  await cb.from("profiles").update({ display_name: names[1], avatar_key: "moon", avatar_hue: 200, onboarded_at: now, ...agreed }).eq("id", b.id);
   const { data: room, error } = await ca.rpc("create_room", { room_name: "E2E" });
   if (error) throw error;
   const { error: joinErr } = await cb.rpc("join_room", { code: room.invite_code });

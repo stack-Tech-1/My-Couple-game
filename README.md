@@ -117,6 +117,7 @@ migrations.
 | `SMTP_USER`, `SMTP_PASS` | optional, **server only** | Turn on announcement emails. With Gmail: the address and a 16-character App Password. |
 | `SMTP_HOST`, `SMTP_PORT`, `EMAIL_FROM` | optional | Another SMTP provider (defaults `smtp.gmail.com`, `465`) and the From line. |
 | `EMAIL_LINK_SECRET` | optional, server only | Signs unsubscribe links. Defaults to the service role key; set it if you ever rotate that key and want old links to keep working. |
+| `NEXT_PUBLIC_SENTRY_DSN` | optional | Turns on error tracking (Sentry). Safe to expose. Off when empty. |
 
 `.env.local` is git-ignored. **Never put real keys in `.env.example`**: it is committed.
 
@@ -139,6 +140,7 @@ All schema lives in `supabase/migrations/`, applied in filename order:
 | `0009_chat_media.sql` | Voice notes and stickers: message kinds, `stickers`, the public `stickers` bucket (starter pack) and the private `chat-media` bucket. |
 | `0010_admin.sql` | Admin: `app_admins`, `is_admin()`, `app_config` (game switches), `announcements`, and the service-role-only `admin_stats`, `admin_find_user`, `admin_remove_from_room`. |
 | `0011_content_email.sql` | Editable content (`content_items`, `content_hidden`), announcement email opt-out and send log, `admin_email_recipients`, admin uploads to the starter-sticker bucket. |
+| `0012_safety.sql` | Consent records (18+, Terms version), `reports` with message snapshots and `file_report()`, `blocks` and `block_partner()`, and `join_room` refusing blocked pairs. |
 
 `npm run db:migrate` records what it has applied in `public._twain_migrations` (the original project name; kept so existing databases stay in sync) and only runs new
 files, each in its own transaction. To change the schema, **add a new numbered file**; never edit
@@ -173,9 +175,18 @@ fastest way to build or debug a game. Game ids are listed in `src/games/catalog.
 **Unit tests** (`npm test`, Vitest): game rules, edge cases, win conditions and the privacy of every
 game's per-player view. They run in a couple of seconds.
 
-**End-to-end tests** (`npm run e2e`, Playwright) run against a production build and your real
-Supabase project. They create throwaway users (`amah-e2e-…@example.com`) and delete them
-afterwards. Coverage:
+**End-to-end tests** (`npm run e2e`, Playwright) run against a production build and a **separate
+test Supabase project**, never the live one. They create throwaway users (`amah-e2e-…@example.com`),
+switch games off, post announcements and so on, so `e2e/helpers.ts` refuses to start if the test
+keys point at the live project. Setup, once:
+
+1. Create a second (free) Supabase project, e.g. `amah-test`.
+2. Put its keys in `.env.test.local` (same names as `.env.local`: `NEXT_PUBLIC_SUPABASE_URL`,
+   `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DB_URL`, plus
+   `NEXT_PUBLIC_SITE_URL=http://localhost:3100` and `AMAH_SANDBOX=1`).
+3. `npm run db:migrate:test` to give it the schema. Run it again whenever a migration is added.
+
+Each run starts by deleting test accounts an interrupted earlier run left behind. Coverage:
 
 - Pairing, then Connect Four played live in two browsers (with a mid-game refresh).
 - Simultaneous Word Duel guesses: every guess lands, and there is exactly one winner.
@@ -192,7 +203,8 @@ First run: `npx playwright install chromium`.
 Handy flags:
 
 ```bash
-E2E_REUSE=1 npm run e2e        # reuse a server you already started with `next start -p 3100`
+npm run e2e:build && npm run e2e:serve   # a test-project build on :3100 (NEXT_PUBLIC_* are baked in at build time)
+E2E_REUSE=1 npm run e2e        # reuse that server
 E2E_NO_SERVER=1 npx playwright test e2e/daily-privacy.spec.ts   # database-only specs
 AMAH_SANDBOX=1 npx next start -p 3100   # lets the per-board accessibility audit run
 ```
@@ -395,11 +407,18 @@ their room.
 
 ## Before a public launch
 
-- **Legal pages.** Write the Terms, Privacy Policy and 18+ notice text (`src/app/(marketing)/`).
-  Each placeholder is clearly marked "To be written".
+- **Legal pages.** Written for Stackcoding Technologies under the Nigeria Data Protection Act 2023
+  and the GAID 2025 (`src/app/(marketing)/`, operator details in `src/lib/legal.ts`). Have a lawyer
+  review them before you charge money. When they change materially, bump `TERMS_VERSION` and
+  everyone is asked to accept again.
+- **NDPC registration.** Above roughly 200 users in six months, Amah may count as a "data
+  controller of major importance" and need to register with the Nigeria Data Protection Commission
+  (and file annual compliance returns). Check the current thresholds at ndpc.gov.ng.
 - **Email.** Configure custom SMTP in Supabase and the token-hash magic-link template above.
 - **Google OAuth.** Configure it if you want it; the button works once the provider is enabled.
 - **Analytics.** Choose whether to enable it; it only ever sends event names, never content.
-- **Age verification.** Review whether the 18+ checkbox meets the requirements where you launch.
+- **Age.** Amah is 18+ for everyone: confirmed at onboarding and stored with the Terms version.
+- **Error tracking.** Set `NEXT_PUBLIC_SENTRY_DSN` (Sentry → Settings → Projects → Client Keys).
+  Reports are scrubbed of emails, IPs, tokens and typed text before they leave the device.
 - **Fonts.** Fraunces and Manrope are bundled under the SIL Open Font License; see
   `public/fonts/NOTICE.txt`.

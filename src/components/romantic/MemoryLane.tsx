@@ -11,9 +11,9 @@ import { supabaseBrowser } from "@/lib/supabase/browser";
 import { useRoom } from "@/lib/realtime/RoomProvider";
 import { addMemory, answerMemory, deleteMemory } from "@/lib/romantic/actions";
 import type { Memory } from "@/lib/romantic/types";
+import { isDataSaverOn, photoEdge, useDataSaver } from "@/lib/dataSaver";
 
 const PROMPTS = ["Where were we here?", "What happened right after this?", "What was I laughing at?", "What were we eating?", "What song was playing?", "What year was this?"];
-const MAX_EDGE = 1600;
 
 /**
  * Re-encode in the browser: shrinks the upload and drops EXIF metadata (including GPS
@@ -21,7 +21,7 @@ const MAX_EDGE = 1600;
  */
 async function prepareImage(file: File): Promise<Blob> {
   const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
-  const scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height));
+  const scale = Math.min(1, photoEdge(isDataSaverOn()) / Math.max(bitmap.width, bitmap.height));
   const canvas = document.createElement("canvas");
   canvas.width = Math.round(bitmap.width * scale);
   canvas.height = Math.round(bitmap.height * scale);
@@ -130,11 +130,18 @@ function Polaroid({ memory: m, me, partnerName, tilt }: { memory: Memory; me: st
   const [pending, start] = useTransition();
   const mine = m.author_id === me;
   const canAnswer = !mine && !m.answer;
+  const { active: saver } = useDataSaver();
+  const [reveal, setReveal] = useState(false);
 
   return (
     <motion.figure initial={{ opacity: 0, y: 20, rotate: 0 }} whileInView={{ opacity: 1, y: 0, rotate: tilt }} viewport={{ once: true, margin: "-40px" }} className="relative bg-[#fbf7f1] p-3 pb-5 text-ink shadow-[0_18px_40px_-24px_rgba(28,20,22,.55)]">
       <div className="aspect-[4/3] overflow-hidden bg-sunk">
-        {m.url ? (
+        {m.url && saver && !reveal ? (
+          <button type="button" onClick={() => setReveal(true)} className="flex h-full w-full flex-col items-center justify-center gap-1 text-[0.85rem] font-semibold text-[#57474a]">
+            Photo
+            <span className="font-normal">Data saver is on. Tap to load.</span>
+          </button>
+        ) : m.url ? (
           // eslint-disable-next-line @next/next/no-img-element -- short-lived signed URL, must not be proxied or cached
           <img src={m.url} alt={m.prompt} loading="lazy" className="h-full w-full object-cover" />
         ) : (

@@ -24,6 +24,9 @@ test("two partners pair up and play Connect Four live", async ({ browser }) => {
     await pa.goto(await signInPath(a.email, "/room"));
     await expect(pa).toHaveURL(/\/onboarding/);
     await pa.getByLabel("Your name").fill("Ada");
+    // Can't continue without confirming 18+ and accepting the Terms.
+    await expect(pa.getByRole("button", { name: "Next: your room" })).toBeDisabled();
+    await pa.getByRole("checkbox", { name: /18 or older/ }).check();
     await pa.getByRole("button", { name: "Next: your room" }).click();
     await pa.getByLabel("Room name").fill("The Den");
     await pa.getByRole("button", { name: "Open the room" }).click();
@@ -39,6 +42,7 @@ test("two partners pair up and play Connect Four live", async ({ browser }) => {
     await pb.goto(await signInPath(b.email, `/join/${code}`));
     await expect(pb).toHaveURL(/\/onboarding\?next=/);
     await pb.getByLabel("Your name").fill("Bo");
+    await pb.getByRole("checkbox", { name: /18 or older/ }).check();
     await pb.getByRole("button", { name: "Continue to your invite" }).click();
     await expect(pb.getByText(/saved you a seat in/)).toBeVisible();
     await pb.getByRole("button", { name: "Take the seat" }).click();

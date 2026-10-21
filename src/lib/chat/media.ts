@@ -52,10 +52,10 @@ export type Recorder = {
   cancel: () => void;
 };
 
-export async function startRecording(onLimit: () => void): Promise<Recorder> {
+export async function startRecording(onLimit: () => void, bitrate = 48_000): Promise<Recorder> {
   const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
   const mime = pickMime();
-  const rec = new MediaRecorder(stream, mime ? { mimeType: mime, audioBitsPerSecond: 48_000 } : undefined);
+  const rec = new MediaRecorder(stream, mime ? { mimeType: mime, audioBitsPerSecond: bitrate } : { audioBitsPerSecond: bitrate });
   const chunks: Blob[] = [];
   rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
 

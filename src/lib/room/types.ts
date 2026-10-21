@@ -72,3 +72,13 @@ export const prefsInput = z.object({
 });
 
 export type ActionResult<T = null> = { ok: true; data: T } | { ok: false; error: string };
+export const REPORT_REASONS = ["harassment", "pressure", "intimate_images", "underage", "spam", "other"] as const;
+export type ReportReason = (typeof REPORT_REASONS)[number];
+export const REPORT_LABELS: Record<ReportReason, string> = {
+  harassment: "Harassment, threats or abuse",
+  pressure: "Pressuring me into something",
+  intimate_images: "Sharing intimate images without consent",
+  underage: "They might be under 18",
+  spam: "Spam or a scam",
+  other: "Something else",
+};

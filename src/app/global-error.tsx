@@ -1,6 +1,10 @@
 "use client";
 
-export default function GlobalError({ reset }: { error: Error; reset: () => void }) {
+import { useEffect } from "react";
+import { reportError } from "@/lib/monitoring/client";
+
+export default function GlobalError({ error, reset }: { error: Error; reset: () => void }) {
+  useEffect(() => reportError(error), [error]);
   return (
     <html lang="en">
       <body style={{ background: "#f6efe6", color: "#1c1416", fontFamily: "Georgia, serif", display: "grid", placeItems: "center", minHeight: "100dvh", margin: 0, padding: 16 }}>

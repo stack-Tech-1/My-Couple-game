@@ -13,6 +13,9 @@ import { useRoom } from "@/lib/realtime/RoomProvider";
 import { deleteAccount, leaveRoom, renameRoom, setAnnouncementEmails, signOut, updateMyPrefs } from "@/lib/room/actions";
 import { applyTheme, resolveTheme, saveThemePref, type ThemePref } from "@/lib/theme/theme";
 import { HouseRules } from "@/components/room/HouseRules";
+import { ReportDialog } from "@/components/safety/ReportDialog";
+import { BlockDialog } from "@/components/safety/BlockDialog";
+import { useDataSaver, type DataSaverPref } from "@/lib/dataSaver";
 import { setOptIn } from "@/lib/afterdark/actions";
 
 export function SettingsView({ announcementEmails }: { announcementEmails: boolean }) {
@@ -25,6 +28,8 @@ export function SettingsView({ announcementEmails }: { announcementEmails: boole
   const [emails, setEmails] = useState(announcementEmails);
   const [pending, start] = useTransition();
   const [leaveOpen, setLeaveOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [blockOpen, setBlockOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [confirmText, setConfirmText] = useState("");
 
@@ -105,6 +110,7 @@ export function SettingsView({ announcementEmails }: { announcementEmails: boole
         <div className="mt-4 border-t border-line">
           <Toggle checked={sound} onChange={toggleSound} label="Sounds" description="Soft clicks, card snaps and a little fanfare when you win. Off by default." />
           <Toggle checked={emails} onChange={toggleEmails} label="Announcement emails" description="Now and then: new games and important news. Sign-in emails always arrive." />
+          <DataSaverSetting />
         </div>
       </Section>
 
@@ -137,6 +143,20 @@ export function SettingsView({ announcementEmails }: { announcementEmails: boole
         </Link>
       </Section>
 
+      {partner ? (
+        <Section title="Safety" id="safety">
+          <p className="mb-5 text-muted">
+            If {partner.profile.display_name} is making you uncomfortable or breaking our rules, tell us. They won&apos;t know you reported them. Blocking takes you out
+            of the room for good.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <Button variant="outline" onClick={() => setReportOpen(true)}>Report {partner.profile.display_name}</Button>
+            <Button variant="danger" onClick={() => setBlockOpen(true)}>Block {partner.profile.display_name}</Button>
+          </div>
+          <p className="mt-4 text-[0.85rem] text-muted">To report one message, open the chat and press and hold it (or right-click on a computer).</p>
+        </Section>
+      ) : null}
+
       <Section title="Account">
         <div className="flex flex-wrap gap-3">
           <Button variant="outline" icon="exit" onClick={() => start(async () => { await signOut(); router.push("/"); router.refresh(); })}>Sign out</Button>
@@ -145,6 +165,12 @@ export function SettingsView({ announcementEmails }: { announcementEmails: boole
         </div>
       </Section>
 
+      {partner ? (
+        <>
+          <ReportDialog open={reportOpen} onClose={() => setReportOpen(false)} partnerName={partner.profile.display_name} onBlockInstead={() => setBlockOpen(true)} />
+          <BlockDialog open={blockOpen} onClose={() => setBlockOpen(false)} partnerName={partner.profile.display_name} />
+        </>
+      ) : null}
       <Modal open={leaveOpen} onClose={() => setLeaveOpen(false)} title="Leave the room?" description={partner ? `You'll be unpaired from ${partner.profile.display_name}. They keep the room and its history, and get a fresh invite code. After Dark closes; your own After Dark answers stay private to you and are never shown to anyone.` : "The room will be deleted, since nobody else is in it."}>
         <div className="flex justify-end gap-3">
           <Button variant="ghost" onClick={() => setLeaveOpen(false)}>Stay</Button>
@@ -192,5 +218,38 @@ function Section({ title, id, children }: { title: string; id?: string; children
       <h2 id={`${id ?? title}-h`} className="eyebrow mb-5 text-muted">{title}</h2>
       {children}
     </section>
+  );
+}
+function DataSaverSetting() {
+  const { pref, auto, setPref } = useDataSaver();
+  const options: { key: DataSaverPref; label: string }[] = [
+    { key: "auto", label: "Auto" },
+    { key: "on", label: "On" },
+    { key: "off", label: "Off" },
+  ];
+  return (
+    <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3 py-3">
+      <div className="min-w-0 flex-1">
+        <p className="font-semibold" id="data-saver-label">Data saver</p>
+        <p className="mt-0.5 text-[0.85rem] text-muted">
+          Smaller voice notes and photos, and stickers and photos wait for a tap before loading. On this device only.
+          {pref === "auto" ? (auto ? " Your phone says data is limited, so it's on." : " It switches on when your phone is in data-saver mode or on a slow network.") : ""}
+        </p>
+      </div>
+      <div role="radiogroup" aria-labelledby="data-saver-label" className="flex rounded-full border border-line bg-raised p-1">
+        {options.map((o) => (
+          <button
+            key={o.key}
+            type="button"
+            role="radio"
+            aria-checked={pref === o.key}
+            onClick={() => setPref(o.key)}
+            className={cn("rounded-full px-3.5 py-1.5 text-[0.85rem] font-semibold", pref === o.key ? "bg-fg text-bg" : "text-muted hover:text-fg")}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }

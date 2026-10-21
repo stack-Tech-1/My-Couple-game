@@ -6,6 +6,7 @@ import { PlayNext } from "@/components/room/PlayNext";
 import { Moments } from "@/components/room/Moments";
 import { Library } from "@/components/room/Library";
 import { Greeting } from "@/components/room/Greeting";
+import { InstallPrompt } from "@/components/room/InstallPrompt";
 import { ActiveGames } from "@/components/room/ActiveGames";
 import { activeSessions, scoreboard } from "@/lib/games/server";
 import { getDaily } from "@/lib/daily/server";
@@ -30,6 +31,7 @@ export default async function RoomHome({ params }: { params: Promise<{ roomId: s
   return (
     <div className="pt-8 sm:pt-12">
       <Greeting />
+      <InstallPrompt />
       {!paired ? <InvitePanel /> : null}
       <ActiveGames sessions={active} />
 

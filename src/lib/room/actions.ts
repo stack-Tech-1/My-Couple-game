@@ -5,12 +5,15 @@ import { supabaseAdmin, supabaseServer } from "@/lib/supabase/server";
 import { friendlyError } from "@/lib/errors";
 import { getUser } from "./server";
 import { purgeRoomMedia } from "@/lib/media/purge";
+import { TERMS_VERSION } from "@/lib/legal";
+import { z } from "zod";
 import { HOUSE_RULES } from "@/games/houseRules";
 import {
   inviteCodeInput,
   prefsInput,
   profileInput,
   roomNameInput,
+  REPORT_REASONS,
   type ActionResult,
   type Room,
 } from "./types";
@@ -18,15 +21,22 @@ import {
 const fail = (e: unknown): { ok: false; error: string } => ({ ok: false, error: friendlyError(e) });
 const firstIssue = (e: { issues: { message: string }[] }) => e.issues[0]?.message ?? "That didn't look right.";
 
-export async function saveProfile(input: unknown): Promise<ActionResult> {
+/** What gets stored when someone confirms they're 18+ and accepts the current Terms. */
+const consent = () => {
+  const now = new Date().toISOString();
+  return { adult_confirmed_at: now, terms_version: TERMS_VERSION, terms_accepted_at: now };
+};
+
+export async function saveProfile(input: unknown, agreed?: unknown): Promise<ActionResult> {
   const parsed = profileInput.safeParse(input);
   if (!parsed.success) return { ok: false, error: firstIssue(parsed.error) };
+  if (agreed !== true) return { ok: false, error: "Please confirm you're 18 or older and agree to the Terms and Privacy Policy." };
   const user = await getUser();
   if (!user) return fail("not signed in");
   const supabase = await supabaseServer();
   const { error } = await supabase
     .from("profiles")
-    .update({ ...parsed.data, onboarded_at: new Date().toISOString() })
+    .update({ ...parsed.data, ...consent(), onboarded_at: new Date().toISOString() })
     .eq("id", user.id);
   if (error) return fail(error);
   revalidatePath("/room", "layout");
@@ -162,5 +172,40 @@ export async function deleteAccount(confirmation: unknown): Promise<ActionResult
 export async function signOut(): Promise<ActionResult> {
   const supabase = await supabaseServer();
   await supabase.auth.signOut();
+  return { ok: true, data: null };
+}
+/** Existing accounts accepting the current Terms (and confirming 18+) when they change. */
+export async function acceptTerms(agreed: unknown): Promise<ActionResult> {
+  if (agreed !== true) return { ok: false, error: "Please tick the box to continue." };
+  const user = await getUser();
+  if (!user) return fail("not signed in");
+  const { error } = await (await supabaseServer()).from("profiles").update(consent()).eq("id", user.id);
+  if (error) return fail(error);
+  revalidatePath("/room", "layout");
+  return { ok: true, data: null };
+}
+
+const reportInput = z.object({
+  reason: z.enum(REPORT_REASONS),
+  details: z.string().trim().max(1000, "Keep it under 1000 characters.").optional(),
+  messageId: z.uuid().optional(),
+});
+
+/** Report your partner, optionally pointing at one of their messages. */
+export async function reportPartner(input: unknown): Promise<ActionResult> {
+  const parsed = reportInput.safeParse(input);
+  if (!parsed.success) return { ok: false, error: firstIssue(parsed.error) };
+  const supabase = await supabaseServer();
+  const { error } = await supabase.rpc("file_report", { p_reason: parsed.data.reason, p_details: parsed.data.details ?? null, p_message: parsed.data.messageId ?? null });
+  if (error) return fail(error);
+  return { ok: true, data: null };
+}
+
+/** Block your partner: you leave the room (they keep it) and the two of you can't pair again. */
+export async function blockPartner(): Promise<ActionResult> {
+  const supabase = await supabaseServer();
+  const { error } = await supabase.rpc("block_partner");
+  if (error) return fail(error);
+  revalidatePath("/room", "layout");
   return { ok: true, data: null };
 }

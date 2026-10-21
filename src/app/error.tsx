@@ -2,10 +2,12 @@
 
 import { useEffect } from "react";
 import { Button } from "@/design/Button";
+import { reportError } from "@/lib/monitoring/client";
 
 export default function ErrorBoundary({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
     console.error(error);
+    reportError(error);
   }, [error]);
   return (
     <div className="relative z-[1] mx-auto flex min-h-[70dvh] max-w-xl flex-col justify-center px-4 sm:px-8">

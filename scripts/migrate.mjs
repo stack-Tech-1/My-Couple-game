@@ -1,5 +1,6 @@
 // Applies supabase/migrations/*.sql in order, once each, inside a transaction.
-// Usage: npm run db:migrate   (reads SUPABASE_DB_URL from .env.local or the environment)
+// Usage: npm run db:migrate        (live: SUPABASE_DB_URL from .env.local)
+//        npm run db:migrate:test   (test project: .env.test.local)
 import fs from "node:fs";
 import path from "node:path";
 import pg from "pg";
@@ -11,7 +12,9 @@ function loadEnv(file) {
     if (m && !(m[1] in process.env)) process.env[m[1]] = m[2].replace(/^["']|["']$/g, "");
   }
 }
-loadEnv(".env.local");
+// --env <file> targets another project (npm run db:migrate:test uses .env.test.local).
+const envArg = process.argv.indexOf("--env");
+loadEnv(envArg > -1 ? process.argv[envArg + 1] : ".env.local");
 
 const url = process.env.SUPABASE_DB_URL;
 if (!url) {

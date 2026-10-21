@@ -11,6 +11,8 @@ import { canRecord, startRecording, type Recorder, type Recording } from "@/lib/
 import { describe, formatDuration, MAX_CHAT_LENGTH, type LocalMessage, type StickerMedia } from "@/lib/chat/types";
 import { StickerImage, VoiceNote } from "./Bubbles";
 import { StickerTray } from "./StickerTray";
+import { ReportDialog } from "@/components/safety/ReportDialog";
+import { useDataSaver, voiceBitrate } from "@/lib/dataSaver";
 
 const dayKey = (iso: string) => new Date(iso).toDateString();
 function dayLabel(iso: string): string {
@@ -70,12 +72,32 @@ export function ChatPanel(props: Props) {
   const myLast = messages.findLast((m) => m.sender_id === me && !m.status);
   const seen = !!(myLast && partnerReadAt && Date.parse(partnerReadAt) >= Date.parse(myLast.created_at));
   const name = partner.display_name;
+  const { active: saver } = useDataSaver();
+  const [reporting, setReporting] = useState<{ id: string; preview: string } | null>(null);
+  // Press and hold (touch) or right-click (mouse) a partner's message to report it.
+  const hold = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const report = (m: LocalMessage) => setReporting({ id: m.id, preview: m.kind === "text" ? m.body : describe(m) });
+  const holdProps = (m: LocalMessage) => ({
+    onContextMenu: (e: React.MouseEvent) => {
+      e.preventDefault();
+      report(m);
+    },
+    onPointerDown: (e: React.PointerEvent) => {
+      if (e.pointerType !== "touch") return;
+      hold.current = setTimeout(() => report(m), 550);
+    },
+    onPointerUp: () => hold.current && clearTimeout(hold.current),
+    onPointerLeave: () => hold.current && clearTimeout(hold.current),
+    onPointerCancel: () => hold.current && clearTimeout(hold.current),
+  });
 
   return (
     <motion.div
       role="dialog"
       aria-label={`Chat with ${name}`}
       onKeyDown={(e) => {
+        // Escape inside the report dialog closes only the dialog.
+        if ((e.target as HTMLElement).closest("dialog")) return;
         if (e.key === "Escape") {
           // Handled here so it doesn't also count towards After Dark's double-Escape exit.
           e.stopPropagation();
@@ -142,7 +164,20 @@ export function ChatPanel(props: Props) {
                   <p className="sr-only">
                     {mine ? "You" : name}: {m.kind === "text" ? "" : describe(m)}
                   </p>
-                  <Body m={m} mine={mine} />
+                  {mine || m.status ? (
+                    <Body m={m} mine={mine} saver={false} />
+                  ) : (
+                    <div className="group relative max-w-full select-none [-webkit-touch-callout:none]" {...holdProps(m)}>
+                      <Body m={m} mine={mine} saver={saver} />
+                      <button
+                        type="button"
+                        onClick={() => report(m)}
+                        className="sr-only rounded-full border border-line bg-raised px-2.5 py-1 text-[0.75rem] font-semibold focus:not-sr-only focus:absolute focus:left-full focus:top-1/2 focus:ml-2 focus:-translate-y-1/2 focus:whitespace-nowrap"
+                      >
+                        Report message
+                      </button>
+                    </div>
+                  )}
                   {m.status === "failed" ? (
                     <button type="button" onClick={() => onRetry(m)} className="mt-1 text-[0.75rem] font-semibold text-accent-ink underline underline-offset-2">
                       Didn&apos;t send. Tap to retry.
@@ -171,17 +206,18 @@ export function ChatPanel(props: Props) {
       </div>
 
       <Composer {...props} onBeforeSend={pin} />
+      <ReportDialog open={!!reporting} onClose={() => setReporting(null)} partnerName={name} message={reporting} />
     </motion.div>
   );
 }
 
-function Body({ m, mine }: { m: LocalMessage; mine: boolean }) {
+function Body({ m, mine, saver }: { m: LocalMessage; mine: boolean; saver: boolean }) {
   const pending = m.status === "sending" && "opacity-60";
   const failed = m.status === "failed" && "opacity-60 ring-2 ring-accent-ink";
   if (m.kind === "sticker") {
     return (
       <div className={cn("rounded-[14px]", pending, failed)}>
-        <StickerImage media={m.media} />
+        <StickerImage media={m.media} deferred={saver} />
       </div>
     );
   }
@@ -206,6 +242,7 @@ function Composer({ roomId, me, partner, onSendText, onSendSticker, onSendVoice,
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const name = partner.display_name;
   const mic = canRecord();
+  const { active: saver } = useDataSaver();
 
   useEffect(() => inputRef.current?.focus(), []);
 
@@ -233,7 +270,7 @@ function Composer({ roomId, me, partner, onSendText, onSendSticker, onSendVoice,
     setStarting(true);
     setTray(false);
     try {
-      const r = await startRecording(() => stopRef.current());
+      const r = await startRecording(() => stopRef.current(), voiceBitrate(saver));
       setRecorder(r);
     } catch (e) {
       const denied = e instanceof DOMException && (e.name === "NotAllowedError" || e.name === "SecurityError");
