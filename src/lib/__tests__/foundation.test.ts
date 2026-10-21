@@ -27,7 +27,7 @@ const member = (over: Partial<Member> = {}): Member => ({
   ...over,
 });
 const bundle = (me: Partial<Member>, partner: Partial<Member> | null): RoomBundle => ({
-  room: { id: "r", name: "x", invite_code: null, created_by: null, paired_at: null, settings: {}, created_at: "" },
+  room: { id: "r", name: "x", invite_code: null, created_by: null, paired_at: null, together_since: null, settings: {}, created_at: "" },
   me: { profile: { id: "a", display_name: "A", avatar_key: "fig", avatar_hue: 1, onboarded_at: "" }, member: member(me) },
   partner: partner ? { profile: { id: "b", display_name: "B", avatar_key: "fig", avatar_hue: 1, onboarded_at: "" }, member: member(partner) } : null,
 });

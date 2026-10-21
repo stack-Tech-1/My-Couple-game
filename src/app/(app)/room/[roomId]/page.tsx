@@ -12,6 +12,8 @@ import { vapidKeys } from "@/lib/push/server";
 import { getLastWeek, getProgress } from "@/lib/progress/server";
 import { UsPanel } from "@/components/room/UsPanel";
 import { WeeklyRecap } from "@/components/room/WeeklyRecap";
+import { getTogether } from "@/lib/together/server";
+import { ChallengeCard, MoodCard, TogetherCard, TogetherSync } from "@/components/room/TogetherCards";
 import { ActiveGames } from "@/components/room/ActiveGames";
 import { activeSessions, scoreboard } from "@/lib/games/server";
 import { getDaily } from "@/lib/daily/server";
@@ -23,7 +25,7 @@ export default async function RoomHome({ params }: { params: Promise<{ roomId: s
   const { roomId } = await params;
   const bundle = await getMyRoom();
   if (!bundle) return null;
-  const [moments, board, active, daily, keys, progress, week] = await Promise.all([
+  const [moments, board, active, daily, keys, progress, week, together] = await Promise.all([
     getRecentMoments(roomId),
     scoreboard(roomId),
     activeSessions(roomId),
@@ -31,6 +33,7 @@ export default async function RoomHome({ params }: { params: Promise<{ roomId: s
     vapidKeys(),
     bundle.partner ? getProgress(roomId) : Promise.resolve(null),
     bundle.partner ? getLastWeek(roomId) : Promise.resolve(null),
+    bundle.partner ? getTogether(roomId) : Promise.resolve(null),
   ]);
   const mine = board.totals[bundle.me.profile.id] ?? 0;
   const theirs = bundle.partner ? (board.totals[bundle.partner.profile.id] ?? 0) : 0;
@@ -49,10 +52,14 @@ export default async function RoomHome({ params }: { params: Promise<{ roomId: s
           <HeadToHead mine={mine} theirs={theirs} />
           {progress ? <UsPanel roomId={roomId} stats={progress} /> : null}
           {daily ? <DailyQuestion daily={daily} /> : null}
+          {together ? <ChallengeCard challenge={together.challenge} /> : null}
           {week ? <WeeklyRecap week={week} /> : null}
         </div>
-        <div className="lg:sticky lg:top-24 lg:self-start">
+        <div className="flex flex-col gap-6 lg:self-start">
           <PlayNext />
+          {together ? <MoodCard moods={together.moods} /> : null}
+          {together ? <TogetherCard countdowns={together.countdowns} /> : null}
+          {together ? <TogetherSync /> : null}
         </div>
       </div>
 

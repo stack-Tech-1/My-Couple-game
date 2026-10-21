@@ -142,6 +142,9 @@ All schema lives in `supabase/migrations/`, applied in filename order:
 | `0011_content_email.sql` | Editable content (`content_items`, `content_hidden`), announcement email opt-out and send log, `admin_email_recipients`, admin uploads to the starter-sticker bucket. |
 | `0012_safety.sql` | Consent records (18+, Terms version), `reports` with message snapshots and `file_report()`, `blocks` and `block_partner()`, and `join_room` refusing blocked pairs. |
 | `0013_feedback.sql` | Feedback threads (`feedback`, `feedback_replies`, private `feedback` screenshot bucket), suggested cards (`suggestions`), and the service-role-only `admin_list_users`. |
+| `0014_push.sql` | Web push (`push_subscriptions`, `push_prefs`, `app_secrets` for the VAPID keys), `user_presence` heartbeat, `nudges`. |
+| `0015_progress.sql` | `room_progress()` (streaks, counts for levels and badges) and `room_week()` for the weekly recap. Members only. |
+| `0016_together.sql` | `rooms.together_since`, `countdowns`, `moods`, and 30-day challenges (`room_challenges`, `challenge_checks`). |
 
 `npm run db:migrate` records what it has applied in `public._twain_migrations` (the original project name; kept so existing databases stay in sync) and only runs new
 files, each in its own transaction. To change the schema, **add a new numbered file**; never edit
@@ -291,6 +294,20 @@ e2e/                   Playwright tests
 Daily Question, Love Notes, Memory Lane, Date Night, the bucket list and Fantasy Match are
 ongoing room features rather than turn-based sessions. They use their own tables, server
 actions and RLS (see `src/components/romantic`, `src/components/afterdark` and `src/lib/*`).
+
+**Push notifications** (`src/lib/push`). Web push with a VAPID key pair kept in `app_secrets`.
+Create it once per project with `npm run push:keys` (`-- --env .env.test.local` for the test
+project); re-running keeps existing keys. People turn notifications on per device in Settings,
+where they also choose the kinds: game invites, your move, messages, Daily Question, nudges and
+love notes. The open app sends a heartbeat to `user_presence`, and anyone seen in the last 70
+seconds is skipped, so nobody is pinged about what they're already looking at. On iPhone,
+notifications need Amah added to the Home Screen first.
+
+**Us** (`src/lib/progress`). The couple streak counts days in a row where both did something.
+Levels come from XP that weights shared effort over chatter. There are 17 badges with progress
+bars, and a weekly recap card on Mondays covering the week before. The **Together** cards
+(`src/lib/together`) cover days together and the anniversary, countdowns, a daily mood check-in,
+and 30-day challenges (`src/content/challenges.ts`).
 
 **Chat** (`src/components/chat/Chat.tsx`) sits in the room header, so it's one tap away on every
 room page and mid-game. The browser writes messages straight to Supabase under RLS, then

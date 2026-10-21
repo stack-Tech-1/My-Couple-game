@@ -27,6 +27,8 @@ export type Room = {
   invite_code: string | null;
   created_by: string | null;
   paired_at: string | null;
+  /** When the couple got together (YYYY-MM-DD), if they've said. */
+  together_since: string | null;
   settings: RoomSettings;
   created_at: string;
 };
