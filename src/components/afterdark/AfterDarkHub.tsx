@@ -57,7 +57,7 @@ export function AfterDarkHub({ state: server }: { state: AfterDarkState }) {
       <h1 className="display mt-3 text-[clamp(2.8rem,9vw,4.4rem)]">{state.unlocked ? "The lights are low." : "Two keys, two yeses."}</h1>
       <p className="mt-3 max-w-xl text-[1.05rem] leading-relaxed text-muted">
         {state.unlocked
-          ? `Flirty, teasing, never graphic. Heat is capped at ${HEAT_LABEL[state.effectiveHeat as Heat]}: the lower of your two limits. Skip anything, any time.`
+          ? `Heat is capped at ${HEAT_LABEL[state.effectiveHeat as Heat]}: the lower of your two limits. Skip anything, any time.`
           : "This corner opens only when you've both confirmed you're 18 or older and both chosen to open it, each on your own phone. Either of you can close it again at any time."}
       </p>
 
@@ -115,6 +115,7 @@ export function AfterDarkHub({ state: server }: { state: AfterDarkState }) {
                 </button>
               ))}
             </div>
+            <p className="mt-2 text-[0.8rem] text-muted">Warm is romantic. Hot is suggestive. Fire is bold, and some Fire cards are sexually explicit.</p>
           </div>
           {state.unlocked ? (
             <Toggle

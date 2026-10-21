@@ -183,7 +183,7 @@ export default function Landing() {
                 The lights dim only when you <em className="display-wonk">both</em> say so.
               </h2>
               <p className="mt-6 max-w-md leading-relaxed text-[#c9b0a7]">
-                Flirty, teasing and suggestive, never graphic. A separate corner of the app with its own rules, built
+                Flirty, teasing, and as bold as you both choose. A separate corner of the app with its own rules, built
                 so that nobody is ever surprised, pressured or put on the spot.
               </p>
             </div>

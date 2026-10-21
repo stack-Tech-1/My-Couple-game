@@ -1,5 +1,6 @@
 /**
- * After Dark decks. Original, written for Amah. Flirty, suggestive, teasing; never graphic.
+ * After Dark decks. Original, written for Amah. Warm is romantic, Hot suggestive; Fire can be explicit
+ * (only shown when both partners chose Fire).
  * Heat: 1 Warm, 2 Hot, 3 Fire. Players can add their own cards (private to their room).
  * Every card can be skipped instantly, with no penalty and no explanation.
  */

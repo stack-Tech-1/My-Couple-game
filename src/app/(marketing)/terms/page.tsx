@@ -58,7 +58,7 @@ export default function Terms() {
 
       <h2>4. After Dark (18+)</h2>
       <ul>
-        <li>After Dark contains suggestive, flirty content for adults. It is off by default and opens only when <strong>both</strong> members of a room have each confirmed they are {MIN_AGE}+ and chosen to opt in on their own device.</li>
+        <li>After Dark contains suggestive content for adults. At the Fire heat level, which both of you must choose, some cards are sexually explicit. It is off by default and opens only when <strong>both</strong> members of a room have each confirmed they are {MIN_AGE}+ and chosen to opt in on their own device.</li>
         <li>Consent matters more than any game. Either of you can skip any card, end any game, or switch After Dark off at any time, and that locks it for both of you. No one is ever required to do anything.</li>
         <li>Content in After Dark is meant for two consenting adults in a relationship. Do not use it to pressure anyone, and do not record or share what happens without your partner&apos;s consent.</li>
         <li>See our <Link href="/adults" className="underline underline-offset-2">18+ notice</Link>.</li>
