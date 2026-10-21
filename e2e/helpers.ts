@@ -72,6 +72,26 @@ export async function pairedRoom(names: [string, string]) {
   return { a, b, roomId: room.id as string };
 }
 
+/** An onboarded user (terms accepted) with a signed-in client. */
+export async function onboardedUser(name: string, avatar = "fig") {
+  const u = await makeUser(name.toLowerCase());
+  const c = await clientAs(u.email);
+  const now = new Date().toISOString();
+  await c.from("profiles").update({ display_name: name, avatar_key: avatar, avatar_hue: 40, onboarded_at: now, adult_confirmed_at: now, terms_version: TERMS_VERSION, terms_accepted_at: now }).eq("id", u.id);
+  return { ...u, c };
+}
+
+/** A friend room owned by the first user, with the others joined by invite code. */
+export async function friendRoom(owner: { c: SupabaseClient }, others: { c: SupabaseClient }[], name = "The Crew") {
+  const { data: room, error } = await owner.c.rpc("create_room", { room_name: name, p_kind: "friends" });
+  if (error) throw error;
+  for (const o of others) {
+    const { error: e } = await o.c.rpc("join_room", { code: room.invite_code });
+    if (e) throw e;
+  }
+  return room as { id: string; invite_code: string };
+}
+
 export async function cleanup(userIds: string[]) {
   const { data: rooms } = await admin.from("room_members").select("room_id").in("user_id", userIds);
   const roomIds = [...new Set((rooms ?? []).map((r) => r.room_id as string))];
