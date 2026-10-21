@@ -25,17 +25,23 @@ function dayLabel(iso: string): string {
 }
 const clockTime = (iso: string) => new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
 
+type Person = { display_name: string; avatar_key: string; avatar_hue: number };
 type Props = {
   roomId: string;
   me: string;
-  partner: { display_name: string; avatar_key: string; avatar_hue: number };
+  /** Couple rooms: your partner. Friend rooms: the room (its name). */
+  partner: Person;
+  /** Friend rooms: everyone by id, and how many are in the room. */
+  group?: { people: Record<string, Person>; members: number };
   online: boolean;
   typing: boolean;
+  typingName?: string;
   messages: LocalMessage[];
   loaded: boolean;
   hasMore: boolean;
   loadingEarlier: boolean;
-  partnerReadAt: string | null;
+  /** When each other person last read the chat. */
+  readers: Record<string, string>;
   onEarlier: () => void;
   onSendText: (body: string) => void;
   onSendSticker: (m: StickerMedia) => void;
@@ -46,7 +52,7 @@ type Props = {
 };
 
 export function ChatPanel(props: Props) {
-  const { me, partner, online, typing, messages, loaded, hasMore, loadingEarlier, partnerReadAt, onEarlier, onRetry, onClose } = props;
+  const { roomId, me, partner, group, online, typing, typingName, messages, loaded, hasMore, loadingEarlier, readers, onEarlier, onRetry, onClose } = props;
   const listRef = useRef<HTMLDivElement>(null);
   const stick = useRef(true);
   const firstId = useRef<string | undefined>(undefined);
@@ -68,15 +74,18 @@ export function ChatPanel(props: Props) {
     stick.current = true;
   };
 
-  // The partner has seen everything up to my latest confirmed message?
+  // Who has seen everything up to my latest confirmed message?
   const myLast = messages.findLast((m) => m.sender_id === me && !m.status);
-  const seen = !!(myLast && partnerReadAt && Date.parse(partnerReadAt) >= Date.parse(myLast.created_at));
+  const seenBy = myLast ? Object.entries(readers).filter(([id, t]) => id !== me && Date.parse(t) >= Date.parse(myLast.created_at)).length : 0;
+  const others = group ? group.members - 1 : 1;
+  const seenLabel = !seenBy ? "" : !group ? " · Seen" : seenBy >= others ? " · Seen by everyone" : ` · Seen by ${seenBy}`;
   const name = partner.display_name;
+  const nameOf = (id: string) => group?.people[id]?.display_name ?? name;
   const { active: saver } = useDataSaver();
-  const [reporting, setReporting] = useState<{ id: string; preview: string } | null>(null);
+  const [reporting, setReporting] = useState<{ id: string; preview: string; sender: string } | null>(null);
   // Press and hold (touch) or right-click (mouse) a partner's message to report it.
   const hold = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const report = (m: LocalMessage) => setReporting({ id: m.id, preview: m.kind === "text" ? m.body : describe(m) });
+  const report = (m: LocalMessage) => setReporting({ id: m.id, preview: m.kind === "text" ? m.body : describe(m), sender: m.sender_id });
   const holdProps = (m: LocalMessage) => ({
     onContextMenu: (e: React.MouseEvent) => {
       e.preventDefault();
@@ -94,7 +103,7 @@ export function ChatPanel(props: Props) {
   return (
     <motion.div
       role="dialog"
-      aria-label={`Chat with ${name}`}
+      aria-label={group ? `${name} group chat` : `Chat with ${name}`}
       onKeyDown={(e) => {
         // Escape inside the report dialog closes only the dialog.
         if ((e.target as HTMLElement).closest("dialog")) return;
@@ -113,7 +122,9 @@ export function ChatPanel(props: Props) {
         <Avatar name={name} motif={partner.avatar_key} hue={partner.avatar_hue} size={36} online={online} />
         <div className="min-w-0 flex-1">
           <p className="truncate text-[0.95rem] font-semibold leading-tight">{name}</p>
-          <p className="text-[0.78rem] leading-tight text-muted">{typing ? "typing…" : online ? "here now" : "away"}</p>
+          <p className="text-[0.78rem] leading-tight text-muted">
+            {group ? (typing ? `${typingName ?? "Someone"} is typing…` : `${group.members} ${group.members === 1 ? "person" : "people"}`) : typing ? "typing…" : online ? "here now" : "away"}
+          </p>
         </div>
         <IconButton icon="close" label="Close chat" onClick={onClose} />
       </div>
@@ -139,8 +150,10 @@ export function ChatPanel(props: Props) {
         {loaded && !messages.length ? (
           <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
             <Icon name="chat" size={28} className="text-muted" />
-            <p className="display text-[1.3rem]">Say something sweet.</p>
-            <p className="text-[0.88rem] text-muted">Or trash-talk. Voice notes and stickers work too, and this chat follows you into every game.</p>
+            <p className="display text-[1.3rem]">{group ? "Say hi to everyone." : "Say something sweet."}</p>
+            <p className="text-[0.88rem] text-muted">
+              {group ? "Everyone in the room sees this chat. Voice notes and stickers work too, and it follows you into every game." : "Or trash-talk. Voice notes and stickers work too, and this chat follows you into every game."}
+            </p>
           </div>
         ) : null}
 
@@ -161,8 +174,11 @@ export function ChatPanel(props: Props) {
                   </li>
                 ) : null}
                 <li className={cn("flex flex-col", mine ? "items-end" : "items-start", joinsPrev ? "mt-1" : "mt-3")}>
+                  {group && !mine && !joinsPrev ? (
+                    <p aria-hidden className="mb-1 ml-1 text-[0.75rem] font-semibold text-muted">{nameOf(m.sender_id)}</p>
+                  ) : null}
                   <p className="sr-only">
-                    {mine ? "You" : name}: {m.kind === "text" ? "" : describe(m)}
+                    {mine ? "You" : nameOf(m.sender_id)}: {m.kind === "text" ? "" : describe(m)}
                   </p>
                   {mine || m.status ? (
                     <Body m={m} mine={mine} saver={false} />
@@ -185,7 +201,7 @@ export function ChatPanel(props: Props) {
                   ) : endsRun ? (
                     <p className="mt-1 text-[0.7rem] text-muted">
                       {m.status === "sending" && m.kind === "voice" ? "Sending…" : clockTime(m.created_at)}
-                      {mine && m.id === myLast?.id && seen ? " · Seen" : ""}
+                      {mine && m.id === myLast?.id ? seenLabel : ""}
                     </p>
                   ) : null}
                 </li>
@@ -206,7 +222,13 @@ export function ChatPanel(props: Props) {
       </div>
 
       <Composer {...props} onBeforeSend={pin} />
-      <ReportDialog open={!!reporting} onClose={() => setReporting(null)} partnerName={name} message={reporting} />
+      <ReportDialog
+        open={!!reporting}
+        onClose={() => setReporting(null)}
+        partnerName={reporting ? nameOf(reporting.sender) : name}
+        message={reporting}
+        target={group && reporting ? { roomId, userId: reporting.sender } : undefined}
+      />
     </motion.div>
   );
 }

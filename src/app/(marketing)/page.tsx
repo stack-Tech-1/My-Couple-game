@@ -10,11 +10,11 @@ import { CATEGORIES, CATEGORY_ORDER, GAMES, gamesIn } from "@/games/catalog";
 import { GameArt } from "@/games/GameArt";
 
 export const metadata: Metadata = {
-  title: { absolute: `${APP_NAME}: game night for exactly two people` },
+  title: { absolute: `${APP_NAME}: games for the people closest to you` },
   description: APP_DESCRIPTION,
   alternates: { canonical: "/" },
   openGraph: {
-    title: `${APP_NAME}: game night for exactly two people`,
+    title: `${APP_NAME}: games for the people closest to you`,
     description: APP_DESCRIPTION,
     type: "website",
     images: [{ url: "/og", width: 1200, height: 630 }],
@@ -57,15 +57,15 @@ export default function Landing() {
         {/* Hero */}
         <section className="mx-auto grid max-w-6xl items-center gap-14 px-4 pb-20 pt-8 sm:px-8 lg:grid-cols-[1.15fr_1fr] lg:pt-16">
           <div>
-            <p className="eyebrow text-accent-ink">A private game room for couples</p>
+            <p className="eyebrow text-accent-ink">Made for couples. Bring your best friends too.</p>
             <h1 className="display mt-5 text-[clamp(3.1rem,9vw,6.4rem)]">
-              Game night for <span className="display-wonk mr-[0.12em] italic">exactly</span>{" "}
-              <span className="scribble">two</span> people.
+              Games for the people <span className="display-wonk mr-[0.12em] italic">closest</span>{" "}
+              <span className="scribble">to you</span>.
             </h1>
             <p className="mt-7 max-w-[34rem] text-[1.12rem] leading-relaxed text-muted">
-              Cards, board games, trivia about each other, love notes that unlock on a date you choose, and an
-              after-dark corner you both have to open. Same couch or different time zones: you each play from
-              your own phone, live.
+              A private room for the two of you: cards, board games, trivia about each other, love notes that unlock
+              on a date you choose, and an after-dark corner you both have to open. And when the group chat wants a
+              rematch, a friend room fits up to eight. Everyone plays from their own phone, live.
             </p>
             <div className="mt-9 flex flex-wrap items-center gap-3">
               <Link
@@ -84,10 +84,10 @@ export default function Landing() {
         <section aria-label="At a glance" className="border-y border-line-strong">
           <dl className="mx-auto grid max-w-6xl grid-cols-2 divide-line sm:grid-cols-4 sm:divide-x">
             {[
-              [String(GAMES.length), "games, all two-player"],
-              ["5", "moods, from cutthroat to candlelit"],
+              [String(GAMES.length), "games, from Whot to love notes"],
+              ["2", "in a couple room. Only ever."],
+              ["8", "friends in a friend room"],
               ["0", "ads, feeds or audiences"],
-              ["2", "people per room. Always."],
             ].map(([n, label]) => (
               <div key={label} className="px-4 py-6 sm:px-8">
                 <dt className="sr-only">{label}</dt>
@@ -166,6 +166,35 @@ export default function Landing() {
           </div>
         </section>
 
+        {/* Friend rooms */}
+        <section className="mx-auto max-w-6xl px-4 py-24 sm:px-8" aria-labelledby="friends">
+          <div className="grid gap-12 lg:grid-cols-[1fr_1.2fr] lg:items-start">
+            <div>
+              <p className="eyebrow text-accent-ink">New · Friend rooms</p>
+              <h2 id="friends" className="display mt-4 text-[clamp(2.4rem,6vw,4rem)]">
+                Bring your people.
+              </h2>
+              <p className="mt-6 max-w-md leading-relaxed text-muted">
+                Your best friend, your siblings, the group chat that never stops arguing about Whot rules. Start a friend
+                room, send the code, and pick who you&apos;re playing. Your couple room stays just for the two of you.
+              </p>
+            </div>
+            <div className="grid gap-8 sm:grid-cols-2">
+              {[
+                ["Up to eight", "Everyone gets a seat. Be in up to five friend rooms, plus your couple room."],
+                ["The good games", "Whot, Ludo, Ayo, Word Duel, Connect Four, Draw & Guess, riddles and Don't Laugh."],
+                ["A group chat", "Voice notes, stickers and trash talk, following you into every game."],
+                ["One owner", "Whoever starts the room invites people and can remove them. Nobody else gets a key."],
+              ].map(([t, b]) => (
+                <div key={t} className="border-t border-line-strong pt-4">
+                  <h3 className="font-bold">{t}</h3>
+                  <p className="mt-2 leading-relaxed text-muted">{b}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
         {/* After dark */}
         <section className="relative overflow-hidden bg-[#120c0e] text-[#f4e4da]" aria-labelledby="afterdark">
           <div
@@ -216,7 +245,7 @@ export default function Landing() {
             </div>
             <div className="grid gap-8 sm:grid-cols-2">
               {[
-                ["Locked to two", "Once your partner joins, the invite code is retired. No third account can get in."],
+                ["Locked to two", "Once your partner joins a couple room, the invite code is retired. No third account can get in, and After Dark never exists in friend rooms."],
                 ["Hidden means hidden", "Your hand of cards and sealed answers never even reach your partner's phone until they should."],
                 ["Photos stay private", "Memory Lane photos sit in private storage and load through short-lived links."],
                 ["Leave cleanly", "Delete your account and everything you wrote goes with it. One button, no email to support."],

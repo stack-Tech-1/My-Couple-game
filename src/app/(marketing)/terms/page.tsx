@@ -14,9 +14,9 @@ export default function Terms() {
       updated={TERMS_UPDATED}
       summary={
         <ul>
-          <li>Amah is a private game room for two adults. You must be {MIN_AGE} or older.</li>
-          <li>Be kind to your partner and honest with us. No harassment, no illegal content, no sharing intimate images of anyone without their consent.</li>
-          <li>What you create stays yours. You let us store and show it to your partner so Amah can work.</li>
+          <li>Amah is a private game room for adults: a couple room for two, and friend rooms for up to eight. You must be {MIN_AGE} or older.</li>
+          <li>Be kind to the people in your rooms and honest with us. No harassment, no illegal content, no sharing intimate images of anyone without their consent.</li>
+          <li>What you create stays yours. You let us store and show it to the people in that room so Amah can work.</li>
           <li>After Dark is optional, adults-only, and opens only when both of you say yes.</li>
           <li>Amah is free for now. If we add paid features, you&apos;ll see the price and terms before you pay.</li>
           <li>Nigerian law applies.</li>
@@ -38,15 +38,17 @@ export default function Terms() {
 
       <h2>2. Your room</h2>
       <ul>
-        <li>A room is shared by two people. Anything you share in it, such as messages, voice notes, notes, photos and answers, can be seen by the other member, except things the app keeps hidden by design (described in the Privacy Policy).</li>
-        <li>Only invite someone you trust. You can leave a room at any time in Settings. Your partner keeps the room and its shared history, and gets a new invite code.</li>
-        <li>You can block your partner, which removes you from the room, and report anything that breaks these Terms.</li>
+        <li>There are two kinds of room. A <strong>couple room</strong> is shared by two people; you can be in one at a time. A <strong>friend room</strong> holds up to eight people; you can be in up to five. Anything you share in a room, such as messages, voice notes, notes, photos and answers, can be seen by everyone in that room, except things the app keeps hidden by design (described in the Privacy Policy).</li>
+        <li>Friend rooms have an owner: the person who started the room, or whoever it was handed to. The owner can rename the room, share or change its invite code, and remove people. If the owner leaves, they can choose the next owner; otherwise the person who has been in the room longest becomes the owner.</li>
+        <li>Friend rooms have games and a group chat only. After Dark and the couple features (such as love notes, Memory Lane and moods) are only ever available in couple rooms.</li>
+        <li>Only invite people you trust. You can leave a room at any time in Settings. In a couple room, your partner keeps the room and its shared history, and gets a new invite code. In a friend room, everyone else keeps the room.</li>
+        <li>You can block your partner, which removes you from your couple room. In a friend room, blocking someone hides their messages and game invites from you, and nobody has to leave. You can report anything that breaks these Terms.</li>
       </ul>
 
       <h2>3. Acceptable use</h2>
       <p>You agree not to use Amah to:</p>
       <ul>
-        <li>harass, threaten, blackmail, stalk or abuse anyone, or pressure your partner into anything;</li>
+        <li>harass, threaten, blackmail, stalk or abuse anyone, or pressure your partner or anyone in your rooms into anything;</li>
         <li>share sexual or intimate images or videos of anyone without their consent, or any sexual content involving a person under 18 (we report this to the authorities);</li>
         <li>share content that is unlawful in Nigeria, including content prohibited by the Cybercrimes (Prohibition, Prevention, etc.) Act 2015, or content that is hateful, or promotes violence or self-harm;</li>
         <li>impersonate someone, or use someone else&apos;s account or email without permission;</li>
@@ -67,7 +69,7 @@ export default function Terms() {
       <h2>5. Your content</h2>
       <ul>
         <li>You own what you create in Amah, such as messages, voice notes, photos, notes, answers, stickers and custom cards.</li>
-        <li>You give us a limited, non-exclusive, royalty-free licence to store, process and display it, and only to run Amah for you and your partner, including backups and handling reports. This licence ends when your content is deleted, except where we must keep it by law.</li>
+        <li>You give us a limited, non-exclusive, royalty-free licence to store, process and display it, and only to run Amah for you and the people in your rooms, including backups and handling reports. This licence ends when your content is deleted, except where we must keep it by law.</li>
         <li>You confirm you have the right to share what you upload. Don&apos;t upload photos, stickers or audio that belong to someone else unless you are allowed to.</li>
         <li>If you send us feedback or suggest questions or cards, we may use them freely to improve Amah, without owing you anything.</li>
       </ul>
@@ -102,7 +104,7 @@ export default function Terms() {
       <p>
         To the extent the law allows, we are not liable for indirect or consequential losses, or for loss of data, profits or goodwill. Our total liability to you
         for any claim about Amah is limited to the amount you paid us in the 12 months before the claim, or ₦10,000 if you paid nothing. We are not responsible for
-        what other users, including your partner, say or do. Nothing here limits liability for death or personal injury caused by negligence, for fraud, or for
+        what other users, including your partner and the people in your friend rooms, say or do. Nothing here limits liability for death or personal injury caused by negligence, for fraud, or for
         anything else that can&apos;t be limited by law.
       </p>
 

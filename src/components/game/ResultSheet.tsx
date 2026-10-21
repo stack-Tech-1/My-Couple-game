@@ -69,7 +69,7 @@ export function ResultSheet({ session, me, names }: { session: SessionRow; me: s
     setBusy(true);
     try {
       const next = await gameApi.create(session.game_id, { rematchOf: session.id });
-      send("game:invite", { sessionId: next.id, gameId: next.game_id, rematch: true });
+      send("game:invite", { sessionId: next.id, gameId: next.game_id, rematch: true, to: next.players.filter((p) => p !== me) });
       track("rematch", { game: session.game_id });
       router.push(`/room/${next.room_id}/play/${next.id}`);
     } catch (e) {

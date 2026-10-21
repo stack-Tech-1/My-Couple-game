@@ -6,7 +6,7 @@ import { TextArea } from "@/design/Field";
 import { Modal } from "@/design/Modal";
 import { toast } from "@/design/toast";
 import { cn } from "@/lib/cn";
-import { reportPartner } from "@/lib/room/actions";
+import { reportMember, reportPartner } from "@/lib/room/actions";
 import { REPORT_LABELS, REPORT_REASONS, type ReportReason } from "@/lib/room/types";
 
 /**
@@ -19,6 +19,7 @@ export function ReportDialog({
   partnerName,
   message,
   onBlockInstead,
+  target,
 }: {
   open: boolean;
   onClose: () => void;
@@ -26,6 +27,8 @@ export function ReportDialog({
   /** When reporting one message: its id and a short preview. */
   message?: { id: string; preview: string } | null;
   onBlockInstead?: () => void;
+  /** Friend rooms: who is being reported, and where. Couple rooms leave this out (it's the partner). */
+  target?: { roomId: string; userId: string };
 }) {
   const [reason, setReason] = useState<ReportReason | null>(null);
   const [details, setDetails] = useState("");
@@ -45,7 +48,8 @@ export function ReportDialog({
   function submit() {
     if (!reason) return;
     start(async () => {
-      const res = await reportPartner({ reason, details: details || undefined, messageId: message?.id });
+      const input = { reason, details: details || undefined, messageId: message?.id };
+      const res = target ? await reportMember({ ...input, roomId: target.roomId, reportedId: target.userId }) : await reportPartner(input);
       if (!res.ok) return void toast.error(res.error);
       setSent(true);
     });
@@ -64,7 +68,11 @@ export function ReportDialog({
             We&apos;ve got your report. If you&apos;re in danger, please contact someone you trust or the emergency services (112 in Nigeria) right away.
           </p>
           {onBlockInstead ? (
-            <p className="mt-3 text-muted">You can also block {partnerName}. You&apos;ll leave the room and they won&apos;t be able to pair with you again.</p>
+            <p className="mt-3 text-muted">
+              {target
+                ? `You can also block ${partnerName}. Their messages and game invites will be hidden from you.`
+                : `You can also block ${partnerName}. You'll leave the room and they won't be able to pair with you again.`}
+            </p>
           ) : null}
           <div className="mt-6 flex flex-wrap justify-end gap-3">
             {onBlockInstead ? (

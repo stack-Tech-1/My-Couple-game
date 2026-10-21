@@ -10,7 +10,8 @@ import { Icon } from "@/design/icons";
 import { toast } from "@/design/toast";
 import { cn } from "@/lib/cn";
 import { useRoom } from "@/lib/realtime/RoomProvider";
-import { deleteAccount, leaveRoom, renameRoom, setAnnouncementEmails, signOut, updateMyPrefs } from "@/lib/room/actions";
+import { deleteAccount, leaveFriendRoom, leaveRoom, renameRoom, setAnnouncementEmails, signOut, updateMyPrefs } from "@/lib/room/actions";
+import { FriendPeople } from "@/components/friends/FriendPeople";
 import { applyTheme, resolveTheme, saveThemePref, type ThemePref } from "@/lib/theme/theme";
 import { HouseRules } from "@/components/room/HouseRules";
 import { ReportDialog } from "@/components/safety/ReportDialog";
@@ -26,7 +27,12 @@ import { setOptIn } from "@/lib/afterdark/actions";
 export function SettingsView({ announcementEmails, feedback, push }: { announcementEmails: boolean; feedback: { threads: FeedbackThread[]; unread: number }; push: { publicKey: string | null; prefs: PushPrefs } }) {
   const { bundle } = useRoom();
   const router = useRouter();
-  const { room, me, partner } = bundle;
+  const { room, me, partner, members, rooms } = bundle;
+  const friendsRoom = room.kind === "friends";
+  const isOwner = room.owner_id === me.profile.id;
+  const others = members.filter((m) => m.profile.id !== me.profile.id);
+  // Leaving a friend room you own: who takes over ("" = the longest-standing member).
+  const [heir, setHeir] = useState("");
   const [name, setName] = useState(room.name);
   const [theme, setTheme] = useState<ThemePref>(me.member.theme);
   const [sound, setSound] = useState(me.member.sound_enabled);
@@ -42,7 +48,7 @@ export function SettingsView({ announcementEmails, feedback, push }: { announcem
     e.preventDefault();
     start(async () => {
       const res = await renameRoom(room.id, name);
-      if (res.ok) toast.success("Renamed.", "Your partner will see it right away.");
+      if (res.ok) toast.success("Renamed.", friendsRoom ? "Everyone in the room will see it." : "Your partner will see it right away.");
       else toast.error(res.error);
     });
   }
@@ -80,15 +86,40 @@ export function SettingsView({ announcementEmails, feedback, push }: { announcem
       <h1 className="display mt-6 text-[clamp(2.6rem,8vw,3.8rem)]">Settings</h1>
 
       <Section title="The room">
+        {friendsRoom && !isOwner ? (
+          <p className="text-muted">
+            <b className="text-fg">{room.name}</b> is a friend room. Only {members.find((m) => m.profile.id === room.owner_id)?.profile.display_name ?? "the owner"} can rename it or invite people.
+          </p>
+        ) : (
         <form onSubmit={saveName} className="flex items-end gap-3">
           <div className="flex-1">
             <TextField label="Room name" value={name} onChange={(e) => setName(e.target.value)} maxLength={40} />
           </div>
           <Button type="submit" variant="outline" loading={pending} disabled={name.trim() === room.name}>Save</Button>
         </form>
+        )}
+        {friendsRoom ? null : (
         <p className="mt-4 text-[0.9rem] text-muted">
           {partner ? <>Paired with <b className="text-fg">{partner.profile.display_name}</b>{room.paired_at ? ` since ${new Date(room.paired_at).toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" })}` : ""}.</> : <>Still waiting on your person. Invite code <b className="tabular text-fg">{room.invite_code}</b>.</>}
         </p>
+        )}
+      </Section>
+
+      {friendsRoom ? (
+        <Section title="People" id="people">
+          <FriendPeople />
+        </Section>
+      ) : null}
+
+      <Section title="Your rooms" id="rooms">
+        <p className="mb-4 text-muted">
+          {rooms.length > 1
+            ? "Switch rooms from the room name at the top of the screen."
+            : "Got a best friend or a group chat that needs a rematch? A friend room fits up to eight people, with Whot, Ludo, Ayo and more. Your couple room stays just for the two of you."}
+        </p>
+        <Link href="/room/new" className="inline-flex items-center gap-1.5 font-semibold underline underline-offset-4">
+          Start or join a friend room <Icon name="arrowRight" size={16} />
+        </Link>
       </Section>
 
       <Section title="Just for you">
@@ -124,10 +155,11 @@ export function SettingsView({ announcementEmails, feedback, push }: { announcem
       </Section>
 
       <Section title="House rules" id="house-rules">
-        <p className="mb-6 text-muted">Shared by both of you. Every family plays these differently; argue it out here, not mid-game.</p>
+        <p className="mb-6 text-muted">{friendsRoom ? "Shared by everyone in this room." : "Shared by both of you."} Every family plays these differently; argue it out here, not mid-game.</p>
         <HouseRules />
       </Section>
 
+      {friendsRoom ? null : (
       <Section title="After dark" id="after-dark">
         <p className="leading-relaxed text-muted">
           An 18+ section with five flirty games. It stays locked until <b className="text-fg">both</b> of you have confirmed you&apos;re over 18 and opted in, each on your own phone. The heat never goes above the lower of your two limits, any card can be skipped without a reason, and it has its own PIN and a one-tap exit.
@@ -151,6 +183,7 @@ export function SettingsView({ announcementEmails, feedback, push }: { announcem
           {me.member.spicy_opt_in ? "Manage After Dark" : "How After Dark works"} <Icon name="arrowRight" size={16} />
         </Link>
       </Section>
+      )}
 
       {partner ? (
         <Section title="Safety" id="safety">
@@ -167,7 +200,7 @@ export function SettingsView({ announcementEmails, feedback, push }: { announcem
       ) : null}
 
       <Section title="Help & feedback" id="feedback">
-        <p className="mb-5 text-muted">Found a bug, have an idea, or a question you think every couple should play? Tell us. A real person reads every message.</p>
+        <p className="mb-5 text-muted">Found a bug, have an idea, or a question you think everyone should play? Tell us. A real person reads every message.</p>
         <FeedbackHub userId={me.profile.id} threads={feedback.threads} unread={feedback.unread} spicyOpen={afterDarkOpen(bundle)} />
       </Section>
 
@@ -185,17 +218,41 @@ export function SettingsView({ announcementEmails, feedback, push }: { announcem
           <BlockDialog open={blockOpen} onClose={() => setBlockOpen(false)} partnerName={partner.profile.display_name} />
         </>
       ) : null}
-      <Modal open={leaveOpen} onClose={() => setLeaveOpen(false)} title="Leave the room?" description={partner ? `You'll be unpaired from ${partner.profile.display_name}. They keep the room and its history, and get a fresh invite code. After Dark closes; your own After Dark answers stay private to you and are never shown to anyone.` : "The room will be deleted, since nobody else is in it."}>
+      <Modal
+        open={leaveOpen}
+        onClose={() => setLeaveOpen(false)}
+        title="Leave the room?"
+        description={
+          friendsRoom
+            ? others.length
+              ? `Everyone else keeps the room and its chat. You can come back with the invite code.${isOwner ? " Choose who looks after it next." : ""}`
+              : "The room will be deleted, since nobody else is in it."
+            : partner
+              ? `You'll be unpaired from ${partner.profile.display_name}. They keep the room and its history, and get a fresh invite code. After Dark closes; your own After Dark answers stay private to you and are never shown to anyone.`
+              : "The room will be deleted, since nobody else is in it."
+        }
+      >
+        {friendsRoom && isOwner && others.length ? (
+          <label className="mb-5 block">
+            <span className="text-[0.82rem] font-semibold">New owner</span>
+            <select value={heir} onChange={(e) => setHeir(e.target.value)} className="mt-1.5 h-12 w-full rounded-[12px] border-[1.5px] border-line bg-raised px-3 font-semibold">
+              <option value="">Whoever has been here longest ({others[0]!.profile.display_name})</option>
+              {others.map((o) => (
+                <option key={o.profile.id} value={o.profile.id}>{o.profile.display_name}</option>
+              ))}
+            </select>
+          </label>
+        ) : null}
         <div className="flex justify-end gap-3">
           <Button variant="ghost" onClick={() => setLeaveOpen(false)}>Stay</Button>
           <Button
             variant="danger"
             loading={pending}
             onClick={() => start(async () => {
-              const res = await leaveRoom();
+              const res = friendsRoom ? await leaveFriendRoom(room.id, heir || null) : await leaveRoom();
               if (!res.ok) return void toast.error(res.error);
-              // Hard navigation: the room's live listeners are about to see us leave.
-              window.location.assign("/onboarding?step=room");
+              // Hard navigation: the room's live listeners are about to see us leave. /room picks another room, if any.
+              window.location.assign(rooms.length > 1 ? "/room" : "/onboarding?step=room");
             })}
           >
             Leave

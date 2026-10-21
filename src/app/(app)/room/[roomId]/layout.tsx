@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
-import { getMyRoom } from "@/lib/room/server";
+import { after } from "next/server";
+import { getRoom } from "@/lib/room/server";
 import { RoomProvider } from "@/lib/realtime/RoomProvider";
 import { RoomHeader } from "@/components/room/RoomHeader";
 import { ConnectionBanner } from "@/components/room/ConnectionBanner";
@@ -32,10 +33,14 @@ async function termsStatus(userId: string): Promise<"ok" | "first" | "updated"> 
 
 export default async function RoomLayout({ children, params }: { children: ReactNode; params: Promise<{ roomId: string }> }) {
   const { roomId } = await params;
-  const [bundle, flags, announcements] = await Promise.all([getMyRoom(), getGameFlags(), liveAnnouncements()]);
-  if (!bundle) redirect("/room");
+  const [bundle, flags, announcements] = await Promise.all([getRoom(roomId), getGameFlags(), liveAnnouncements()]);
   // A room URL that isn't yours just takes you home: no hint the other room exists.
-  if (bundle.room.id !== roomId) redirect(`/room/${bundle.room.id}`);
+  if (!bundle) redirect("/room");
+  // Remember it, so signing in next time lands here.
+  const sb = await supabaseServer();
+  after(async () => {
+    await sb.from("profiles").update({ last_room_id: roomId }).eq("id", bundle.me.profile.id).or(`last_room_id.is.null,last_room_id.neq.${roomId}`);
+  });
   const [terms, feedbackUnread] = await Promise.all([termsStatus(bundle.me.profile.id), unreadReplies()]);
 
   return (

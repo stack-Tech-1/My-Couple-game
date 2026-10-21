@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Icon } from "@/design/icons";
 import { useRoom } from "@/lib/realtime/RoomProvider";
-import { CATEGORIES, CATEGORY_ORDER, gamesIn, type GameMeta } from "@/games/catalog";
+import { CATEGORIES, CATEGORY_ORDER, gamesIn, isFriendGame, type GameMeta } from "@/games/catalog";
 import { GameArt } from "@/games/GameArt";
 import { cn } from "@/lib/cn";
 import { afterDarkOpen } from "@/lib/room/afterDark";
@@ -13,6 +13,7 @@ export function Library() {
   const { bundle } = useRoom();
   const spicyOpen = afterDarkOpen(bundle);
   const { isOff, isNew } = useGameFlags();
+  const friendsRoom = bundle.room.kind === "friends";
 
   return (
     <section aria-labelledby="library-h">
@@ -20,7 +21,9 @@ export function Library() {
       <div className="mt-6 space-y-14">
         {CATEGORY_ORDER.map((c) => {
           const cat = CATEGORIES[c];
-          const games = gamesIn(c).filter((g) => !isOff(g.id));
+          const games = gamesIn(c).filter((g) => !isOff(g.id) && (!friendsRoom || isFriendGame(g.id)));
+          // Friend rooms never mention After Dark.
+          if (friendsRoom && c === "spicy") return null;
           // Discretion: After Dark is one panel on the shared home screen, never a list of its games.
           if (!games.length && c !== "spicy") return null;
           if (c === "spicy") return <AfterDarkEntry key={c} roomId={bundle.room.id} open={spicyOpen} />;
@@ -30,7 +33,7 @@ export function Library() {
                 <h3 className="display text-[2rem]" style={{ color: cat.ink }}>{cat.label}</h3>
                 <span className="text-[0.85rem] text-muted tabular">{games.length} games</span>
               </div>
-              <p className="mt-1 text-muted">{cat.blurb}</p>
+              <p className="mt-1 text-muted">{friendsRoom && c === "competitive" ? "Loser buys the next round of suya." : cat.blurb}</p>
               <ul className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {games.map((g, i) => (
                   <li key={g.id} className={cn(i === 0 && "col-span-2 sm:col-span-1 sm:row-span-2")}>

@@ -77,9 +77,10 @@ export async function notifyChatMessage(messageId: unknown): Promise<ActionResul
   const { data: m } = await (await supabaseServer()).from("chat_messages").select("room_id, sender_id, kind, body").eq("id", id.data).maybeSingle();
   if (!m || m.sender_id !== user.id) return { ok: true, data: null };
   after(async () => {
-    const name = await displayName(user.id);
+    const [name, { data: room }] = await Promise.all([displayName(user.id), supabaseAdmin().from("rooms").select("kind, name").eq("id", m.room_id).maybeSingle()]);
+    const title = room?.kind === "friends" ? `${name} in ${room.name}` : name;
     const body = m.kind === "voice" ? "🎤 Voice message" : m.kind === "sticker" ? "Sent a sticker" : String(m.body ?? "").slice(0, 120);
-    await notifyPartner(m.room_id as string, user.id, "messages", { title: name, body, url: `/room/${m.room_id}?chat=1`, tag: `chat-${m.room_id}` });
+    await notifyPartner(m.room_id as string, user.id, "messages", { title, body, url: `/room/${m.room_id}?chat=1`, tag: `chat-${m.room_id}` });
   });
   return { ok: true, data: null };
 }

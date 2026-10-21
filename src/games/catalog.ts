@@ -107,5 +107,9 @@ export const GAMES: GameMeta[] = [
   { id: "fantasy-match", name: "Fantasy Match", category: "spicy", estimatedMinutes: 10, scored: false, tagline: "Only the mutual yeses ever see daylight." },
 ];
 
+/** The games friend rooms get (for now, played one friend against another). */
+export const FRIEND_GAMES = ["whot", "ludo", "ayo", "word-duel", "reflex-duel", "connect-four", "draw-guess", "riddles", "dont-laugh"] as const;
+export const isFriendGame = (id: string) => (FRIEND_GAMES as readonly string[]).includes(id);
+
 export const gameMeta = (id: string): GameMeta | undefined => GAMES.find((g) => g.id === id);
 export const gamesIn = (c: GameCategory): GameMeta[] => GAMES.filter((g) => g.category === c);

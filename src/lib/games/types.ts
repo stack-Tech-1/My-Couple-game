@@ -30,6 +30,10 @@ export const createSessionBody = z.object({
   gameId: z.string().min(1).max(40),
   config: z.record(z.string(), z.unknown()).optional(),
   rematchOf: z.uuid().optional(),
+  /** Which room to play in. Absent: your couple room. */
+  roomId: z.uuid().optional(),
+  /** Friend rooms: who you're playing. */
+  opponent: z.uuid().optional(),
 });
 
 export const moveBody = z.object({
@@ -38,5 +42,11 @@ export const moveBody = z.object({
 });
 
 /** Broadcast on the room channel to invite the partner into a session. */
-export const inviteEvent = z.object({ sessionId: z.uuid(), gameId: z.string().max(40), rematch: z.boolean().optional() });
+export const inviteEvent = z.object({
+  sessionId: z.uuid(),
+  gameId: z.string().max(40),
+  rematch: z.boolean().optional(),
+  /** Friend rooms: who the invite is for. Absent in couple rooms (it's for your partner). */
+  to: z.array(z.uuid()).max(8).optional(),
+});
 export type InviteEvent = z.infer<typeof inviteEvent>;

@@ -7,9 +7,9 @@ import { Avatar, AVATAR_HUES, AVATAR_MOTIFS, type AvatarMotif } from "@/design/A
 import { Button } from "@/design/Button";
 import { TextField } from "@/design/Field";
 import { Logo } from "@/design/Logo";
-import { Icon } from "@/design/icons";
 import { cn } from "@/lib/cn";
-import { createRoom, joinRoom, saveProfile } from "@/lib/room/actions";
+import { saveProfile } from "@/lib/room/actions";
+import { NewRoomForm } from "@/components/friends/NewRoomForm";
 import type { Profile } from "@/lib/room/types";
 import { track } from "@/lib/analytics";
 
@@ -23,9 +23,6 @@ export function Onboarding({ profile, startAt, next }: { profile: Profile; start
   const [hue, setHue] = useState<number>(profile.avatar_hue);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
-  const [mode, setMode] = useState<"create" | "join">(next?.startsWith("/join/") ? "join" : "create");
-  const [roomName, setRoomName] = useState("");
-  const [code, setCode] = useState("");
   const [agreed, setAgreed] = useState(false);
 
   function submitYou(e: FormEvent) {
@@ -37,18 +34,6 @@ export function Onboarding({ profile, startAt, next }: { profile: Profile; start
       track("onboarding_profile_saved");
       if (next) return router.push(next);
       setStep("room");
-    });
-  }
-
-  function submitRoom(e: FormEvent) {
-    e.preventDefault();
-    setError(null);
-    start(async () => {
-      const res = mode === "create" ? await createRoom(roomName.trim() || `${name.trim()}'s room`) : await joinRoom(code);
-      if (!res.ok) return setError(res.error);
-      track(mode === "create" ? "room_created" : "room_joined");
-      router.push(`/room/${res.data.id}`);
-      router.refresh();
     });
   }
 
@@ -131,65 +116,17 @@ export function Onboarding({ profile, startAt, next }: { profile: Profile; start
             </Button>
           </motion.form>
         ) : (
-          <motion.form
+          <motion.div
             key="room"
-            onSubmit={submitRoom}
             initial={{ opacity: 0, x: 24 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -24 }}
             className="flex flex-1 flex-col py-12"
           >
-            <h1 className="display text-[clamp(2.6rem,9vw,3.8rem)]">Now, a room for two.</h1>
-            <p className="mt-3 text-muted">Start one and invite your person, or use the code they sent you.</p>
-
-            <div role="radiogroup" aria-label="Start or join" className="mt-10 grid grid-cols-2 gap-3">
-              {([
-                ["create", "door", "Start a room", "I'll send the invite"],
-                ["join", "link", "I have a code", "They already started one"],
-              ] as const).map(([k, icon, title, sub]) => (
-                <button
-                  key={k}
-                  type="button"
-                  role="radio"
-                  aria-checked={mode === k}
-                  onClick={() => setMode(k)}
-                  className={cn(
-                    "rounded-[16px] border-[1.5px] p-4 text-left transition-colors",
-                    mode === k ? "border-line-strong bg-raised" : "border-line hover:border-[color-mix(in_srgb,var(--line-strong)_40%,var(--line))]",
-                  )}
-                >
-                  <Icon name={icon} size={24} className={mode === k ? "text-accent" : "text-muted"} />
-                  <p className="mt-3 font-bold">{title}</p>
-                  <p className="text-[0.85rem] text-muted">{sub}</p>
-                </button>
-              ))}
-            </div>
-
-            <div className="mt-8">
-              {mode === "create" ? (
-                <TextField label="Room name" placeholder={`${name.trim() || "Our"}'s room`} value={roomName} onChange={(e) => setRoomName(e.target.value)} maxLength={40} hint="You can change it later. Inside jokes encouraged." />
-              ) : (
-                <TextField
-                  label="Invite code"
-                  placeholder="ABC234"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6))}
-                  autoCapitalize="characters"
-                  autoComplete="off"
-                  spellCheck={false}
-                  className="tabular font-mono text-[1.4rem] tracking-[0.3em]"
-                />
-              )}
-            </div>
-
-            {error ? <p role="alert" className="mt-6 font-medium text-accent-ink">{error}</p> : null}
-            <div className="mt-auto flex gap-3 pt-12">
-              <Button variant="ghost" size="lg" onClick={() => setStep("you")} icon="arrowLeft">Back</Button>
-              <Button type="submit" size="lg" className="flex-1" loading={pending} disabled={mode === "join" && code.length !== 6}>
-                {mode === "create" ? "Open the room" : "Join the room"}
-              </Button>
-            </div>
-          </motion.form>
+            <h1 className="display text-[clamp(2.6rem,9vw,3.8rem)]">Now, your first room.</h1>
+            <p className="mt-3 mb-10 text-muted">A couple room is just for the two of you. A friend room fits up to eight. You can have one of each, and more friend rooms later.</p>
+            <NewRoomForm name={name} hasCouple={false} friendRooms={0} initialMode={next?.startsWith("/join/") ? "join" : "couple"} onBack={() => setStep("you")} />
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

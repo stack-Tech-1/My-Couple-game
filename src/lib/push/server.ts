@@ -69,9 +69,20 @@ export async function notify(userId: string, kind: PushKind, payload: Payload, o
 }
 
 /** Notify the other member of a room. */
-export async function notifyPartner(roomId: string, fromUserId: string, kind: PushKind, payload: Payload): Promise<number> {
-  const { data } = await supabaseAdmin().from("room_members").select("user_id").eq("room_id", roomId).neq("user_id", fromUserId).maybeSingle();
-  return data?.user_id ? notify(data.user_id as string, kind, payload) : 0;
+/**
+ * Notifies the other people in a room: your partner in a couple room, everyone else in a friend
+ * room, or only `only` if given. Anyone who has blocked the sender is skipped.
+ */
+export async function notifyPartner(roomId: string, fromUserId: string, kind: PushKind, payload: Payload, only?: string[]): Promise<number> {
+  const admin = supabaseAdmin();
+  const [{ data: members }, { data: blockers }] = await Promise.all([
+    admin.from("room_members").select("user_id").eq("room_id", roomId).neq("user_id", fromUserId),
+    admin.from("blocks").select("blocker_id").eq("blocked_id", fromUserId),
+  ]);
+  const skip = new Set((blockers ?? []).map((b) => b.blocker_id as string));
+  const to = (members ?? []).map((m) => m.user_id as string).filter((id) => !skip.has(id) && (!only || only.includes(id)));
+  const sent = await Promise.all(to.map((id) => notify(id, kind, payload)));
+  return sent.reduce((a, b) => a + b, 0);
 }
 
 export async function displayName(userId: string): Promise<string> {

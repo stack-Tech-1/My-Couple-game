@@ -21,9 +21,17 @@ export type Member = {
   max_heat: number;
 };
 
+export type RoomKind = "couple" | "friends";
+/** Couple rooms hold 2; friend rooms up to this many. Each person: 1 couple room, up to MAX_FRIEND_ROOMS friend rooms. */
+export const FRIEND_ROOM_SIZE = 8;
+export const MAX_FRIEND_ROOMS = 5;
+
 export type Room = {
   id: string;
   name: string;
+  kind: RoomKind;
+  /** Friend rooms: the person who can rename, invite and remove. */
+  owner_id: string | null;
   invite_code: string | null;
   created_by: string | null;
   paired_at: string | null;
@@ -42,10 +50,21 @@ export type Moment = {
   created_at: string;
 };
 
+export type RoomPerson = { profile: Profile; member: Member };
+/** A room I'm in, for the switcher. */
+export type RoomSummary = { id: string; name: string; kind: RoomKind; members: number };
+
 export type RoomBundle = {
   room: Room;
-  me: { profile: Profile; member: Member };
-  partner: { profile: Profile; member: Member } | null;
+  me: RoomPerson;
+  /** Couple rooms: the other person. Friend rooms: always null (see `members`). */
+  partner: RoomPerson | null;
+  /** Everyone in the room, me included, longest-standing first. */
+  members: RoomPerson[];
+  /** Every room I'm in, couple room first. */
+  rooms: RoomSummary[];
+  /** People I've blocked: their messages and invites are hidden from me. */
+  blocked: string[];
 };
 
 export const roomSettingsSchema = z

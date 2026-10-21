@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getMyProfile, getMyRoom, getUser } from "@/lib/room/server";
+import { getMyProfile, getUser, homeRoomId } from "@/lib/room/server";
 
 export const dynamic = "force-dynamic";
 
@@ -9,7 +9,7 @@ export default async function RoomIndex() {
   if (!user) redirect("/sign-in");
   const profile = await getMyProfile();
   if (!profile?.onboarded_at) redirect("/onboarding");
-  const bundle = await getMyRoom();
-  if (!bundle) redirect("/onboarding?step=room");
-  redirect(`/room/${bundle.room.id}`);
+  const home = await homeRoomId();
+  if (!home) redirect("/onboarding?step=room");
+  redirect(`/room/${home}`);
 }

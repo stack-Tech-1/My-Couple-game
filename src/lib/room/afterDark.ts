@@ -7,7 +7,7 @@ import type { RoomBundle } from "./types";
  */
 export function afterDarkOpen(b: RoomBundle): boolean {
   const p = b.partner;
-  if (!p) return false;
+  if (b.room.kind !== "couple" || !p) return false;
   const both = [b.me.member, p.member];
   return both.every((m) => m.spicy_opt_in && m.age_confirmed_at !== null);
 }

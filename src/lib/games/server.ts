@@ -9,7 +9,7 @@ import { isSpicy } from "@/games/after-dark/logic";
 import { getGameFlags } from "./flags.server";
 import { getContentPack } from "@/lib/content/server";
 import { after } from "next/server";
-import { gameMeta } from "@/games/catalog";
+import { gameMeta, isFriendGame } from "@/games/catalog";
 import { displayName, notifyPartner } from "@/lib/push/server";
 
 /** Both current members confirmed 18+ and opted in. The same gate the database uses. */
@@ -71,18 +71,48 @@ export async function getSnapshot(sessionId: string): Promise<SessionSnapshot> {
   return { session, view: data.view, version: data.version as number, serverNow: Date.now(), ...(closing ? { closing } : {}) };
 }
 
-export async function createSession(gameId: string, rawConfig: unknown, rematchOf?: string): Promise<SessionRow> {
+export async function createSession(gameId: string, rawConfig: unknown, rematchOf?: string, roomId?: string, opponent?: string): Promise<SessionRow> {
   const { supabase, user } = await requireUser();
   const logic = GAME_LOGIC[gameId];
   if (!logic) throw new ApiError(404, "We don't have that game (yet).");
   if ((await getGameFlags()).off.includes(gameId)) throw new ApiError(403, "That game is taking a break. Try another one?");
   await rateLimit(user.id, "create_session", 20, 600);
 
-  const { data: members } = await supabase.from("room_members").select("room_id, user_id, spicy_opt_in, age_confirmed_at");
-  const mine = members?.find((m) => m.user_id === user.id);
-  const partner = members?.find((m) => m.user_id !== user.id && m.room_id === mine?.room_id);
-  if (!mine) throw new ApiError(403, "You need a room first.");
-  if (!partner) throw new ApiError(409, "Games need two players. Invite your person first.");
+  // Which room: a rematch stays where it was; otherwise the room asked for, else my couple room.
+  let prev: SessionRow | null = null;
+  if (rematchOf) {
+    const { data: prevRow } = await supabase.from("game_sessions").select("*").eq("id", rematchOf).maybeSingle();
+    prev = prevRow as SessionRow | null;
+    if (prev && (prev.game_id !== gameId || !prev.players.includes(user.id))) prev = null;
+  }
+  let rid = prev?.room_id ?? roomId ?? null;
+  if (!rid) {
+    const { data: coupleId } = await supabase.rpc("my_room_id");
+    rid = (coupleId as string | null) ?? null;
+  }
+  if (!rid) throw new ApiError(403, "You need a room first.");
+  // RLS returns the room and its members only to members.
+  const [{ data: roomInfo }, { data: members }] = await Promise.all([
+    supabase.from("rooms").select("kind").eq("id", rid).maybeSingle(),
+    supabase.from("room_members").select("user_id").eq("room_id", rid),
+  ]);
+  const ids = (members ?? []).map((m) => m.user_id as string);
+  if (!roomInfo || !ids.includes(user.id)) throw new ApiError(403, "You need a room first.");
+  const friends = roomInfo.kind === "friends";
+  const mine = { room_id: rid };
+
+  let other: string | undefined;
+  if (friends) {
+    if (!isFriendGame(gameId) || logic.category === "spicy") throw new ApiError(403, "That game isn't in friend rooms yet.");
+    other = prev ? prev.players.find((p) => p !== user.id) : opponent;
+    if (!other || other === user.id || !ids.includes(other)) throw new ApiError(409, "Pick a friend from this room to play with.");
+    const { count } = await supabaseAdmin().from("blocks").select("blocker_id", { count: "exact", head: true })
+      .or(`and(blocker_id.eq.${other},blocked_id.eq.${user.id}),and(blocker_id.eq.${user.id},blocked_id.eq.${other})`);
+    if (count) throw new ApiError(409, "They can't play right now. Pick someone else?");
+  } else {
+    other = ids.find((id) => id !== user.id);
+  }
+  if (!other) throw new ApiError(409, "Games need two players. Invite your person first.");
 
   // After Dark: both must be confirmed and opted in. Heat cap and custom cards come from the
   // database, never from the client.
@@ -107,30 +137,26 @@ export async function createSession(gameId: string, rawConfig: unknown, rematchO
 
   // Rematch: whoever went second last time goes first now.
   let rematchId: string | undefined;
-  if (rematchOf) {
-    const { data: prevRow } = await supabase.from("game_sessions").select("*").eq("id", rematchOf).maybeSingle();
-    const prev = prevRow as SessionRow | null;
-    if (prev && prev.game_id === gameId && prev.room_id === mine.room_id) {
-      // Both pressed Rematch? The second press joins the first one's game instead of replacing it.
-      const { data: existing } = await supabase.from("game_sessions").select("*").eq("rematch_of", prev.id).eq("status", "active").maybeSingle();
-      if (existing) return existing as SessionRow;
-      rematchId = prev.id;
-      // Keep the mode the last game was played in.
-      const kept = Object.fromEntries((logic.rematchKeeps ?? []).filter((k) => k in prev.config).map((k) => [k, prev.config[k]]));
-      if (Object.keys(kept).length && logic.configSchema) {
-        const p = logic.configSchema.safeParse({ ...config, ...kept });
-        if (p.success) config = p.data as Record<string, unknown>;
-      }
-      // firstPlayer is an index into players; map it through the previous seat order.
-      const prevFirst = prev.config.firstPlayer;
-      if (prevFirst === 0 || prevFirst === 1) {
-        const prevFirstUser = prev.players[prevFirst];
-        config = { ...config, firstPlayer: prevFirstUser === user.id ? 1 : 0 };
-      }
+  if (prev) {
+    // Both pressed Rematch? The second press joins the first one's game instead of replacing it.
+    const { data: existing } = await supabase.from("game_sessions").select("*").eq("rematch_of", prev.id).eq("status", "active").maybeSingle();
+    if (existing) return existing as SessionRow;
+    rematchId = prev.id;
+    // Keep the mode the last game was played in.
+    const kept = Object.fromEntries((logic.rematchKeeps ?? []).filter((k) => k in prev.config).map((k) => [k, prev.config[k]]));
+    if (Object.keys(kept).length && logic.configSchema) {
+      const p = logic.configSchema.safeParse({ ...config, ...kept });
+      if (p.success) config = p.data as Record<string, unknown>;
+    }
+    // firstPlayer is an index into players; map it through the previous seat order.
+    const prevFirst = prev.config.firstPlayer;
+    if (prevFirst === 0 || prevFirst === 1) {
+      const prevFirstUser = prev.players[prevFirst];
+      config = { ...config, firstPlayer: prevFirstUser === user.id ? 1 : 0 };
     }
   }
 
-  const players: Players = [user.id, partner.user_id];
+  const players: Players = [user.id, other];
   const seed = randomBytes(16).toString("hex");
   const state = logic.initialState(seed, players, config as never, { now: Date.now(), content: await getContentPack() });
   const firstTurn = (state as { turn?: unknown }).turn;
@@ -158,7 +184,7 @@ export async function createSession(gameId: string, rawConfig: unknown, rematchO
       body: game ? `${game}. Tap to join.` : "Tap to join.",
       url: `/room/${mine.room_id}/play/${created.id}`,
       tag: `invite-${mine.room_id}`,
-    });
+    }, [other]);
   });
   return created;
 }

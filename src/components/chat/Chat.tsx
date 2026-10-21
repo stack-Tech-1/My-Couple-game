@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Avatar } from "@/design/Avatar";
 import { Icon } from "@/design/icons";
@@ -38,14 +38,19 @@ const later = (a: string | null, b: string | null) => (!a ? b : !b ? a : Date.pa
  */
 export function Chat() {
   const { bundle } = useRoom();
-  return bundle.partner ? <ChatInner /> : null;
+  // Couple rooms: once paired. Friend rooms: always (it's how the group talks).
+  return bundle.partner || bundle.room.kind === "friends" ? <ChatInner /> : null;
 }
 
 function ChatInner() {
   const { bundle, on, send: broadcast, myWhere, partnerPresence, connection } = useRoom();
   const roomId = bundle.room.id;
   const me = bundle.me.profile.id;
-  const partner = bundle.partner!.profile;
+  const group = bundle.room.kind === "friends";
+  const people = useMemo(() => Object.fromEntries(bundle.members.map((m) => [m.profile.id, m.profile])), [bundle.members]);
+  const blocked = bundle.blocked;
+  // In a friend room the "other side" of the chat is the room itself.
+  const partner = group ? { display_name: bundle.room.name, avatar_key: "fig", avatar_hue: 200 } : bundle.partner!.profile;
   const soundOn = bundle.me.member.sound_enabled;
 
   const [messages, setMessages] = useState<LocalMessage[]>([]);
@@ -53,9 +58,12 @@ function ChatInner() {
   const [hasMore, setHasMore] = useState(false);
   const [loadingEarlier, setLoadingEarlier] = useState(false);
   const [myReadAt, setMyReadAt] = useState<string | null>(null);
-  const [partnerReadAt, setPartnerReadAt] = useState<string | null>(null);
+  // When everyone else last read the chat (one entry in a couple room).
+  const [readers, setReaders] = useState<Record<string, string>>({});
+  const markRead = useCallback((uid: string, t: string) => setReaders((r) => ({ ...r, [uid]: later(r[uid] ?? null, t)! })), []);
   const [open, setOpen] = useState(false);
-  const [typing, setTyping] = useState(false);
+  // Who is typing (null: nobody).
+  const [typing, setTyping] = useState<string | null>(null);
   const [preview, setPreview] = useState<ChatMessage | null>(null);
 
   const openRef = useRef(open);
@@ -92,9 +100,9 @@ function ChatInner() {
     }
     for (const r of (reads ?? []) as { user_id: string; read_at: string }[]) {
       if (r.user_id === me) setMyReadAt((t) => later(t, r.read_at));
-      else setPartnerReadAt((t) => later(t, r.read_at));
+      else markRead(r.user_id, r.read_at);
     }
-  }, [roomId, me]);
+  }, [roomId, me, markRead]);
 
   useEffect(() => {
     void refresh();
@@ -147,14 +155,14 @@ function ChatInner() {
       const fresh = !known.current.has(m.id);
       known.current.add(m.id);
       setMessages((list) => mergeMessages(list, [m]));
-      if (!fresh || m.sender_id === me) return;
-      setTyping(false);
+      if (!fresh || m.sender_id === me || blocked.includes(m.sender_id)) return;
+      setTyping(null);
       if (!openRef.current || document.visibilityState !== "visible") {
         setPreview(m);
         if (soundOn) playSound("flip");
       }
     },
-    [roomId, me, soundOn],
+    [roomId, me, soundOn, blocked],
   );
 
   useEffect(() => {
@@ -163,24 +171,25 @@ function ChatInner() {
         const parsed = chatMessageSchema.safeParse(p);
         if (parsed.success && parsed.data.sender_id === from) receive(parsed.data);
       }),
-      on("chat:read", (p) => {
+      on("chat:read", (p, from) => {
         const t = (p as { read_at?: unknown } | null)?.read_at;
-        if (typeof t === "string" && !Number.isNaN(Date.parse(t))) setPartnerReadAt((cur) => later(cur, t));
+        if (typeof t === "string" && !Number.isNaN(Date.parse(t))) markRead(from, t);
       }),
     ];
     let clear: ReturnType<typeof setTimeout> | undefined;
     offs.push(
-      on("chat:typing", () => {
-        setTyping(true);
+      on("chat:typing", (_p, from) => {
+        if (blocked.includes(from)) return;
+        setTyping(from);
         clearTimeout(clear);
-        clear = setTimeout(() => setTyping(false), TYPING_SHOWS);
+        clear = setTimeout(() => setTyping(null), TYPING_SHOWS);
       }),
     );
     return () => {
       offs.forEach((off) => off());
       clearTimeout(clear);
     };
-  }, [on, receive]);
+  }, [on, receive, markRead, blocked]);
 
   // Durable path: Postgres Changes, in case a broadcast was missed.
   useEffect(() => {
@@ -201,7 +210,7 @@ function ChatInner() {
         const r = p.new as { user_id?: string; read_at?: string };
         if (typeof r.read_at !== "string") return;
         if (r.user_id === me) setMyReadAt((t) => later(t, r.read_at!));
-        else setPartnerReadAt((t) => later(t, r.read_at!));
+        else if (r.user_id) markRead(r.user_id, r.read_at);
       })
       .subscribe();
     });
@@ -209,11 +218,13 @@ function ChatInner() {
       cancelled = true;
       if (ch) void sb.removeChannel(ch);
     };
-  }, [roomId, me, receive]);
+  }, [roomId, me, receive, markRead]);
 
   // ---- reading -------------------------------------------------------------------------------
-  const unread = countUnread(messages, me, myReadAt);
-  const newestFromPartner = messages.findLast((m) => m.sender_id !== me)?.created_at ?? null;
+  // Blocked people's messages are never shown (or counted).
+  const visible = useMemo(() => (blocked.length ? messages.filter((m) => !blocked.includes(m.sender_id)) : messages), [messages, blocked]);
+  const unread = countUnread(visible, me, myReadAt);
+  const newestFromPartner = visible.findLast((m) => m.sender_id !== me)?.created_at ?? null;
 
   useEffect(() => {
     if (!open || !unread || !newestFromPartner) return;
@@ -319,6 +330,7 @@ function ChatInner() {
   // After Dark keeps things discreet: a message arriving there is announced, never quoted.
   const discreet = myWhere === "afterdark";
   const partnerName = partner.display_name;
+  const sender = preview ? (people[preview.sender_id] ?? partner) : partner;
 
   return (
     <div className="relative">
@@ -327,7 +339,7 @@ function ChatInner() {
         type="button"
         onClick={() => toggle(!open)}
         aria-expanded={open}
-        aria-label={unread ? `Chat with ${partnerName}, ${unread} unread` : `Chat with ${partnerName}`}
+        aria-label={unread ? `${group ? "Group chat" : `Chat with ${partnerName}`}, ${unread} unread` : group ? "Group chat" : `Chat with ${partnerName}`}
         className={cn("relative flex h-10 w-10 items-center justify-center rounded-full hover:bg-sunk", open && "bg-sunk")}
       >
         <Icon name="chat" size={20} />
@@ -338,7 +350,7 @@ function ChatInner() {
         ) : null}
       </button>
 
-      <p className="sr-only" aria-live="polite">{preview ? `New message from ${partnerName}` : ""}</p>
+      <p className="sr-only" aria-live="polite">{preview ? `New message from ${sender.display_name}` : ""}</p>
       <AnimatePresence>
         {preview && !open ? (
           <motion.button
@@ -351,9 +363,9 @@ function ChatInner() {
             transition={{ duration: 0.18 }}
             className="absolute right-0 top-full z-50 mt-2 flex w-[min(17rem,calc(100vw-2rem))] items-start gap-2.5 rounded-[16px] border-[1.5px] border-line-strong bg-raised p-3 text-left shadow-[0_14px_36px_-16px_rgba(28,20,22,.55)]"
           >
-            <Avatar name={partnerName} motif={partner.avatar_key} hue={partner.avatar_hue} size={28} />
+            <Avatar name={sender.display_name} motif={sender.avatar_key} hue={sender.avatar_hue} size={28} />
             <span className="min-w-0">
-              <span className="block text-[0.78rem] font-semibold">{partnerName}</span>
+              <span className="block text-[0.78rem] font-semibold">{sender.display_name}</span>
               <span className="line-clamp-2 break-words text-[0.86rem] text-muted">{discreet ? "Sent you a message" : describe(preview)}</span>
             </span>
           </motion.button>
@@ -366,13 +378,15 @@ function ChatInner() {
               roomId={roomId}
               me={me}
               partner={partner}
-              online={!!partnerPresence}
-              typing={typing}
-              messages={messages}
+              online={!group && !!partnerPresence}
+              typing={!!typing}
+              typingName={typing ? people[typing]?.display_name : undefined}
+              group={group ? { people, members: bundle.members.length } : undefined}
+              messages={visible}
               loaded={loaded}
               hasMore={hasMore}
               loadingEarlier={loadingEarlier}
-              partnerReadAt={partnerReadAt}
+              readers={readers}
               onEarlier={loadEarlier}
               onSendText={sendText}
               onSendSticker={sendSticker}

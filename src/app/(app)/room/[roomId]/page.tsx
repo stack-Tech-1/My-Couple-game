@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { getMyRoom, getRecentMoments } from "@/lib/room/server";
+import { getRoom, getRecentMoments } from "@/lib/room/server";
+import { FriendRoomHome } from "@/components/friends/FriendRoomHome";
 import { InvitePanel } from "@/components/room/InvitePanel";
 import { HeadToHead } from "@/components/room/HeadToHead";
 import { PlayNext } from "@/components/room/PlayNext";
@@ -23,8 +24,9 @@ export const metadata: Metadata = { title: "Your room" };
 
 export default async function RoomHome({ params }: { params: Promise<{ roomId: string }> }) {
   const { roomId } = await params;
-  const bundle = await getMyRoom();
+  const bundle = await getRoom(roomId);
   if (!bundle) return null;
+  if (bundle.room.kind === "friends") return <FriendRoomHome roomId={roomId} />;
   const [moments, board, active, daily, keys, progress, week, together] = await Promise.all([
     getRecentMoments(roomId),
     scoreboard(roomId),

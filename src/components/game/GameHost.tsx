@@ -31,8 +31,8 @@ export function GameHost({ initial }: { initial: SessionSnapshot }) {
   const lastStatus = useRef(session.status);
 
   const names = useMemo(
-    () => ({ [me]: bundle.me.profile.display_name, ...(bundle.partner ? { [bundle.partner.profile.id]: bundle.partner.profile.display_name } : {}) }),
-    [me, bundle.me.profile.display_name, bundle.partner],
+    () => Object.fromEntries(bundle.members.map((m) => [m.profile.id, m.profile.display_name])),
+    [bundle.members],
   );
 
   const sound = useCallback((n: SoundName) => soundOn && playSound(n), [soundOn]);

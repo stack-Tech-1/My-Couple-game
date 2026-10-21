@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { getMyProfile, getMyRoom } from "@/lib/room/server";
+import { getMyProfile, homeRoomId } from "@/lib/room/server";
 import { safeNext } from "@/lib/safeNext";
 import { Onboarding } from "./Onboarding";
 
@@ -11,8 +11,9 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
   const sp = await searchParams;
   const profile = await getMyProfile();
   if (!profile) redirect("/sign-in");
-  const bundle = await getMyRoom();
-  if (bundle && profile.onboarded_at) redirect(`/room/${bundle.room.id}`);
+  // Already set up with a room: more rooms are started from /room/new.
+  const home = await homeRoomId();
+  if (home && profile.onboarded_at) redirect(`/room/${home}`);
 
   const next = sp.next ? safeNext(sp.next) : null;
   const startAt = profile.onboarded_at && sp.step === "room" ? "room" : "you";

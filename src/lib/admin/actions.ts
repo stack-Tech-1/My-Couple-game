@@ -75,11 +75,12 @@ export async function deleteUserAccount(userId: unknown, typedEmail: unknown): P
     }
     const { data: photos } = await admin.from("memories").select("path").eq("author_id", id);
     if (photos?.length) await admin.storage.from("memories").remove(photos.map((p) => p.path as string));
-    const { data: roomId, error: leaveErr } = await admin.rpc("admin_remove_from_room", { p_user: id });
+    const { data: memberships } = await admin.from("room_members").select("room_id").eq("user_id", id);
+    const { error: leaveErr } = await admin.rpc("admin_remove_from_room", { p_user: id });
     if (leaveErr) return fail(leaveErr);
     const { error } = await admin.auth.admin.deleteUser(id);
     if (error) return fail(error);
-    if (typeof roomId === "string") await purgeRoomMedia(roomId);
+    await Promise.all((memberships ?? []).map((m) => purgeRoomMedia(m.room_id as string)));
     revalidatePath("/admin");
     return { ok: true, data: null };
   } catch (e) {

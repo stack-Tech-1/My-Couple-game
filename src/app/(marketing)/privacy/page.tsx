@@ -16,7 +16,7 @@ export default function Privacy() {
         <ul>
           <li>Amah is run by {OPERATOR.name}, a registered Nigerian business. We are the data controller.</li>
           <li>We collect what the app needs to work: your email, the name and avatar you choose, your room, and what you create and play inside it.</li>
-          <li>What you share in your room is visible only to you and your partner. Our team does not read your messages, notes, answers, photos or voice notes, except when you report something to us or the law requires it.</li>
+          <li>What you share in a room is visible only to the people in that room: your partner in a couple room, or the members of a friend room. Our team does not read your messages, notes, answers, photos or voice notes, except when you report something to us or the law requires it.</li>
           <li>We never sell your data and we don&apos;t show ads.</li>
           <li>After Dark choices can reveal information about your sex life, which the law treats as sensitive. We only process it with your explicit consent, and you can withdraw it at any time.</li>
           <li>You can see, download, correct or delete your data. Deleting your account deletes what you created.</li>
@@ -41,7 +41,7 @@ export default function Privacy() {
       <ul>
         <li><strong>Account:</strong> your email address, used to sign you in with a one-time link, or the name and email Google shares if you sign in with Google.</li>
         <li><strong>Profile:</strong> the display name, avatar and colour you choose, and your confirmation that you are {MIN_AGE} or older.</li>
-        <li><strong>Your room:</strong> your room&apos;s name, who your partner is, invite codes and room settings (like house rules).</li>
+        <li><strong>Your rooms:</strong> each room&apos;s name and kind, who is in it (and, for friend rooms, who owns it), invite codes, room settings (like house rules), the room you opened last, and anyone you have blocked.</li>
         <li>
           <strong>What you create and play:</strong> game moves and results, Daily Question answers, chat messages, voice notes, stickers you make, love notes,
           Memory Lane photos and captions, bucket-list items and similar content.
@@ -105,7 +105,8 @@ export default function Privacy() {
 
       <h2>4. Who can see what</h2>
       <ul>
-        <li><strong>Your partner</strong> sees what you share in your room: your name and avatar, your moves, messages, voice notes, notes and photos. That is the point of Amah. Some things stay hidden from them by design, such as your Daily Question answer until they answer too, your hand in card games, sealed notes before their date, and Fantasy Match picks that don&apos;t match.</li>
+        <li><strong>People in your friend rooms</strong> see your name and avatar, your messages, voice notes and stickers in that room&apos;s chat, the games you play there and their results. They never see anything from your couple room.</li>
+        <li><strong>Your partner</strong> sees what you share in your couple room: your name and avatar, your moves, messages, voice notes, notes and photos. That is the point of Amah. Some things stay hidden from them by design, such as your Daily Question answer until they answer too, your hand in card games, sealed notes before their date, and Fantasy Match picks that don&apos;t match.</li>
         <li><strong>Our team</strong> can see account facts (email, name, sign-up date, last activity, whether you are paired), counts and anything you send us directly. Our tools are built so that we do not see your room&apos;s content. The exceptions are a message you report (we see that message and its context) and where the law requires access.</li>
         <li><strong>No one else</strong> in Amah can see your room.</li>
       </ul>
@@ -175,7 +176,7 @@ export default function Privacy() {
       <h2>8. How long we keep it</h2>
       <ul>
         <li><strong>Account and profile:</strong> until you delete your account.</li>
-        <li><strong>Room content</strong> (messages, voice notes, notes, photos, answers, game history): while your room exists. If you leave a room, your partner keeps the room and its shared history. If both of you leave, the room and its content are deleted. If you delete your account, what you created is deleted.</li>
+        <li><strong>Room content</strong> (messages, voice notes, notes, photos, answers, game history): while your room exists. If you leave a couple room, your partner keeps the room and its shared history. If you leave a friend room, the others keep it, including messages you sent there. When the last person leaves any room, the room and its content are deleted. If you delete your account, what you created is deleted.</li>
         <li><strong>Reports and feedback:</strong> up to 2 years, so we can handle repeat problems, then deleted.</li>
         <li><strong>Error reports:</strong> up to 90 days.</li>
         <li><strong>Server logs</strong> kept by our hosting providers: usually up to 30 days.</li>

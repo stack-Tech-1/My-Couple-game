@@ -1,8 +1,8 @@
 /** Product-wide constants. Rename the product by changing APP_NAME. */
 export const APP_NAME = "Amah";
-export const APP_TAGLINE = "A tiny arcade for the two of you.";
+export const APP_TAGLINE = "Games for the people closest to you.";
 export const APP_DESCRIPTION =
-  "Amah is a private game room for couples. Trivia, cards, board games, love notes and a strictly opt-in after-dark corner, played live from your own phones.";
+  "Amah is a private game room for couples, and for your best friends too. Whot, Ludo, trivia, love notes and a strictly opt-in after-dark corner for two, played live from your own phones.";
 
 export const INVITE_CODE_LENGTH = 6;
 export const MAX_DISPLAY_NAME = 32;

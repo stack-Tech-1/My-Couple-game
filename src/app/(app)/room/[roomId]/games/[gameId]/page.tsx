@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { CATEGORIES, gameMeta } from "@/games/catalog";
+import { CATEGORIES, gameMeta, isFriendGame } from "@/games/catalog";
 import { getGameFlags } from "@/lib/games/flags.server";
 import { GameArt } from "@/games/GameArt";
 import { Icon } from "@/design/icons";
-import { getMyRoom } from "@/lib/room/server";
+import { getRoom } from "@/lib/room/server";
 import { afterDarkOpen } from "@/lib/room/afterDark";
 import { GAME_LOGIC } from "@/games/logic";
 import { activeSessions } from "@/lib/games/server";
@@ -25,9 +25,11 @@ export default async function GamePage({ params }: { params: Promise<{ roomId: s
   const { roomId, gameId } = await params;
   const game = gameMeta(gameId);
   if (!game) notFound();
-  const bundle = await getMyRoom();
+  const bundle = await getRoom(roomId);
   if (!bundle) redirect("/room");
   if (game.category === "spicy" && !afterDarkOpen(bundle)) redirect(`/room/${roomId}`);
+  // Friend rooms only have the friend games (After Dark and couple features never).
+  if (bundle.room.kind === "friends" && !isFriendGame(game.id)) redirect(`/room/${roomId}`);
   if ((await getGameFlags()).off.includes(game.id)) {
     return (
       <div className="mx-auto max-w-xl pt-16 text-center">
@@ -73,7 +75,8 @@ export default async function GamePage({ params }: { params: Promise<{ roomId: s
   }
   const logic = GAME_LOGIC[game.id];
   if (!logic) notFound(); // every library entry is a feature, an After Dark page, or a session game
-  const active = logic ? (await activeSessions(roomId)).find((s) => s.game_id === game.id) : undefined;
+  const me = bundle.me.profile.id;
+  const active = logic ? (await activeSessions(roomId)).find((s) => s.game_id === game.id && s.players.includes(me)) : undefined;
 
   return (
     <div className="pt-8">

@@ -9,6 +9,8 @@ import { regenerateInvite } from "@/lib/room/actions";
 
 export function InvitePanel() {
   const { bundle } = useRoom();
+  const friends = bundle.room.kind === "friends";
+  const seats = 8 - bundle.members.length;
   const [code, setCode] = useState(bundle.room.invite_code ?? "");
   const [pending, start] = useTransition();
   const link = typeof window === "undefined" ? "" : `${window.location.origin}/join/${code}`;
@@ -25,7 +27,7 @@ export function InvitePanel() {
   async function share() {
     if (navigator.share) {
       try {
-        await navigator.share({ title: "Come play with me", text: `I made us a room. Code ${code}.`, url: link });
+        await navigator.share({ title: friends ? `Join ${bundle.room.name} on Amah` : "Come play with me", text: friends ? `Come play with us. Code ${code}.` : `I made us a room. Code ${code}.`, url: link });
       } catch {
         // dismissed share sheet; nothing to do
       }
@@ -38,11 +40,23 @@ export function InvitePanel() {
     <section aria-labelledby="invite-h" className="mt-8 overflow-hidden rounded-[22px] border-[1.5px] border-line-strong">
       <div className="grid gap-8 p-6 sm:p-8 md:grid-cols-[1fr_auto] md:items-end">
         <div>
-          <p className="eyebrow text-accent-ink">One seat left</p>
-          <h2 id="invite-h" className="display mt-3 text-[clamp(2rem,6vw,3rem)]">Your room is ready. It&apos;s missing someone.</h2>
-          <p className="mt-3 max-w-lg text-muted">
-            Send them the link, or read the code out loud. As soon as they join, the room locks to the two of you and this card disappears.
-          </p>
+          {friends ? (
+            <>
+              <p className="eyebrow text-accent-ink">{seats} {seats === 1 ? "seat" : "seats"} left</p>
+              <h2 id="invite-h" className="display mt-3 text-[clamp(2rem,6vw,3rem)]">Bring your people.</h2>
+              <p className="mt-3 max-w-lg text-muted">
+                Up to eight in a friend room. The code keeps working until you make a new one, so only share it with people you want in.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="eyebrow text-accent-ink">One seat left</p>
+              <h2 id="invite-h" className="display mt-3 text-[clamp(2rem,6vw,3rem)]">Your room is ready. It&apos;s missing someone.</h2>
+              <p className="mt-3 max-w-lg text-muted">
+                Send them the link, or read the code out loud. As soon as they join, the room locks to the two of you and this card disappears.
+              </p>
+            </>
+          )}
         </div>
         <div>
           <p className="sr-only">Invite code: {code.split("").join(" ")}</p>
@@ -70,7 +84,7 @@ export function InvitePanel() {
           loading={pending}
           onClick={() =>
             start(async () => {
-              const res = await regenerateInvite();
+              const res = await regenerateInvite(bundle.room.id);
               if (res.ok) {
                 setCode(res.data);
                 toast.info("Fresh code.", "The old one no longer works.");

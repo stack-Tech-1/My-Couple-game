@@ -10,6 +10,6 @@ export const OPERATOR = {
   email: "stacktechnologies0@gmail.com",
 } as const;
 
-export const TERMS_VERSION = "2026-10-22";
-export const TERMS_UPDATED = "22 October 2026";
+export const TERMS_VERSION = "2026-10-23";
+export const TERMS_UPDATED = "23 October 2026";
 export const MIN_AGE = 18;

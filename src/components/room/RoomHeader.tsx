@@ -2,16 +2,17 @@
 
 import Link from "next/link";
 import { Avatar } from "@/design/Avatar";
-import { LogoMark } from "@/design/Logo";
 import { Icon } from "@/design/icons";
 import { useRoom } from "@/lib/realtime/RoomProvider";
 import { gameMeta } from "@/games/catalog";
 import { Chat } from "@/components/chat/Chat";
 import { NudgeButton } from "./Nudge";
+import { RoomSwitcher } from "./RoomSwitcher";
 
 export function RoomHeader({ feedbackUnread = 0 }: { feedbackUnread?: number }) {
   const { bundle, partnerPresence } = useRoom();
   const { room, me, partner } = bundle;
+  const friendsRoom = room.kind === "friends";
   const partnerOnline = !!partnerPresence;
   const activity = partnerPresence
     ? partnerPresence.where === "game" && partnerPresence.gameId
@@ -24,16 +25,14 @@ export function RoomHeader({ feedbackUnread = 0 }: { feedbackUnread?: number }) 
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-[color-mix(in_srgb,var(--bg)_92%,transparent)] backdrop-blur-sm">
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:px-8">
-        <Link href={`/room/${room.id}`} className="flex min-w-0 items-center gap-2.5 rounded-md" aria-label={`${room.name}: room home`}>
-          <LogoMark size={26} />
-          <span className="display truncate text-[1.25rem]">{room.name}</span>
-        </Link>
+        <RoomSwitcher />
         <div className="ml-auto flex items-center gap-2 sm:gap-3">
-          <div className="hidden text-right sm:block">
+          {friendsRoom ? <FriendFaces /> : null}
+          <div className={friendsRoom ? "hidden" : "hidden text-right sm:block"}>
             <p className="text-[0.82rem] font-semibold leading-tight">{partner?.profile.display_name ?? "Waiting for your person"}</p>
             <p className="text-[0.75rem] leading-tight text-muted" aria-live="polite">{partner ? activity : "invite pending"}</p>
           </div>
-          <div className="flex -space-x-2">
+          <div className={friendsRoom ? "hidden" : "flex -space-x-2"}>
             <Avatar name={me.profile.display_name} motif={me.profile.avatar_key} hue={me.profile.avatar_hue} size={34} />
             {partner ? (
               <Avatar name={partner.profile.display_name} motif={partner.profile.avatar_key} hue={partner.profile.avatar_hue} size={34} online={partnerOnline} />
@@ -43,7 +42,7 @@ export function RoomHeader({ feedbackUnread = 0 }: { feedbackUnread?: number }) 
               </span>
             )}
           </div>
-          <NudgeButton />
+          {friendsRoom ? null : <NudgeButton />}
           <Chat />
           <Link
             href={feedbackUnread ? `/room/${room.id}/settings#feedback` : `/room/${room.id}/settings`}
@@ -56,5 +55,20 @@ export function RoomHeader({ feedbackUnread = 0 }: { feedbackUnread?: number }) 
         </div>
       </div>
     </header>
+  );
+}
+
+/** Friend rooms: up to four faces, then a count. */
+function FriendFaces() {
+  const { members } = useRoom().bundle;
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex -space-x-2" role="img" aria-label={`${members.length} ${members.length === 1 ? "person" : "people"} in this room`}>
+        {members.slice(0, 4).map((m) => (
+          <Avatar key={m.profile.id} name={m.profile.display_name} motif={m.profile.avatar_key} hue={m.profile.avatar_hue} size={34} />
+        ))}
+      </div>
+      {members.length > 4 ? <span className="text-[0.82rem] font-semibold text-muted">+{members.length - 4}</span> : null}
+    </div>
   );
 }
