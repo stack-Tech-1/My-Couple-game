@@ -31,7 +31,7 @@ test("accessibility: key screens have no serious or critical violations", async 
     await p.goto(`/room/${roomId}/settings`);
     await audit(p, "settings");
     await p.getByRole("radio", { name: "Night" }).click();
-    await expect.poll(async () => (await admin.from("room_members").select("theme").eq("user_id", a.id).single()).data?.theme).toBe("night");
+    await expect.poll(async () => (await admin.from("profiles").select("theme").eq("id", a.id).single()).data?.theme).toBe("night");
     await p.goto(`/room/${roomId}`);
     await expect(p.locator("html")).toHaveAttribute("data-theme", "night");
     await audit(p, "room home (night)");

@@ -29,6 +29,17 @@ export function scrubEvent(event: ErrorEvent, _hint?: EventHint): ErrorEvent | n
 }
 
 
+/**
+ * A phone losing its connection isn't a bug: Safari says "Load failed", Chrome "Failed to fetch",
+ * Firefox "NetworkError…", and the app's own message is "Couldn't reach the server". The person
+ * already sees a message for it, so these aren't reported.
+ */
+export const NETWORK_ERRORS = [/^Load failed$/, /^Failed to fetch$/, /NetworkError when attempting to fetch resource/, /Couldn't reach the server/];
+export const isNetworkError = (e: unknown) => {
+  const msg = e instanceof Error ? e.message : typeof e === "string" ? e : "";
+  return NETWORK_ERRORS.some((re) => re.test(msg));
+};
+
 export const baseOptions = {
   dsn: SENTRY_DSN,
   enabled: SENTRY_ON,
@@ -36,5 +47,6 @@ export const baseOptions = {
   sendDefaultPii: false,
   // Errors only: no performance tracing or session replay (keeps it free-tier friendly and light).
   tracesSampleRate: 0,
+  ignoreErrors: NETWORK_ERRORS,
   beforeSend: scrubEvent,
 };

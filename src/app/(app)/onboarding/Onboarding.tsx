@@ -10,6 +10,7 @@ import { Logo } from "@/design/Logo";
 import { cn } from "@/lib/cn";
 import { saveProfile } from "@/lib/room/actions";
 import { NewRoomForm } from "@/components/friends/NewRoomForm";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import type { Profile } from "@/lib/room/types";
 import { track } from "@/lib/analytics";
 
@@ -41,7 +42,10 @@ export function Onboarding({ profile, startAt, next }: { profile: Profile; start
     <div className="mx-auto flex min-h-dvh max-w-xl flex-col px-4 py-5 sm:px-8">
       <div className="flex items-center justify-between">
         <Logo />
-        <span className="eyebrow tabular text-muted">Step {step === "you" ? 1 : 2} of 2</span>
+        <span className="flex items-center gap-2">
+          <span className="eyebrow tabular text-muted">Step {step === "you" ? 1 : 2} of 2</span>
+          <ThemeToggle />
+        </span>
       </div>
 
       <AnimatePresence mode="wait" initial={false}>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Logo } from "@/design/Logo";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { publicEnv } from "@/lib/env";
 import { safeNext } from "@/lib/safeNext";
 import { getUser } from "@/lib/room/server";
@@ -39,9 +40,12 @@ export default async function SignIn({ searchParams }: { searchParams: Promise<R
 
   return (
     <div className="relative z-[1] mx-auto flex min-h-dvh max-w-6xl flex-col px-4 py-5 sm:px-8">
-      <Link href="/" className="self-start rounded-md">
-        <Logo />
-      </Link>
+      <div className="flex items-center justify-between">
+        <Link href="/" className="rounded-md">
+          <Logo />
+        </Link>
+        <ThemeToggle />
+      </div>
       <div className="grid flex-1 items-center gap-16 py-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <div className="max-w-md">
           <p className="eyebrow text-accent-ink">{joining ? "You've been invited" : creating ? "New room" : "Welcome back"}</p>

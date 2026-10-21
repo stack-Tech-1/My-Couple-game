@@ -8,6 +8,7 @@ import { DeletedNotice } from "@/components/landing/DeletedNotice";
 import { Suspense } from "react";
 import { CATEGORIES, CATEGORY_ORDER, GAMES, gamesIn } from "@/games/catalog";
 import { GameArt } from "@/games/GameArt";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const metadata: Metadata = {
   title: { absolute: `${APP_NAME}: games for the people closest to you` },
@@ -41,6 +42,7 @@ export default function Landing() {
           <Logo />
         </Link>
         <nav className="flex items-center gap-2">
+          <ThemeToggle />
           <Link href="/sign-in" className="rounded-full px-4 py-2 text-[0.92rem] font-semibold hover:bg-sunk">
             Sign in
           </Link>

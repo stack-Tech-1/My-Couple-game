@@ -16,7 +16,7 @@ export const getMyProfile = cache(async (): Promise<Profile | null> => {
   const user = await getUser();
   if (!user) return null;
   const supabase = await supabaseServer();
-  const { data } = await supabase.from("profiles").select("id, display_name, avatar_key, avatar_hue, onboarded_at").eq("id", user.id).maybeSingle();
+  const { data } = await supabase.from("profiles").select("id, display_name, avatar_key, avatar_hue, onboarded_at, theme").eq("id", user.id).maybeSingle();
   return (data as Profile | null) ?? null;
 });
 
@@ -59,7 +59,7 @@ export const getRoom = cache(async (roomId: string): Promise<RoomBundle | null> 
   const member = members.find((m) => m.user_id === user.id);
   if (!room || !member) return null;
 
-  const { data: profiles } = await supabase.from("profiles").select("id, display_name, avatar_key, avatar_hue, onboarded_at").in("id", members.map((m) => m.user_id));
+  const { data: profiles } = await supabase.from("profiles").select("id, display_name, avatar_key, avatar_hue, onboarded_at, theme").in("id", members.map((m) => m.user_id));
   const byId = new Map(((profiles ?? []) as Profile[]).map((p) => [p.id, p]));
   const people = members.flatMap((m) => {
     const profile = byId.get(m.user_id);

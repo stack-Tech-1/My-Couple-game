@@ -5,6 +5,7 @@ import { Logo } from "@/design/Logo";
 import { Icon } from "@/design/icons";
 import { getMyProfile, getMyRooms, homeRoomId } from "@/lib/room/server";
 import { NewRoomForm } from "@/components/friends/NewRoomForm";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const metadata: Metadata = { title: "New room" };
 export const dynamic = "force-dynamic";
@@ -22,11 +23,14 @@ export default async function NewRoomPage() {
     <div className="mx-auto flex min-h-dvh max-w-2xl flex-col px-4 py-5 sm:px-8">
       <div className="flex items-center justify-between">
         <Logo />
+        <span className="flex items-center gap-2">
+        <ThemeToggle />
         {home ? (
           <Link href={`/room/${home}`} className="inline-flex items-center gap-1.5 text-[0.9rem] font-semibold text-muted hover:text-fg">
             <Icon name="arrowLeft" size={16} /> Back
           </Link>
         ) : null}
+        </span>
       </div>
       <div className="flex flex-1 flex-col py-12">
         <h1 className="display text-[clamp(2.6rem,9vw,3.8rem)]">Another room.</h1>

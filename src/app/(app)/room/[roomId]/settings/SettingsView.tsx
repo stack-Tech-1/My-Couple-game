@@ -34,7 +34,7 @@ export function SettingsView({ announcementEmails, feedback, push }: { announcem
   // Leaving a friend room you own: who takes over ("" = the longest-standing member).
   const [heir, setHeir] = useState("");
   const [name, setName] = useState(room.name);
-  const [theme, setTheme] = useState<ThemePref>(me.member.theme);
+  const [theme, setTheme] = useState<ThemePref>(me.profile.theme ?? "auto");
   const [sound, setSound] = useState(me.member.sound_enabled);
   const [emails, setEmails] = useState(announcementEmails);
   const [pending, start] = useTransition();

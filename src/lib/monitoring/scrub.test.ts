@@ -27,3 +27,13 @@ describe("error report scrubbing", () => {
     expect(e.breadcrumbs).toEqual([{ category: "navigation", message: "to /email/unsubscribe?t=[filtered]", data: { url: "/x?token=[filtered]" } }]);
   });
 });
+
+describe("network errors", () => {
+  it("treats dropped connections as expected, not as bugs", async () => {
+    const { isNetworkError } = await import("./scrub");
+    expect(isNetworkError(new TypeError("Load failed"))).toBe(true);
+    expect(isNetworkError(new TypeError("Failed to fetch"))).toBe(true);
+    expect(isNetworkError(new Error("Couldn't reach the server. Is the Wi-Fi napping?"))).toBe(true);
+    expect(isNetworkError(new TypeError("Cannot read properties of undefined"))).toBe(false);
+  });
+});

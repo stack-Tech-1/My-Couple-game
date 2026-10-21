@@ -10,6 +10,7 @@ import { Icon } from "@/design/icons";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import { friendlyError } from "@/lib/errors";
 import { track } from "@/lib/analytics";
+import { suggestEmail } from "@/lib/emailTypos";
 
 const emailSchema = z.email();
 
@@ -20,6 +21,11 @@ export function SignInForm({ next, linkError, google: googleEnabled }: { next: s
   );
   const [sending, setSending] = useState(false);
   const [sentTo, setSentTo] = useState<string | null>(null);
+  // A likely typo in the domain ("gmail.co"): offered once they leave the box or press send.
+  const [checked, setChecked] = useState(false);
+  const [keepAsTyped, setKeepAsTyped] = useState<string | null>(null);
+  const suggestion = suggestEmail(email);
+  const showSuggestion = !!suggestion && checked && keepAsTyped !== email.trim();
 
   const redirectTo = (path: string) => `${window.location.origin}${path}?next=${encodeURIComponent(next)}`;
 
@@ -28,6 +34,10 @@ export function SignInForm({ next, linkError, google: googleEnabled }: { next: s
     const parsed = emailSchema.safeParse(email.trim());
     if (!parsed.success) {
       setError("That doesn't look like an email address. Typo?");
+      return;
+    }
+    if (suggestion && keepAsTyped !== email.trim()) {
+      setChecked(true);
       return;
     }
     setError(null);
@@ -91,8 +101,24 @@ export function SignInForm({ next, linkError, google: googleEnabled }: { next: s
                 placeholder="you@somewhere.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                onBlur={() => setChecked(true)}
                 error={error}
               />
+              {showSuggestion ? (
+                <div role="status" className="-mt-1 rounded-[14px] border-[1.5px] border-brass bg-[color-mix(in_srgb,var(--brass)_14%,transparent)] px-4 py-3 text-[0.92rem]">
+                  <p>
+                    Did you mean <b className="break-all">{suggestion}</b>?
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <Button size="sm" variant="primary" onClick={() => setEmail(suggestion!)}>
+                      Yes, fix it
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => setKeepAsTyped(email.trim())}>
+                      No, mine is right
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
               <Button type="submit" size="lg" loading={sending} iconRight="arrowRight">
                 Email me a link
               </Button>

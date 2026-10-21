@@ -6,7 +6,7 @@ import type { RealtimeChannel } from "@supabase/supabase-js";
 import { z } from "zod";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import type { RoomBundle } from "@/lib/room/types";
-import { applyTheme, resolveTheme, saveThemePref, type ThemeName } from "@/lib/theme/theme";
+import { applyTheme, loadThemePref, resolveTheme, type ThemeName } from "@/lib/theme/theme";
 
 /** What each person broadcasts about themselves via presence. */
 export const presenceSchema = z.object({
@@ -60,12 +60,11 @@ export function RoomProvider({ bundle, children }: { bundle: RoomBundle; childre
 
   // Theme: member preference, unless a section (After Dark) overrides it.
   useEffect(() => {
-    const pref = bundle.me.member.theme;
-    saveThemePref(pref);
-    applyTheme(override ?? resolveTheme(pref));
-  }, [bundle.me.member.theme, override]);
+    // ThemeSync keeps this device's saved choice in step with the account.
+    applyTheme(override ?? resolveTheme(loadThemePref()));
+  }, [override]);
 
-  useEffect(() => () => applyTheme(resolveTheme(bundle.me.member.theme)), [bundle.me.member.theme]);
+  useEffect(() => () => applyTheme(resolveTheme(loadThemePref())), []);
 
   const dispatch = useCallback((event: string, raw: unknown) => {
     const parsed = envelope.safeParse(raw);

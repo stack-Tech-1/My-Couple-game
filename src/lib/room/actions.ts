@@ -115,8 +115,15 @@ export async function updateMyPrefs(input: unknown): Promise<ActionResult> {
   const user = await getUser();
   if (!user) return fail("not signed in");
   const supabase = await supabaseServer();
-  const { error } = await supabase.from("room_members").update(parsed.data).eq("user_id", user.id);
-  if (error) return fail(error);
+  const { theme, ...perRoom } = parsed.data;
+  if (theme) {
+    const { error } = await supabase.from("profiles").update({ theme }).eq("id", user.id);
+    if (error) return fail(error);
+  }
+  if (Object.keys(perRoom).length) {
+    const { error } = await supabase.from("room_members").update(perRoom).eq("user_id", user.id);
+    if (error) return fail(error);
+  }
   return { ok: true, data: null };
 }
 

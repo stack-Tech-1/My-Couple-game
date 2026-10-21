@@ -27,7 +27,7 @@ export const viewport: Viewport = {
 };
 
 // Applies the saved theme before first paint so night mode never flashes paper.
-const themeBoot = `try{var t=localStorage.getItem("amah-theme");if(t==="night"||(t==="auto"&&matchMedia("(prefers-color-scheme: dark)").matches)){document.documentElement.dataset.theme="night"}}catch(e){}`;
+const themeBoot = `try{var t=localStorage.getItem("amah-theme")||"auto";if(t==="night"||(t==="auto"&&matchMedia("(prefers-color-scheme: dark)").matches)){document.documentElement.dataset.theme="night"}}catch(e){}`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

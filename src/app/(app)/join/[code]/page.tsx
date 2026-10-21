@@ -6,6 +6,7 @@ import { getMyProfile, getMyRooms } from "@/lib/room/server";
 import { peekInvite } from "@/lib/room/actions";
 import { MAX_FRIEND_ROOMS } from "@/lib/room/types";
 import { JoinButton } from "./JoinButton";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const metadata: Metadata = { title: "You're invited" };
 export const dynamic = "force-dynamic";
@@ -85,7 +86,10 @@ export default async function JoinPage({ params }: { params: Promise<{ code: str
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-xl flex-col px-4 py-5 sm:px-8">
-      <Link href="/" className="self-start"><Logo /></Link>
+      <div className="flex items-center justify-between">
+        <Link href="/"><Logo /></Link>
+        <ThemeToggle />
+      </div>
       <div className="flex flex-1 flex-col justify-center py-12">{body}</div>
     </div>
   );
