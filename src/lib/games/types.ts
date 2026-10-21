@@ -32,8 +32,9 @@ export const createSessionBody = z.object({
   rematchOf: z.uuid().optional(),
   /** Which room to play in. Absent: your couple room. */
   roomId: z.uuid().optional(),
-  /** Friend rooms: who you're playing. */
+  /** Friend rooms: who you're playing (one friend, or several for group games). */
   opponent: z.uuid().optional(),
+  opponents: z.array(z.uuid()).max(7).optional(),
 });
 
 export const moveBody = z.object({

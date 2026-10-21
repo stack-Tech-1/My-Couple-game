@@ -1,4 +1,4 @@
-import type { AnyGameLogic, MoveContext, Outcome, PlayerId, Players } from "./types";
+import type { AnyGameLogic, MoveContext, Outcome, PlayerId, PlayerList } from "./types";
 
 export type DbOutcome = { status: "active" | "finished"; outcome: "win" | "tie" | "coop_win" | "coop_loss" | "complete" | null; winner: PlayerId | null };
 
@@ -10,8 +10,8 @@ export function toDb(o: Outcome): DbOutcome {
   return { status: "finished", outcome: "win", winner: o.winner };
 }
 
-export function viewsFor(logic: AnyGameLogic, state: unknown, players: Players): Record<PlayerId, unknown> {
-  return { [players[0]]: logic.viewFor(state, players[0]), [players[1]]: logic.viewFor(state, players[1]) };
+export function viewsFor(logic: AnyGameLogic, state: unknown, players: PlayerList): Record<PlayerId, unknown> {
+  return Object.fromEntries(players.map((p) => [p, logic.viewFor(state, p)]));
 }
 
 export class MoveRejected extends Error {}

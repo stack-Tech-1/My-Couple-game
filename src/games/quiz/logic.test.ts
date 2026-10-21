@@ -50,11 +50,11 @@ describe("quiz engine", () => {
     const vb = g.viewFor(s, B);
     expect(vb.done).toHaveLength(0);
     expect(JSON.stringify(vb.current)).not.toContain("answer");
-    expect(vb.partnerAnswered).toBe(1);
+    expect(vb.answered).toEqual([A]);
     const va = g.viewFor(s, A);
     expect(va.current).toBeNull();
     s = play(s, B, 1);
-    expect(g.viewFor(s, A).done[0]).toMatchObject({ mine: 0, theirs: 1 });
+    expect(g.viewFor(s, A).done[0]!.picks).toEqual({ [A]: 0, [B]: 1 });
   });
 
   it("keeps players in step: nobody gets two questions ahead", () => {
@@ -80,6 +80,25 @@ describe("quiz engine", () => {
       t = play(t, B, t.items[i]!.answer);
     }
     expect(g.isOver(t)).toEqual({ over: true, winner: "tie" });
+  });
+
+  it("works for a group: everyone in step, reveal only when all have answered, tie at the top", () => {
+    const C = "00000000-0000-4000-8000-00000000000c";
+    expect(riddles.maxPlayers).toBe(8);
+    let s = riddles.initialState("seed", [A, B, C], {}, ctx);
+    const go = (by: string, pick: number) => (s = riddles.applyMove(s, { index: s.picks[by]!.length, pick }, by, ctx));
+    go(A, 0);
+    go(B, 0);
+    expect(riddles.viewFor(s, A).done).toHaveLength(0);
+    expect(riddles.viewFor(s, A).current).toBeNull();
+    expect(riddles.validateMove(s, { index: 1, pick: 0 }, A, ctx)).toBe(false);
+    expect(riddles.viewFor(s, C).answered).toEqual([A, B]);
+    go(C, 0);
+    expect(riddles.viewFor(s, B).done).toHaveLength(1);
+    expect(Object.keys(riddles.viewFor(s, B).done[0]!.picks)).toHaveLength(3);
+    for (let i = 1; i < s.items.length; i++) for (const p of [A, B, C]) go(p, p === C ? (s.items[i]!.answer + 1) % 4 : s.items[i]!.answer);
+    // A and B share the top score.
+    expect(riddles.isOver(s)).toEqual({ over: true, winner: "tie" });
   });
 
   it("all four games deal a full round", () => {

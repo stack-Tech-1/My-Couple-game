@@ -29,7 +29,7 @@ export default async function GamePage({ params }: { params: Promise<{ roomId: s
   if (!bundle) redirect("/room");
   if (game.category === "spicy" && !afterDarkOpen(bundle)) redirect(`/room/${roomId}`);
   // Friend rooms only have the friend games (After Dark and couple features never).
-  if (bundle.room.kind === "friends" && !isFriendGame(game.id)) redirect(`/room/${roomId}`);
+  if (bundle.room.kind === "friends" ? !isFriendGame(game.id) : game.friendsOnly) redirect(`/room/${roomId}`);
   if ((await getGameFlags()).off.includes(game.id)) {
     return (
       <div className="mx-auto max-w-xl pt-16 text-center">

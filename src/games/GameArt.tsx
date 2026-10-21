@@ -186,6 +186,16 @@ const art: Record<string, (a: string) => ReactNode> = {
       <path d="M30 80c2 6 8 8 12 4" {...S} />
     </>
   ),
+  "most-likely": (a) => (
+    <>
+      <circle cx="48" cy="44" r="12" {...S} />
+      <circle cx="112" cy="44" r="12" {...S} />
+      <circle cx="80" cy="40" r="14" {...S} fill={a} />
+      <path d="M28 92c2-14 10-22 20-22s18 8 20 22M92 92c2-14 10-22 20-22s18 8 20 22" {...S} />
+      <path d="M60 92c2-16 10-26 20-26s18 10 20 26" {...S} />
+      <path d="M80 10v12M74 16l6 6 6-6" {...S} stroke={a} strokeWidth={2.5} />
+    </>
+  ),
   "love-styles": (a) => (
     <>
       <path d="M80 92S36 66 36 42c0-12 9-20 20-20 10 0 18 7 24 15 6-8 14-15 24-15 11 0 20 8 20 20 0 24-44 50-44 50z" {...S} />

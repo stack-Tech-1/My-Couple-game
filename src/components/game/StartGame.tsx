@@ -10,6 +10,7 @@ import { track } from "@/lib/analytics";
 import { GAME_MODES } from "@/games/modes";
 import { cn } from "@/lib/cn";
 import { Avatar } from "@/design/Avatar";
+import { gameMeta } from "@/games/catalog";
 
 export function StartGame({ gameId, activeSessionId }: { gameId: string; activeSessionId: string | null }) {
   const router = useRouter();
@@ -20,23 +21,50 @@ export function StartGame({ gameId, activeSessionId }: { gameId: string; activeS
   const roomId = bundle.room.id;
   const friendsRoom = bundle.room.kind === "friends";
   const friends = bundle.members.filter((m) => m.profile.id !== bundle.me.profile.id && !bundle.blocked.includes(m.profile.id));
-  const [opponent, setOpponent] = useState<string | null>(friends.length === 1 ? friends[0]!.profile.id : null);
-  const opponentName = friendsRoom ? friends.find((f) => f.profile.id === opponent)?.profile.display_name : bundle.partner?.profile.display_name;
+  // Group games let you pick several friends (up to the game's limit, you included).
+  const meta = gameMeta(gameId);
+  const max = friendsRoom ? (meta?.maxPlayers ?? 2) : 2;
+  const min = meta?.minPlayers ?? 2;
+  const group = max > 2;
+  const [picked, setPicked] = useState<string[]>(friends.length === 1 ? [friends[0]!.profile.id] : []);
+  const toggle = (id: string) =>
+    setPicked((cur) => (cur.includes(id) ? cur.filter((p) => p !== id) : group ? (cur.length < max - 1 ? [...cur, id] : cur) : [id]));
+  const nameOf = (id: string) => friends.find((f) => f.profile.id === id)?.profile.display_name ?? "";
+  const enough = picked.length + 1 >= min;
+  const inviteLabel = !friendsRoom
+    ? `Invite ${bundle.partner?.profile.display_name ?? ""}`
+    : !picked.length
+      ? group
+        ? "Pick friends"
+        : "Pick a friend"
+      : !enough
+        ? `Pick at least ${min - 1} friends`
+        : picked.length === 1
+          ? `Invite ${nameOf(picked[0]!)}`
+          : `Invite ${picked.length} friends`;
 
-  if (friendsRoom ? !friends.length : !bundle.partner) {
-    return <p className="mt-8 text-muted">{friendsRoom ? "This one needs two. Invite a friend to the room first." : "This one needs two. Invite your person from the room home first."}</p>;
+  if (friendsRoom ? !friends.length || friends.length + 1 < min : !bundle.partner) {
+    return (
+      <p className="mt-8 text-muted">
+        {friendsRoom
+          ? min > 2
+            ? `This one needs at least ${min} people in the room. Invite more friends first.`
+            : "This one needs two. Invite a friend to the room first."
+          : "This one needs two. Invite your person from the room home first."}
+      </p>
+    );
   }
 
   async function start() {
-    if (friendsRoom && !opponent) return;
+    if (friendsRoom && (!picked.length || !enough)) return;
     setBusy(true);
     try {
       const s = await gameApi.create(gameId, {
         ...(modes ? { config: { [modes.key]: modes.options[mode]!.value } } : {}),
         roomId,
-        ...(friendsRoom && opponent ? { opponent } : {}),
+        ...(friendsRoom ? { opponents: picked } : {}),
       });
-      send("game:invite", { sessionId: s.id, gameId, ...(friendsRoom && opponent ? { to: [opponent] } : {}) });
+      send("game:invite", { sessionId: s.id, gameId, ...(friendsRoom ? { to: picked } : {}) });
       track("game_started", { game: gameId });
       router.push(`/room/${roomId}/play/${s.id}`);
     } catch (e) {
@@ -69,16 +97,16 @@ export function StartGame({ gameId, activeSessionId }: { gameId: string; activeS
       ) : null}
       {friendsRoom ? (
         <fieldset className="mt-8">
-          <legend className="eyebrow mb-3 text-muted">Play with</legend>
-          <div role="radiogroup" aria-label="Play with" className="flex flex-wrap gap-2.5">
+          <legend className="eyebrow mb-3 text-muted">{group ? `Play with (up to ${max - 1})` : "Play with"}</legend>
+          <div role={group ? "group" : "radiogroup"} aria-label="Play with" className="flex flex-wrap gap-2.5">
             {friends.map((f) => (
               <button
                 key={f.profile.id}
                 type="button"
-                role="radio"
-                aria-checked={opponent === f.profile.id}
-                onClick={() => setOpponent(f.profile.id)}
-                className={cn("flex items-center gap-2 rounded-full border-[1.5px] py-1.5 pl-1.5 pr-4 font-semibold transition-colors", opponent === f.profile.id ? "border-fg bg-sunk" : "border-line hover:border-line-strong")}
+                role={group ? "checkbox" : "radio"}
+                aria-checked={picked.includes(f.profile.id)}
+                onClick={() => toggle(f.profile.id)}
+                className={cn("flex items-center gap-2 rounded-full border-[1.5px] py-1.5 pl-1.5 pr-4 font-semibold transition-colors", picked.includes(f.profile.id) ? "border-fg bg-sunk" : "border-line hover:border-line-strong")}
               >
                 <Avatar name={f.profile.display_name} motif={f.profile.avatar_key} hue={f.profile.avatar_hue} size={30} />
                 {f.profile.display_name}
@@ -93,8 +121,8 @@ export function StartGame({ gameId, activeSessionId }: { gameId: string; activeS
             Resume game
           </Button>
         ) : null}
-        <Button size="lg" variant={activeSessionId ? "outline" : "accent"} iconRight={activeSessionId ? undefined : "arrowRight"} loading={busy} disabled={friendsRoom && !opponent} onClick={start}>
-          {activeSessionId ? "Start over" : opponentName ? `Invite ${opponentName}` : "Pick a friend"}
+        <Button size="lg" variant={activeSessionId ? "outline" : "accent"} iconRight={activeSessionId ? undefined : "arrowRight"} loading={busy} disabled={friendsRoom && (!picked.length || !enough)} onClick={start}>
+          {activeSessionId ? "Start over" : inviteLabel}
         </Button>
       </div>
     </>

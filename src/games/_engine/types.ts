@@ -5,6 +5,8 @@ import type { GameCategory } from "@/games/catalog";
 
 export type PlayerId = string;
 export type Players = readonly [PlayerId, PlayerId];
+/** Group games (friend rooms) take 2 to 8 players. */
+export type PlayerList = readonly PlayerId[];
 
 export type Outcome =
   | { over: false }
@@ -30,11 +32,12 @@ export type Rules = {
  * The pure, server-safe half of a game. No React, no I/O. The server imports
  * this to validate and apply moves; tests import it directly.
  */
-export interface GameLogic<State, Move, View = unknown, Config = Record<string, never>> {
+export interface GameLogic<State, Move, View = unknown, Config = Record<string, never>, P extends PlayerList = Players> {
   id: string;
   category: GameCategory;
-  minPlayers: 2;
-  maxPlayers: 2;
+  minPlayers: number;
+  /** 2 for two-player games. Group games go up to 8 (friend rooms only). */
+  maxPlayers: number;
   estimatedMinutes: number;
   rules: Rules;
   /** Zod schema every incoming move is parsed with before anything else happens. */
@@ -42,7 +45,7 @@ export interface GameLogic<State, Move, View = unknown, Config = Record<string, 
   configSchema?: z.ZodType<Config>;
   /** Config keys a rematch carries over, such as a mode chosen when the game started. */
   rematchKeeps?: string[];
-  initialState(seed: string, players: Players, config: Config, ctx: MoveContext): State;
+  initialState(seed: string, players: P, config: Config, ctx: MoveContext): State;
   validateMove(state: State, move: Move, by: PlayerId, ctx: MoveContext): boolean;
   applyMove(state: State, move: Move, by: PlayerId, ctx: MoveContext): State;
   isOver(state: State): Outcome;
@@ -52,7 +55,7 @@ export interface GameLogic<State, Move, View = unknown, Config = Record<string, 
 
 // Erased form used by registries, where each game's types differ.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- heterogeneous registry; each module is fully typed at its definition
-export type AnyGameLogic = GameLogic<any, any, any, any>;
+export type AnyGameLogic = GameLogic<any, any, any, any, any>;
 
 export type GameProps<View, Move> = {
   view: View;

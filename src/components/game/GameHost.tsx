@@ -255,7 +255,13 @@ export function GameHost({ initial }: { initial: SessionSnapshot }) {
         open={resignOpen}
         onClose={() => setResignOpen(false)}
         title={meta.category === "competitive" ? "Throw in the towel?" : "End this game?"}
-        description={meta.category === "competitive" ? `${names[partner] ?? "Your partner"} gets the win. It goes on the record.` : "The game ends for both of you."}
+        description={
+          session.players.length > 2
+            ? "The game ends for everyone, with no winner."
+            : meta.category === "competitive"
+              ? `${names[partner] ?? "Your partner"} gets the win. It goes on the record.`
+              : "The game ends for both of you."
+        }
       >
         <div className="flex justify-end gap-3">
           <Button variant="ghost" onClick={() => setResignOpen(false)}>Keep playing</Button>

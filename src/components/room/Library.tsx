@@ -21,7 +21,7 @@ export function Library() {
       <div className="mt-6 space-y-14">
         {CATEGORY_ORDER.map((c) => {
           const cat = CATEGORIES[c];
-          const games = gamesIn(c).filter((g) => !isOff(g.id) && (!friendsRoom || isFriendGame(g.id)));
+          const games = gamesIn(c).filter((g) => !isOff(g.id) && (friendsRoom ? isFriendGame(g.id) : !g.friendsOnly));
           // Friend rooms never mention After Dark.
           if (friendsRoom && c === "spicy") return null;
           // Discretion: After Dark is one panel on the shared home screen, never a list of its games.

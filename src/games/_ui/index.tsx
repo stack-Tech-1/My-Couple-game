@@ -108,3 +108,63 @@ export function Flash({ id, children }: { id: string | number | null; children: 
 }
 
 export const otherOf = <T,>(pair: readonly [T, T], me: T): T => (pair[0] === me ? pair[1] : pair[0]);
+/**
+ * Scores for 2 or more players. Two players get the classic head-to-head line; groups get a row of
+ * chips, highest first, with an optional highlight (whose turn, who's drawing).
+ */
+export function Scores({
+  players,
+  me,
+  names,
+  scores,
+  active,
+  unit,
+  className,
+}: {
+  players: readonly string[];
+  me: string;
+  names: Record<string, string>;
+  scores: Record<string, number>;
+  active?: string | null;
+  /** Shown under each score for two players ("laughs caused"). */
+  unit?: string;
+  className?: string;
+}) {
+  const nameOf = (p: string) => (p === me ? "You" : (names[p] ?? "Someone"));
+  if (players.length === 2) {
+    const other = otherOf(players as readonly [string, string], me);
+    return (
+      <Scoreline
+        left={{ name: "You", score: scores[me] ?? 0, sub: unit }}
+        right={{ name: nameOf(other), score: scores[other] ?? 0, sub: unit }}
+        active={active ? (active === me ? "left" : "right") : null}
+        className={className}
+      />
+    );
+  }
+  const ranked = [...players].sort((a, b) => (scores[b] ?? 0) - (scores[a] ?? 0));
+  return (
+    <ul className={cn("flex flex-wrap gap-2", className)} aria-label="Scores">
+      {ranked.map((p) => (
+        <li
+          key={p}
+          className={cn(
+            "flex items-center gap-2 rounded-full border-[1.5px] py-1 pl-3 pr-1 text-[0.88rem] font-semibold",
+            p === active ? "border-accent" : "border-line",
+            p === me && "bg-sunk",
+          )}
+        >
+          {p === active ? <span className="h-2 w-2 rounded-full bg-accent" aria-hidden /> : null}
+          <span className="max-w-[8rem] truncate">{nameOf(p)}</span>
+          <span className="tabular flex h-7 min-w-7 items-center justify-center rounded-full bg-fg px-2 text-bg">{scores[p] ?? 0}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** "Ada", "Ada and Bo", "Ada, Bo and Cy". */
+export function listNames(ids: readonly string[], names: Record<string, string>, me?: string): string {
+  const n = ids.map((p) => (p === me ? "you" : (names[p] ?? "someone")));
+  return n.length <= 1 ? (n[0] ?? "") : `${n.slice(0, -1).join(", ")} and ${n.at(-1)}`;
+}

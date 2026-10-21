@@ -63,6 +63,11 @@ export type GameMeta = {
   tagline: string;
   /** Turn-based games are recorded to head-to-head. Keepsake activities aren't scored. */
   scored: boolean;
+  /** Group games: how many can play in a friend room (must match the game logic). */
+  minPlayers?: number;
+  maxPlayers?: number;
+  /** Only in friend rooms (it needs a group). */
+  friendsOnly?: boolean;
 };
 
 export const GAMES: GameMeta[] = [
@@ -75,10 +80,10 @@ export const GAMES: GameMeta[] = [
   { id: "reflex-duel", name: "Reflex Duel", category: "competitive", estimatedMinutes: 3, scored: true, tagline: "Wait for it. Wait for it. Don't." },
   { id: "connect-four", name: "Connect Four", category: "competitive", estimatedMinutes: 6, scored: true, tagline: "Four in a row, and a lifetime of grudges." },
   { id: "draw-guess", name: "Draw & Guess", category: "competitive", estimatedMinutes: 10, scored: true, tagline: "It's a horse. Obviously it's a horse." },
-  { id: "riddles", name: "Riddle Me This", category: "competitive", estimatedMinutes: 6, scored: true, tagline: "Simple words, twisted answers. Get your mind out of the gutter." },
+  { id: "riddles", name: "Riddle Me This", category: "competitive", estimatedMinutes: 6, scored: true, maxPlayers: 8, tagline: "Simple words, twisted answers. Get your mind out of the gutter." },
   { id: "naija-trivia", name: "Naija Trivia", category: "competitive", estimatedMinutes: 6, scored: true, tagline: "Festivals, places, books and history. How Naija are you?" },
   { id: "pidgin-palava", name: "Pidgin Palava", category: "competitive", estimatedMinutes: 4, scored: true, tagline: "Wetin e mean? Prove say you sabi." },
-  { id: "dont-laugh", name: "Don't Laugh", category: "competitive", estimatedMinutes: 8, scored: true, tagline: "Perform something ridiculous. They must keep a straight face." },
+  { id: "dont-laugh", name: "Don't Laugh", category: "competitive", estimatedMinutes: 8, scored: true, maxPlayers: 8, tagline: "Perform something ridiculous. They must keep a straight face." },
   { id: "emoji-guess", name: "Emoji Guess", category: "competitive", estimatedMinutes: 5, scored: true, tagline: "Afrobeats hits and Nollywood favourites, in emoji." },
   // Co-op
   { id: "split-clues", name: "Split Clues", category: "coop", estimatedMinutes: 15, scored: true, tagline: "You each hold half the answer. Talk it out." },
@@ -92,6 +97,7 @@ export const GAMES: GameMeta[] = [
   { id: "this-or-that", name: "This or That", category: "personal", estimatedMinutes: 4, scored: false, tagline: "Rapid fire. Then see where you match." },
   { id: "love-styles", name: "Love Styles", category: "personal", estimatedMinutes: 5, scored: false, tagline: "How do you most like to be loved? Guess theirs too." },
   { id: "same-page", name: "On the Same Page", category: "personal", estimatedMinutes: 6, scored: false, tagline: "Money, family, children, December. Are you in step?" },
+  { id: "most-likely", name: "Most Likely To", category: "personal", estimatedMinutes: 6, scored: false, minPlayers: 3, maxPlayers: 8, friendsOnly: true, tagline: "Who in this room is most likely to…? Anonymous votes, public shame." },
   { id: "deep-questions", name: "Deep Questions", category: "personal", estimatedMinutes: 20, scored: false, tagline: "Start easy. Go somewhere real." },
   // Romantic
   { id: "love-notes", name: "Love Notes", category: "romantic", estimatedMinutes: 5, scored: false, tagline: "Write a letter. Seal it until the right day." },
@@ -108,7 +114,7 @@ export const GAMES: GameMeta[] = [
 ];
 
 /** The games friend rooms get (for now, played one friend against another). */
-export const FRIEND_GAMES = ["whot", "ludo", "ayo", "word-duel", "reflex-duel", "connect-four", "draw-guess", "riddles", "dont-laugh"] as const;
+export const FRIEND_GAMES = ["whot", "ludo", "ayo", "word-duel", "reflex-duel", "connect-four", "draw-guess", "riddles", "dont-laugh", "most-likely"] as const;
 export const isFriendGame = (id: string) => (FRIEND_GAMES as readonly string[]).includes(id);
 
 export const gameMeta = (id: string): GameMeta | undefined => GAMES.find((g) => g.id === id);

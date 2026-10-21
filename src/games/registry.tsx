@@ -25,6 +25,7 @@ import { QuizBoard } from "./quiz/Board";
 import { LoveStylesBoard } from "./love-styles/Board";
 import { SamePageBoard } from "./same-page/Board";
 import { DontLaughBoard } from "./dont-laugh/Board";
+import { MostLikelyBoard } from "./most-likely/Board";
 
 /**
  * Client registry: game id -> component. Logic comes from the server-safe
@@ -60,6 +61,7 @@ const components: Record<string, ComponentType<GameProps<any, any>>> = {
   "love-styles": LoveStylesBoard,
   "same-page": SamePageBoard,
   "dont-laugh": DontLaughBoard,
+  "most-likely": MostLikelyBoard,
 };
 
 export function gameComponent(id: string) {

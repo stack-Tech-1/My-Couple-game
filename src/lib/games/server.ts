@@ -3,7 +3,7 @@ import { randomBytes } from "node:crypto";
 import { supabaseAdmin, supabaseServer } from "@/lib/supabase/server";
 import { GAME_LOGIC } from "@/games/logic";
 import { MoveRejected, runMove, toDb, viewsFor } from "@/games/_engine/runner";
-import type { Players } from "@/games/_engine/types";
+import type { PlayerList } from "@/games/_engine/types";
 import type { SessionRow, SessionSnapshot } from "./types";
 import { isSpicy } from "@/games/after-dark/logic";
 import { getGameFlags } from "./flags.server";
@@ -71,7 +71,7 @@ export async function getSnapshot(sessionId: string): Promise<SessionSnapshot> {
   return { session, view: data.view, version: data.version as number, serverNow: Date.now(), ...(closing ? { closing } : {}) };
 }
 
-export async function createSession(gameId: string, rawConfig: unknown, rematchOf?: string, roomId?: string, opponent?: string): Promise<SessionRow> {
+export async function createSession(gameId: string, rawConfig: unknown, rematchOf?: string, roomId?: string, opponent?: string, opponents?: string[]): Promise<SessionRow> {
   const { supabase, user } = await requireUser();
   const logic = GAME_LOGIC[gameId];
   if (!logic) throw new ApiError(404, "We don't have that game (yet).");
@@ -101,18 +101,25 @@ export async function createSession(gameId: string, rawConfig: unknown, rematchO
   const friends = roomInfo.kind === "friends";
   const mine = { room_id: rid };
 
-  let other: string | undefined;
+  // Who else is playing: your partner in a couple room; the friends you picked in a friend room.
+  let others: string[];
   if (friends) {
     if (!isFriendGame(gameId) || logic.category === "spicy") throw new ApiError(403, "That game isn't in friend rooms yet.");
-    other = prev ? prev.players.find((p) => p !== user.id) : opponent;
-    if (!other || other === user.id || !ids.includes(other)) throw new ApiError(409, "Pick a friend from this room to play with.");
+    others = prev ? prev.players.filter((p) => p !== user.id) : [...new Set(opponents?.length ? opponents : opponent ? [opponent] : [])];
+    if (!others.length || others.some((o) => o === user.id || !ids.includes(o))) throw new ApiError(409, "Pick friends from this room to play with.");
+    const total = others.length + 1;
+    if (total > logic.maxPlayers) throw new ApiError(409, logic.maxPlayers === 2 ? "This one is for two. Pick one friend." : `Up to ${logic.maxPlayers} can play this one.`);
+    if (total < logic.minPlayers) throw new ApiError(409, `This one needs at least ${logic.minPlayers} players.`);
+    const list = others.join(",");
     const { count } = await supabaseAdmin().from("blocks").select("blocker_id", { count: "exact", head: true })
-      .or(`and(blocker_id.eq.${other},blocked_id.eq.${user.id}),and(blocker_id.eq.${user.id},blocked_id.eq.${other})`);
-    if (count) throw new ApiError(409, "They can't play right now. Pick someone else?");
+      .or(`and(blocker_id.in.(${list}),blocked_id.eq.${user.id}),and(blocker_id.eq.${user.id},blocked_id.in.(${list}))`);
+    if (count) throw new ApiError(409, "Someone you picked can't play right now. Try different friends?");
   } else {
-    other = ids.find((id) => id !== user.id);
+    const partner = ids.find((id) => id !== user.id);
+    others = partner ? [partner] : [];
+    if (logic.minPlayers > 2) throw new ApiError(403, "That one is for friend rooms.");
   }
-  if (!other) throw new ApiError(409, "Games need two players. Invite your person first.");
+  if (!others.length) throw new ApiError(409, "Games need two players. Invite your person first.");
 
   // After Dark: both must be confirmed and opted in. Heat cap and custom cards come from the
   // database, never from the client.
@@ -156,7 +163,7 @@ export async function createSession(gameId: string, rawConfig: unknown, rematchO
     }
   }
 
-  const players: Players = [user.id, other];
+  const players: PlayerList = [user.id, ...others];
   const seed = randomBytes(16).toString("hex");
   const state = logic.initialState(seed, players, config as never, { now: Date.now(), content: await getContentPack() });
   const firstTurn = (state as { turn?: unknown }).turn;
@@ -184,7 +191,7 @@ export async function createSession(gameId: string, rawConfig: unknown, rematchO
       body: game ? `${game}. Tap to join.` : "Tap to join.",
       url: `/room/${mine.room_id}/play/${created.id}`,
       tag: `invite-${mine.room_id}`,
-    }, [other]);
+    }, others);
   });
   return created;
 }
@@ -234,7 +241,7 @@ export async function submitMove(sessionId: string, rawMove: unknown): Promise<S
       p_by: user.id,
       p_move: result.move,
       p_state: result.next,
-      p_views: viewsFor(logic, result.next, row.players as Players),
+      p_views: viewsFor(logic, result.next, row.players),
       p_status: db.status,
       p_outcome: db.outcome,
       p_winner: db.winner,
@@ -274,6 +281,8 @@ export async function resign(sessionId: string): Promise<SessionRow> {
 
   const partner = session.players.find((p) => p !== user.id) ?? null;
   const coop = logic.category === "coop";
+  // A group game can't hand the win to one person: leaving ends it for everyone, unscored.
+  const group = session.players.length > 2;
   const { data, error } = await admin.rpc("commit_game_move", {
     p_session: sessionId,
     p_expected_version: session.version,
@@ -283,8 +292,8 @@ export async function resign(sessionId: string): Promise<SessionRow> {
     p_views: viewsFor(logic, secret.state, session.players),
     p_status: "finished",
     // Competitive: the partner wins. Co-op: the team falls short. Everything else simply ends.
-    p_outcome: coop ? "coop_loss" : logic.category === "competitive" ? "win" : "complete",
-    p_winner: coop || logic.category !== "competitive" ? null : partner,
+    p_outcome: coop ? "coop_loss" : logic.category === "competitive" && !group ? "win" : "complete",
+    p_winner: coop || group || logic.category !== "competitive" ? null : partner,
   });
   if (error) throw new ApiError(500, "Couldn't end the game. Try again?");
   if (!isRow(data)) throw new ApiError(409, "stale");

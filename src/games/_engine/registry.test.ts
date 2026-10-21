@@ -11,6 +11,8 @@ describe("game registry", () => {
       const meta = GAMES.find((g) => g.id === logic.id);
       expect(meta, logic.id).toBeDefined();
       expect(meta!.category).toBe(logic.category);
+      expect(meta!.maxPlayers ?? 2, logic.id).toBe(logic.maxPlayers);
+      expect(meta!.minPlayers ?? 2, logic.id).toBe(logic.minPlayers);
       expect(logic.rules.sections.length).toBeGreaterThan(0);
     }
   });

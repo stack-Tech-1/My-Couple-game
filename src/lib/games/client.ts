@@ -32,7 +32,7 @@ export const gameApi = {
   move: (id: string, move: unknown, expectedVersion: number) =>
     call<SessionSnapshot>(`/api/sessions/${id}/move`, { method: "POST", body: JSON.stringify({ move, expectedVersion }) }),
   resign: (id: string) => call<SessionRow>(`/api/sessions/${id}/resign`, { method: "POST" }),
-  create: (gameId: string, opts: { config?: Record<string, unknown>; rematchOf?: string; roomId?: string; opponent?: string } = {}) =>
+  create: (gameId: string, opts: { config?: Record<string, unknown>; rematchOf?: string; roomId?: string; opponent?: string; opponents?: string[] } = {}) =>
     call<SessionRow>(`/api/sessions`, { method: "POST", body: JSON.stringify({ gameId, ...opts }) }),
 };
 
