@@ -8,6 +8,7 @@ import { cn } from "@/lib/cn";
 
 const LINKS = [
   { href: "/admin", label: "Overview" },
+  { href: "/admin/inbox", label: "Inbox" },
   { href: "/admin/users", label: "Users" },
   { href: "/admin/games", label: "Games" },
   { href: "/admin/content", label: "Content" },
@@ -15,7 +16,7 @@ const LINKS = [
   { href: "/admin/announcements", label: "Announcements" },
 ];
 
-export function AdminNav() {
+export function AdminNav({ inbox = 0 }: { inbox?: number }) {
   const path = usePathname();
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-[color-mix(in_srgb,var(--bg)_92%,transparent)] backdrop-blur-sm">
@@ -40,6 +41,7 @@ export function AdminNav() {
               className={cn("whitespace-nowrap rounded-full px-3.5 py-1.5 text-[0.88rem] font-semibold", active ? "bg-fg text-bg" : "text-muted hover:bg-sunk hover:text-fg")}
             >
               {l.label}
+              {l.href === "/admin/inbox" && inbox ? <span className="ml-1.5 rounded-full bg-accent px-1.5 text-[0.72rem] text-on-accent">{inbox}</span> : null}
             </Link>
           );
         })}

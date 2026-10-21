@@ -141,6 +141,7 @@ All schema lives in `supabase/migrations/`, applied in filename order:
 | `0010_admin.sql` | Admin: `app_admins`, `is_admin()`, `app_config` (game switches), `announcements`, and the service-role-only `admin_stats`, `admin_find_user`, `admin_remove_from_room`. |
 | `0011_content_email.sql` | Editable content (`content_items`, `content_hidden`), announcement email opt-out and send log, `admin_email_recipients`, admin uploads to the starter-sticker bucket. |
 | `0012_safety.sql` | Consent records (18+, Terms version), `reports` with message snapshots and `file_report()`, `blocks` and `block_partner()`, and `join_room` refusing blocked pairs. |
+| `0013_feedback.sql` | Feedback threads (`feedback`, `feedback_replies`, private `feedback` screenshot bucket), suggested cards (`suggestions`), and the service-role-only `admin_list_users`. |
 
 `npm run db:migrate` records what it has applied in `public._twain_migrations` (the original project name; kept so existing databases stay in sync) and only runs new
 files, each in its own transaction. To change the schema, **add a new numbered file**; never edit
@@ -322,8 +323,14 @@ npm run admin:grant -- you@example.com --revoke   # remove
   daily/weekly/monthly active people, games started and finished per game, chat volume and
   weekly retention. "Active" means a game move, a chat message or a Daily Question answer that
   day. Nobody's content is read, and After Dark is never counted.
-- **Users:** look up one account by exact email, then suspend, restore or delete it.
-  Deleting works like self-deletion: the partner keeps the room.
+- **Inbox:** feedback (bugs, ideas, complaints, with optional screenshot and device details).
+  Set a status, keep private notes and reply. The person sees replies in Settings, with a dot on
+  the settings icon, and by email if SMTP is set up. Suggested cards can be approved straight
+  into the decks with one click. Reports show the reason, details and a snapshot of the reported
+  message, with links to suspend or delete the account.
+- **Users:** every account with its partner, search, filters (paired, waiting, no room,
+  suspended, admins) and paging. Manage one to suspend, restore or delete it. Deleting works like
+  self-deletion: the partner keeps the room.
 - **Games:** switch a game off (hidden everywhere, and new sessions are refused) or tag it "New".
 - **Announcements:** a dismissible banner in every room, for a set number of days. It can also
   be emailed once to everyone who hasn't opted out (needs `SMTP_USER`/`SMTP_PASS`). Each email

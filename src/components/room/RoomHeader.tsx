@@ -8,7 +8,7 @@ import { useRoom } from "@/lib/realtime/RoomProvider";
 import { gameMeta } from "@/games/catalog";
 import { Chat } from "@/components/chat/Chat";
 
-export function RoomHeader() {
+export function RoomHeader({ feedbackUnread = 0 }: { feedbackUnread?: number }) {
   const { bundle, partnerPresence } = useRoom();
   const { room, me, partner } = bundle;
   const partnerOnline = !!partnerPresence;
@@ -43,8 +43,13 @@ export function RoomHeader() {
             )}
           </div>
           <Chat />
-          <Link href={`/room/${room.id}/settings`} aria-label="Room settings" className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-sunk">
+          <Link
+            href={feedbackUnread ? `/room/${room.id}/settings#feedback` : `/room/${room.id}/settings`}
+            aria-label={feedbackUnread ? "Room settings, new reply from the Amah team" : "Room settings"}
+            className="relative flex h-10 w-10 items-center justify-center rounded-full hover:bg-sunk"
+          >
             <Icon name="settings" size={20} />
+            {feedbackUnread ? <span aria-hidden className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full border-2 border-bg bg-accent" /> : null}
           </Link>
         </div>
       </div>

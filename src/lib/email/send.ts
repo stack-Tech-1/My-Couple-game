@@ -102,3 +102,24 @@ export async function recipientCount(): Promise<number> {
   const { data } = await supabaseAdmin().rpc("admin_email_recipients");
   return ((data ?? []) as unknown[]).length;
 }
+
+/** Tell someone the team replied to their feedback. Transactional: sent even if they opted out of announcements. */
+export async function sendFeedbackReplyEmail(to: Recipient, reply: string): Promise<void> {
+  if (!emailConfigured()) return;
+  const site = siteUrl();
+  const { html, text } = renderAnnouncement({
+    name: to.display_name,
+    title: "We replied to your feedback",
+    body: reply,
+    tone: "info",
+    link: { url: `${site}/room`, label: "Read it in Amah" },
+    siteUrl: site,
+    unsubscribeUrl: unsubscribeUrl(to.id),
+  });
+  const t = transport();
+  try {
+    await t.sendMail({ from: from(), to: to.email, subject: "The Amah team replied to you", html, text });
+  } finally {
+    t.close();
+  }
+}

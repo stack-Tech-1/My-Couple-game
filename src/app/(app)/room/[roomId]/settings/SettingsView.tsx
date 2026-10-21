@@ -16,9 +16,12 @@ import { HouseRules } from "@/components/room/HouseRules";
 import { ReportDialog } from "@/components/safety/ReportDialog";
 import { BlockDialog } from "@/components/safety/BlockDialog";
 import { useDataSaver, type DataSaverPref } from "@/lib/dataSaver";
+import { FeedbackHub } from "@/components/feedback/FeedbackHub";
+import type { FeedbackThread } from "@/lib/feedback/types";
+import { afterDarkOpen } from "@/lib/room/afterDark";
 import { setOptIn } from "@/lib/afterdark/actions";
 
-export function SettingsView({ announcementEmails }: { announcementEmails: boolean }) {
+export function SettingsView({ announcementEmails, feedback }: { announcementEmails: boolean; feedback: { threads: FeedbackThread[]; unread: number } }) {
   const { bundle } = useRoom();
   const router = useRouter();
   const { room, me, partner } = bundle;
@@ -156,6 +159,11 @@ export function SettingsView({ announcementEmails }: { announcementEmails: boole
           <p className="mt-4 text-[0.85rem] text-muted">To report one message, open the chat and press and hold it (or right-click on a computer).</p>
         </Section>
       ) : null}
+
+      <Section title="Help & feedback" id="feedback">
+        <p className="mb-5 text-muted">Found a bug, have an idea, or a question you think every couple should play? Tell us. A real person reads every message.</p>
+        <FeedbackHub userId={me.profile.id} threads={feedback.threads} unread={feedback.unread} spicyOpen={afterDarkOpen(bundle)} />
+      </Section>
 
       <Section title="Account">
         <div className="flex flex-wrap gap-3">

@@ -11,6 +11,7 @@ import { getGameFlags } from "@/lib/games/flags.server";
 import { supabaseServer } from "@/lib/supabase/server";
 import { TermsGate } from "@/components/room/TermsGate";
 import { TERMS_VERSION } from "@/lib/legal";
+import { unreadReplies } from "@/lib/feedback/server";
 
 export const dynamic = "force-dynamic";
 
@@ -34,12 +35,12 @@ export default async function RoomLayout({ children, params }: { children: React
   if (!bundle) redirect("/room");
   // A room URL that isn't yours just takes you home: no hint the other room exists.
   if (bundle.room.id !== roomId) redirect(`/room/${bundle.room.id}`);
-  const terms = await termsStatus(bundle.me.profile.id);
+  const [terms, feedbackUnread] = await Promise.all([termsStatus(bundle.me.profile.id), unreadReplies()]);
 
   return (
     <RoomProvider bundle={bundle}>
       <GameFlagsProvider flags={flags}>
-        <RoomHeader />
+        <RoomHeader feedbackUnread={feedbackUnread} />
         <ConnectionBanner />
         <AnnouncementBar items={announcements} />
         <InviteListener />

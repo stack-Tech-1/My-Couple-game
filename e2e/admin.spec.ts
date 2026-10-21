@@ -90,11 +90,11 @@ test("admin: numbers, game switches, announcements and user management", async (
     await pa.getByRole("button", { name: "Find" }).click();
     await expect(pa.getByText("Paired with a partner")).toBeVisible();
     await pa.getByRole("button", { name: "Suspend account" }).click();
-    await expect(pa.getByText("Suspended", { exact: true })).toBeVisible();
+    await expect(pa.locator("#manage").getByText("Suspended", { exact: true })).toBeVisible();
     // A suspended account can't sign in.
     await expect(clientAs(b.email)).rejects.toBeTruthy();
     await pa.getByRole("button", { name: "Restore account" }).click();
-    await expect(pa.getByText("Suspended", { exact: true })).toHaveCount(0);
+    await expect(pa.locator("#manage").getByText("Suspended", { exact: true })).toHaveCount(0);
     if (SHOTS) await pa.screenshot({ path: `${SHOTS}/admin-users.png` });
 
     await pa.getByRole("button", { name: "Delete account" }).click();

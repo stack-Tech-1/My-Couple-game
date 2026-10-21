@@ -13,4 +13,8 @@ export default async function globalSetup() {
     if (data.users.length < 200) break;
   }
   if (stale.length) await cleanup(stale);
+  // Inbox items whose (test) author is gone. This only ever runs against the test project.
+  await admin.from("feedback").delete().is("user_id", null);
+  await admin.from("suggestions").delete().is("user_id", null);
+  await admin.from("reports").delete().is("reporter_id", null);
 }

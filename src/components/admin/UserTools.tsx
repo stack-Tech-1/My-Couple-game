@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, type FormEvent } from "react";
+import { useEffect, useState, useTransition, type FormEvent } from "react";
 import { Button } from "@/design/Button";
 import { TextField } from "@/design/Field";
 import { Modal } from "@/design/Modal";
@@ -9,8 +9,8 @@ import { deleteUserAccount, findUser, setSuspended, type AdminUser } from "@/lib
 
 const when = (iso: string | null) => (iso ? new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : "Never");
 
-export function UserTools() {
-  const [email, setEmail] = useState("");
+export function UserTools({ initialEmail = "" }: { initialEmail?: string }) {
+  const [email, setEmail] = useState(initialEmail);
   const [user, setUser] = useState<AdminUser | null | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -28,6 +28,12 @@ export function UserTools() {
       setError(null);
       setUser(res.data);
     });
+
+  // Opened from the list with ?email=…: look it up straight away.
+  useEffect(() => {
+    if (initialEmail) lookup(initialEmail);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per address
+  }, [initialEmail]);
 
   function onSearch(e: FormEvent) {
     e.preventDefault();

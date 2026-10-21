@@ -12,11 +12,14 @@ import { gameApi } from "@/lib/games/client";
 import type { SessionRow } from "@/lib/games/types";
 import { useRoom } from "@/lib/realtime/RoomProvider";
 import { track } from "@/lib/analytics";
+import { Modal } from "@/design/Modal";
+import { FeedbackForm } from "@/components/feedback/FeedbackForm";
 
 const WIN = ["Called it.", "Undefeated (today).", "That's how it's done."];
 const LOSE = ["Rematch?", "They got lucky.", "A setback, not a verdict."];
 
 export function ResultSheet({ session, me, names }: { session: SessionRow; me: string; names: Record<string, string> }) {
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const router = useRouter();
   const { send } = useRoom();
   const [busy, setBusy] = useState(false);
@@ -91,6 +94,9 @@ export function ResultSheet({ session, me, names }: { session: SessionRow; me: s
             <p className="eyebrow text-accent-ink">{eyebrow} · {meta?.name}</p>
             <h2 id="result-title" className="display mt-2 text-[clamp(2.4rem,8vw,3.4rem)]">{title}</h2>
             <p className="mt-1 text-muted">{sub}</p>
+            <button type="button" onClick={() => setFeedbackOpen(true)} className="mt-2 text-[0.85rem] font-semibold text-muted underline underline-offset-2 hover:text-fg">
+              How was that game? Tell us
+            </button>
           </div>
           <div className="flex gap-3">
             <Link href={`/room/${session.room_id}`} className="inline-flex h-12 items-center rounded-full px-5 font-semibold hover:bg-sunk">Library</Link>
@@ -98,6 +104,9 @@ export function ResultSheet({ session, me, names }: { session: SessionRow; me: s
           </div>
         </div>
       </motion.section>
+      <Modal open={feedbackOpen} onClose={() => setFeedbackOpen(false)} title="How was it?" description={`Anything about ${meta?.name ?? "this game"}: bugs, ideas, what you loved.`}>
+        <FeedbackForm userId={me} compact onSent={() => setFeedbackOpen(false)} />
+      </Modal>
     </>
   );
 }
