@@ -9,4 +9,11 @@ export const GAME_MODES: Record<string, GameMode> = {
       { value: true, label: "Market finish", hint: "The market refills once. When it runs out again, the lowest hand wins." },
     ],
   },
+  ludo: {
+    key: "twoDice",
+    options: [
+      { value: true, label: "Two dice", hint: "Use each die on a token, or add them up. A six on either die brings one out." },
+      { value: false, label: "One die", hint: "The classic: one die, a six to come out." },
+    ],
+  },
 };

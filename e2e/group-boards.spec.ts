@@ -71,8 +71,15 @@ test("group boards: Whot for three, Ludo for four", async ({ browser }) => {
     }
     for (const n of ["You", "Bo", "Cy", "Di"]) await expect(pa.getByText(new RegExp(`^${n} · 0/4 home$`))).toBeVisible();
     const { data: ls } = await admin.from("game_secrets").select("state").eq("session_id", ludoId).single();
-    expect((ls!.state as { colours: number[] }).colours).toEqual([0, 1, 2, 3]);
-    if (shots) await pa.screenshot({ path: `${shots}/ludo4.png`, fullPage: true });
+    const st = ls!.state as { colours: number[]; turn: number; players: string[]; rules: { twoDice?: boolean } };
+    expect(st.colours).toEqual([0, 1, 2, 3]);
+    // Two dice is the default mode: whoever's turn it is rolls a pair.
+    expect(st.rules.twoDice).toBe(true);
+    const roller = pages[people.findIndex((x) => x.id === st.players[st.turn])]!;
+    await expect(roller.getByText("Roll the dice.")).toBeVisible();
+    await roller.getByRole("button", { name: "Roll", exact: true }).click();
+    await expect(roller.getByText(/^You rolled \d and \d\./)).toBeVisible();
+    if (shots) await roller.screenshot({ path: `${shots}/ludo4.png`, fullPage: true });
     expect(errors).toEqual([]);
   } finally {
     await cleanup(people.map((p) => p.id));

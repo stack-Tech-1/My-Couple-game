@@ -33,7 +33,7 @@ export const thisOrThat: GameLogic<ToTState, ToTMove, ToTView> = {
   rules: {
     summary: "Twelve quick choices. Don't overthink it. Then see where you matched.",
     sections: [
-      { title: "Rapid fire", body: ["Five seconds a card. Pick one side. Out of time? It's skipped, no harm done."] },
+      { title: "Rapid fire", body: ["Ten seconds a card. Pick one side. Out of time? It's skipped, no harm done."] },
       { title: "The reveal", body: ["When you've both finished, you'll see every pick side by side, and how in tune you are."] },
     ],
   },

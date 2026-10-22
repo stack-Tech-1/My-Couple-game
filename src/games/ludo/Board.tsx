@@ -1,13 +1,13 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
-import { useEffect, useRef, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import type { GameProps } from "@/games/_engine/types";
 import { Dice } from "@/design/Dice";
 import { Button } from "@/design/Button";
 import { Status } from "@/games/_ui";
 import { cn } from "@/lib/cn";
-import { HOME, LAST_TRACK, SAFE, YARD, absoluteFor, colourOf, colourStart, type LudoMove, type LudoView } from "./logic";
+import { HOME, LAST_TRACK, SAFE, YARD, absoluteFor, colourOf, colourStart, type DieUse, type LudoMove, type LudoView } from "./logic";
 
 const S = 40; // cell size in the 15x15 SVG
 type Pt = [number, number];
@@ -70,8 +70,17 @@ export function LudoBoard({ view, me, names, sendMove, pending, sound }: GamePro
   // Colours in play, by seat; the board only lights up the corners in use.
   const colours = view.players.map((_, seat) => colourOf(view, seat));
   const inPlay = new Set(colours);
-  const legal = new Set(view.legal);
   const last = view.last;
+
+  // Two dice: pick a die (or both), then a token. Defaults to the first choice that can move.
+  const two = !!view.rules.twoDice;
+  const options = view.options ?? [];
+  const left = view.left ?? [];
+  const [pick, setPick] = useState<DieUse | null>(null);
+  const usable = (u: DieUse) => options.some((o) => o.use === u);
+  const chosen: DieUse | null = two ? (pick !== null && usable(pick) ? pick : (options[0]?.use ?? null)) : null;
+  const amount = (u: DieUse | null) => (u === null ? null : u === "both" ? left[0]! + left[1]! : left[u]);
+  const legal = new Set(two ? options.filter((o) => o.use === chosen).map((o) => o.token) : view.legal);
 
   const roll = () => {
     if (!myTurn || view.phase !== "roll" || pending) return;
@@ -81,17 +90,19 @@ export function LudoBoard({ view, me, names, sendMove, pending, sound }: GamePro
   const move = (t: number) => {
     if (!legal.has(t) || pending) return;
     sound("tap");
-    void sendMove({ type: "move", token: t });
+    setPick(null);
+    void sendMove(two && chosen !== null ? { type: "move", token: t, use: chosen } : { type: "move", token: t });
   };
 
   const whoName = (p: string) => (p === me ? "You" : (names[p] ?? "They"));
   let detail = "";
   if (last?.kind === "roll") {
+    const rolled = last.pair ? `${last.pair[0]} and ${last.pair[1]}` : `${last.value}`;
     detail = last.forfeited
-      ? `${whoName(last.by)} rolled a third six. Turn over.`
+      ? `${whoName(last.by)} rolled a third ${last.pair ? "double " : ""}six. Turn over.`
       : last.noMoves
-        ? `${whoName(last.by)} rolled ${last.value}. Nothing could move.`
-        : `${whoName(last.by)} rolled ${last.value}.`;
+        ? `${whoName(last.by)} rolled ${rolled}. Nothing could move.`
+        : `${whoName(last.by)} rolled ${rolled}.`;
   } else if (last?.kind === "move") {
     detail = last.captured?.length
       ? last.by === me
@@ -110,8 +121,10 @@ export function LudoBoard({ view, me, names, sendMove, pending, sound }: GamePro
       : `${nameOf(view.winner)} got all four home.`
     : myTurn
       ? view.phase === "roll"
-        ? "Roll the die."
-        : `Pick a token to move ${view.dice}.`
+        ? two
+          ? "Roll the dice."
+          : "Roll the die."
+        : `Pick a token to move ${two ? amount(chosen) : view.dice}.`
       : `${nameOf(view.players[view.turn]!)}'s turn…`;
 
   return (
@@ -184,7 +197,11 @@ export function LudoBoard({ view, me, names, sendMove, pending, sound }: GamePro
       </svg>
 
       <div className="flex w-full items-center justify-center gap-6">
-        <Dice value={view.dice ?? 1} rollId={view.rollId} size={64} tone={view.turn === mySeat ? "ember" : "paper"} label={view.dice ? `Die shows ${view.dice}` : "Die"} />
+        {two ? (
+          <TwoDice view={view} choosing={myTurn && view.phase === "move" && !pending} chosen={chosen} usable={usable} onChoose={setPick} tone={view.turn === mySeat ? "ember" : "paper"} />
+        ) : (
+          <Dice value={view.dice ?? 1} rollId={view.rollId} size={64} tone={view.turn === mySeat ? "ember" : "paper"} label={view.dice ? `Die shows ${view.dice}` : "Die"} />
+        )}
         <div className="min-w-0 flex-1">
           <Status className="text-left">{status}</Status>
           <p className="mt-1 text-[0.88rem] text-muted" aria-live="polite">{detail}</p>
@@ -193,6 +210,51 @@ export function LudoBoard({ view, me, names, sendMove, pending, sound }: GamePro
           Roll
         </Button>
       </div>
+    </div>
+  );
+}
+
+/** The pair of dice. On your move, tap a die (or "Both") to choose what to move by; spent dice fade. */
+function TwoDice({ view, choosing, chosen, usable, onChoose, tone }: { view: LudoView; choosing: boolean; chosen: DieUse | null; usable: (u: DieUse) => boolean; onChoose: (u: DieUse) => void; tone: "ember" | "paper" }) {
+  const pair = view.pair ?? [1, 1];
+  const left = view.left ?? [];
+  // Which entry of `left` each rolled die is (null once spent). Equal dice: the first one stays.
+  const leftIndex = (i: 0 | 1): 0 | 1 | null => {
+    if (view.phase !== "move" || left.length === 2) return i;
+    if (left.length === 1) return i === (pair[0] === left[0] ? 0 : 1) ? 0 : null;
+    return null;
+  };
+  return (
+    <div className="flex shrink-0 flex-col items-center gap-1.5">
+      <div className="flex gap-3">
+        {([0, 1] as const).map((i) => {
+          const li = leftIndex(i);
+          const can = choosing && li !== null && usable(li);
+          return (
+            <button
+              key={i}
+              type="button"
+              disabled={!can}
+              aria-pressed={can ? chosen === li : undefined}
+              aria-label={`Die ${i + 1} shows ${pair[i]}${li === null ? ", used" : ""}`}
+              onClick={() => li !== null && onChoose(li)}
+              className={cn("rounded-[14px] p-1 transition-opacity", li === null ? "opacity-30" : choosing && !can && "opacity-60", can && chosen === li && "bg-sunk ring-2 ring-fg")}
+            >
+              <Dice value={pair[i]} rollId={view.rollId} size={46} tone={tone} />
+            </button>
+          );
+        })}
+      </div>
+      {choosing && usable("both") ? (
+        <button
+          type="button"
+          aria-pressed={chosen === "both"}
+          onClick={() => onChoose("both")}
+          className={cn("rounded-full border-[1.5px] px-3 py-0.5 text-[0.8rem] font-semibold", chosen === "both" ? "border-fg bg-sunk" : "border-line text-muted hover:border-line-strong")}
+        >
+          Both · {left[0]! + left[1]!}
+        </button>
+      ) : null}
     </div>
   );
 }

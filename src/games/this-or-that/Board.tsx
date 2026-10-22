@@ -7,7 +7,7 @@ import { Status } from "@/games/_ui";
 import { cn } from "@/lib/cn";
 import type { ToTMove, ToTView } from "./logic";
 
-const SECONDS = 5;
+const SECONDS = 10;
 
 export function ThisOrThatBoard({ view, me, names, sendMove, sound }: GameProps<ToTView, ToTMove>) {
   const reduce = useReducedMotion();
@@ -24,7 +24,7 @@ export function ThisOrThatBoard({ view, me, names, sendMove, sound }: GameProps<
     void sendMove({ index, pick: p }, { silent: true });
   };
 
-  // Five seconds a card; out of time counts as a skip.
+  // Ten seconds a card; out of time counts as a skip.
   useEffect(() => {
     if (!pair || view.done) return;
     const t = setTimeout(() => pick(null), SECONDS * 1000);

@@ -7,6 +7,7 @@ import { runMove } from "@/games/_engine/runner";
 import type { Players } from "@/games/_engine/types";
 import { Button } from "@/design/Button";
 import { toast } from "@/design/toast";
+import { GAME_MODES } from "@/games/modes";
 
 const PLAYERS: Players = ["00000000-0000-4000-8000-00000000000a", "00000000-0000-4000-8000-00000000000b"];
 const NAMES = { [PLAYERS[0]]: "Ada", [PLAYERS[1]]: "Bo" };
@@ -15,7 +16,10 @@ export function Sandbox({ gameId }: { gameId: string }) {
   const logic = GAME_LOGIC[gameId]!;
   const Component = gameComponent(gameId)!;
   const [seed, setSeed] = useState("sandbox");
-  const [state, setStateRaw] = useState<unknown>(() => logic.initialState("sandbox", PLAYERS, {}, { now: Date.now() }));
+  // Same default as the start screen: the first mode, if the game has modes.
+  const mode = GAME_MODES[gameId];
+  const config = mode ? { [mode.key]: mode.options[0]!.value } : {};
+  const [state, setStateRaw] = useState<unknown>(() => logic.initialState("sandbox", PLAYERS, config, { now: Date.now() }));
   // Mirror of the latest state so moves are judged outside React's render cycle.
   const live = useRef(state);
   const setState = useCallback((s: unknown) => {
@@ -27,7 +31,7 @@ export function Sandbox({ gameId }: { gameId: string }) {
   const reset = () => {
     const s = Math.random().toString(36).slice(2);
     setSeed(s);
-    setState(logic.initialState(s, PLAYERS, {}, { now: Date.now() }));
+    setState(logic.initialState(s, PLAYERS, config, { now: Date.now() }));
   };
 
   const sendFor = useCallback(

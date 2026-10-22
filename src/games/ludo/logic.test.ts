@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { absolute, absoluteFor, colourOf, HOME, ludo as g, legalTokens, YARD, type LudoState } from "./logic";
+import { absolute, absoluteFor, colourOf, HOME, ludo as g, legalOptions, legalTokens, YARD, type LudoState } from "./logic";
 import { runMove, MoveRejected } from "@/games/_engine/runner";
 
 const P = ["ada", "bo"] as const;
@@ -146,5 +146,90 @@ describe("ludo privacy", () => {
     const v = g.viewFor(rig({}), "ada");
     expect(v).not.toHaveProperty("seed");
     expect(v).not.toHaveProperty("rngCursor");
+  });
+});
+
+describe("ludo with two dice", () => {
+  const two = (over: Partial<LudoState>): LudoState => ({ ...g.initialState("s", P, { firstPlayer: 0, twoDice: true }, ctx), ...over });
+  const moving = (left: number[], tokens: LudoState["tokens"], over: Partial<LudoState> = {}) =>
+    two({ phase: "move", pair: [left[0]!, left[1] ?? left[0]!], left, dice: left[0]!, tokens, ...over });
+  const yard = [YARD, YARD, YARD, YARD];
+
+  it("is off for older sessions and on when picked", () => {
+    expect(rig({}).rules.twoDice).toBeUndefined();
+    expect(two({}).rules.twoDice).toBe(true);
+    const r = mv(two({}), "ada", { type: "roll" });
+    expect(r.pair).toHaveLength(2);
+    expect(r.last).toMatchObject({ kind: "roll", pair: r.pair });
+  });
+
+  it("a six on either die brings a token out, and the other die can move it on", () => {
+    let s = moving([6, 3], { ada: [...yard], bo: [...yard] });
+    // Only the six gets out; the sum never does.
+    expect(legalOptions(s)).toEqual([0, 1, 2, 3].map((token) => ({ token, use: 0 })));
+    s = mv(s, "ada", { type: "move", token: 0, use: 0 });
+    expect(s.tokens.ada![0]).toBe(0);
+    expect(s.left).toEqual([3]);
+    expect(s.turn).toBe(0);
+    s = mv(s, "ada", { type: "move", token: 0, use: 0 });
+    expect(s.tokens.ada![0]).toBe(3);
+    // Dice spent, not a double six: the turn passes.
+    expect(s.turn).toBe(1);
+    expect(s.phase).toBe("roll");
+  });
+
+  it("can add the dice together for one token", () => {
+    const s = mv(moving([4, 5], { ada: [10, YARD, YARD, YARD], bo: [...yard] }), "ada", { type: "move", token: 0, use: "both" });
+    expect(s.tokens.ada![0]).toBe(19);
+    expect(s.turn).toBe(1);
+  });
+
+  it("ends the turn when the die that's left can't move anything", () => {
+    // One token out; after using the 3, the 5 has nowhere to go (the yard needs a six).
+    const s = mv(moving([3, 5], { ada: [53, YARD, YARD, YARD], bo: [...yard] }), "ada", { type: "move", token: 0, use: 0 });
+    expect(s.tokens.ada![0]).toBe(HOME);
+    // Getting home earns another roll.
+    expect(s.turn).toBe(0);
+    expect(s.phase).toBe("roll");
+  });
+
+  it("a double six earns another roll; a capture does too", () => {
+    let s = mv(moving([6, 6], { ada: [10, YARD, YARD, YARD], bo: [...yard] }, { again: true, sixes: 1 }), "ada", { type: "move", token: 0, use: "both" });
+    expect(s.tokens.ada![0]).toBe(22);
+    expect(s.turn).toBe(0);
+    expect(s.sixes).toBe(1);
+    // Bo's token at rel 4 sits on absolute 30. Ada from 27 with a 3, then 2 more.
+    s = moving([3, 2], { ada: [27, YARD, YARD, YARD], bo: [4, YARD, YARD, YARD] });
+    s = mv(s, "ada", { type: "move", token: 0, use: 0 });
+    expect(s.tokens.bo![0]).toBe(YARD);
+    s = mv(s, "ada", { type: "move", token: 0, use: 0 });
+    expect(s.turn).toBe(0);
+    expect(s.sixes).toBe(0);
+  });
+
+  it("forfeits on a third double six", () => {
+    for (let i = 0; i < 400; i++) {
+      const n = mv(two({ seed: `x${i}`, sixes: 2 }), "ada", { type: "roll" });
+      if (n.pair?.[0] === 6 && n.pair[1] === 6) {
+        expect(n.turn).toBe(1);
+        expect(n.last).toMatchObject({ forfeited: true });
+        return;
+      }
+    }
+    throw new Error("no double-six seed found");
+  });
+
+  it("rejects a die that can't move that token, and fills in the die for older clients", () => {
+    const s = moving([6, 3], { ada: [...yard], bo: [...yard] });
+    expect(() => mv(s, "ada", { type: "move", token: 0, use: 1 })).toThrow(MoveRejected);
+    expect(() => mv(s, "ada", { type: "move", token: 0, use: "both" })).toThrow(MoveRejected);
+    expect(mv(s, "ada", { type: "move", token: 0 }).tokens.ada![0]).toBe(0);
+  });
+
+  it("shows choices only to the player whose turn it is", () => {
+    const s = moving([6, 3], { ada: [...yard], bo: [...yard] });
+    expect(g.viewFor(s, "ada").options).toHaveLength(4);
+    expect(g.viewFor(s, "bo").options).toEqual([]);
+    expect(g.viewFor(rig({}), "ada")).not.toHaveProperty("options");
   });
 });
