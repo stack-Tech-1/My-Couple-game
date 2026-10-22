@@ -103,7 +103,7 @@ export function WordDuelBoard({ view, me, names, sendMove, pending, sound }: Gam
   return (
     <div className="mx-auto flex w-full max-w-[520px] flex-col items-center gap-5">
       {/* Everyone else's progress: colours only */}
-      <div className={view.others.length > 1 ? "grid w-full grid-cols-2 gap-2 sm:grid-cols-3" : "w-full"}>
+      <div data-tour="wd-others" className={view.others.length > 1 ? "grid w-full grid-cols-2 gap-2 sm:grid-cols-3" : "w-full"}>
         {view.others.map((o) => (
           <div key={o.player} className="flex w-full items-center justify-between gap-3 rounded-[16px] border border-line bg-raised px-4 py-3">
             <div className="min-w-0">
@@ -125,7 +125,7 @@ export function WordDuelBoard({ view, me, names, sendMove, pending, sound }: Gam
       </div>
 
       {/* My board */}
-      <div className="grid gap-1.5" role="grid" aria-label="Your guesses">
+      <div data-tour="wd-board" className="grid gap-1.5" role="grid" aria-label="Your guesses">
         {Array.from({ length: MAX_GUESSES }, (_, r) => {
           const g = view.mine[r];
           const current = r === view.mine.length && !out;
@@ -163,7 +163,7 @@ export function WordDuelBoard({ view, me, names, sendMove, pending, sound }: Gam
       </div>
 
       {/* Keyboard */}
-      <div className="flex w-full flex-col gap-1.5" aria-label="Keyboard">
+      <div data-tour="wd-keys" className="flex w-full flex-col gap-1.5" aria-label="Keyboard">
         {ROWS.map((row, i) => (
           <div key={row} className="flex justify-center gap-1.5">
             {i === 2 ? <Key label="Enter" onPress={() => press("enter")} wide disabled={out || pending} /> : null}

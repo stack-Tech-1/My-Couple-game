@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { toast } from "@/design/toast";
 import { gameMeta } from "@/games/catalog";
 import { inviteEvent } from "@/lib/games/types";
 import { useRoom } from "@/lib/realtime/RoomProvider";
 import { playSound } from "@/lib/sound";
+import { TIMED_TOURS } from "@/games/tours";
+import { GameTour, isTourDue } from "./GameTour";
 
 /**
  * Turns a "game:invite" broadcast into a toast with a Join button. In a friend room the whole room
@@ -19,6 +21,9 @@ export function InviteListener() {
   const me = bundle.me.profile.id;
   const soundOn = bundle.me.member.sound_enabled;
   const { members, blocked } = bundle;
+  const toured = bundle.me.profile.toured_games;
+  // Joining a timed game for the first time: how to play first, then into the game.
+  const [preTour, setPreTour] = useState<{ gameId: string; sessionId: string; href: string } | null>(null);
 
   useEffect(
     () =>
@@ -37,11 +42,21 @@ export function InviteListener() {
         if (soundOn) playSound("invite");
         toast.invite(meta?.category === "spicy" ? `${partnerName} sent you an invite` : rematch ? `${partnerName} wants a rematch` : `${partnerName} wants to play`, name, {
           label: "Join",
-          onClick: () => router.push(href),
+          onClick: () => (TIMED_TOURS.has(gameId) && isTourDue(gameId, toured) ? setPreTour({ gameId, sessionId, href }) : router.push(href)),
         });
       }),
-    [on, bundle.room.id, me, members, blocked, pathname, router, soundOn],
+    [on, bundle.room.id, me, members, blocked, pathname, router, soundOn, toured],
   );
 
-  return null;
+  if (!preTour) return null;
+  return (
+    <GameTour
+      gameId={preTour.gameId}
+      sessionId={preTour.sessionId}
+      onDone={() => {
+        router.push(preTour.href);
+        setPreTour(null);
+      }}
+    />
+  );
 }

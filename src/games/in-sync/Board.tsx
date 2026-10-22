@@ -39,7 +39,7 @@ export function InSyncBoard({ view, me, names, sendMove, pending, sound }: GameP
         Round {view.round} of {MAX_ROUNDS}
       </p>
 
-      <div className="grid w-full grid-cols-2 gap-3" aria-live="polite">
+      <div data-tour="is-words" className="grid w-full grid-cols-2 gap-3" aria-live="polite">
         <AnimatePresence mode="popLayout">
           {[
             ["You", last?.mine],
@@ -62,7 +62,7 @@ export function InSyncBoard({ view, me, names, sendMove, pending, sound }: GameP
       <Status>{prompt}</Status>
 
       {!view.result && !view.mine ? (
-        <form onSubmit={submit} className="flex w-full gap-2">
+        <form data-tour="is-input" onSubmit={submit} className="flex w-full gap-2">
           <label htmlFor="sync-word" className="sr-only">
             Your word
           </label>

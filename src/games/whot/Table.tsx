@@ -165,12 +165,13 @@ export function WhotTable({ view, me, names, sendMove, pending, sound }: GamePro
         </div>
 
         {/* Table centre */}
-        <div className="relative flex items-center justify-center gap-8 rounded-[24px] border border-line bg-[color-mix(in_srgb,var(--sage)_14%,var(--bg-raised))] px-4 py-7">
+        <div data-tour="whot-table" className="relative flex items-center justify-center gap-8 rounded-[24px] border border-line bg-[color-mix(in_srgb,var(--sage)_14%,var(--bg-raised))] px-4 py-7">
           <button
             type="button"
             onClick={() => myTurn && !pending && (sound("flip"), void sendMove({ type: "draw" }))}
             disabled={!myTurn || pending}
             aria-label={view.pendingPick > 0 ? `Pick ${view.pendingPick} from the market` : `Go to market, ${view.marketCount} cards left`}
+            data-tour="whot-market"
             className="group relative h-[124px] w-[88px] disabled:cursor-default"
           >
             {[2, 1, 0].map((d) => (
@@ -267,6 +268,7 @@ export function WhotTable({ view, me, names, sendMove, pending, sound }: GamePro
           <ul
             className="-mx-4 flex overflow-x-auto px-6 pb-2 pt-5 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:justify-center sm:gap-x-1.5 sm:gap-y-3 sm:overflow-visible sm:px-0 [&>li+li]:-ml-6 sm:[&>li+li]:ml-0 [&>li:first-child]:ml-auto [&>li:last-child]:mr-auto"
             aria-label="Your hand"
+            data-tour="whot-hand"
           >
             <AnimatePresence initial={false}>
               {view.hand.map((card) => {

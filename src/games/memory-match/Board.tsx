@@ -38,14 +38,14 @@ export function MemoryMatchBoard({ view, me, names, sendMove, pending, clock, so
           <p className="display tabular text-[2.4rem] leading-none">{pairs}/8</p>
           <p className="text-[0.82rem] text-muted">pairs together · {view.misses} misses</p>
         </div>
-        <p className="display tabular text-[2rem]" aria-label={left === null ? "Clock not started" : `${Math.ceil(left / 1000)} seconds left`}>
+        <p data-tour="mm-clock" className="display tabular text-[2rem]" aria-label={left === null ? "Clock not started" : `${Math.ceil(left / 1000)} seconds left`}>
           {left === null ? `${view.targetMs / 1000}s` : `${Math.ceil(left / 1000)}s`}
         </p>
       </div>
       <TimerBar left={left} total={view.targetMs} />
       <Status>{status}</Status>
 
-      <div className="grid grid-cols-4 gap-2.5 sm:gap-3" role="group" aria-label="Cards">
+      <div data-tour="mm-cards" className="grid grid-cols-4 gap-2.5 sm:gap-3" role="group" aria-label="Cards">
         {view.cards.map((c, i) => {
           const faceUp = c !== null;
           const canFlip = myTurn && !view.matched[i] && !(view.up.length === 1 && view.up[0] === i) && !pending;

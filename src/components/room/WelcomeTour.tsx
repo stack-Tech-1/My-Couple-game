@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/design/Button";
+import { Spotlight } from "@/design/Spotlight";
 import { finishTour } from "@/lib/room/actions";
 import { useRoom } from "@/lib/realtime/RoomProvider";
 
@@ -30,8 +31,6 @@ function stepsFor(kind: "couple" | "friends", ctx: { alone: boolean; owner: bool
   ];
 }
 
-const PAD = 8;
-
 /**
  * The welcome tour, on the room home only (never mid-game). New people see it once, automatically;
  * people who were already here are asked first. It waits for any open dialog (like the Terms prompt)
@@ -51,11 +50,8 @@ export function WelcomeTour() {
   });
 
   const [phase, setPhase] = useState<"waiting" | "ask" | "touring" | "done">(replay || state !== "done" ? "waiting" : "done");
-  const [i, setI] = useState(0);
   // The steps whose target is on screen, worked out once when the tour starts.
   const [live, setLive] = useState<Step[] | null>(null);
-  const [rect, setRect] = useState<DOMRect | null>(null);
-  const nextRef = useRef<HTMLButtonElement>(null);
 
   // Wait until nothing else is on top (the Terms prompt, an invite modal), then begin.
   useEffect(() => {
@@ -77,45 +73,11 @@ export function WelcomeTour() {
   useEffect(() => {
     if (phase === "touring" && !live) setLive(steps.filter((s) => document.querySelector(`[data-tour="${s.target}"]`)));
   }, [phase, live, steps]);
-  const step = live?.[i];
-  const target = step?.target;
 
-  // Follow the target as the page scrolls or resizes (only re-measures when it actually moved).
-  useLayoutEffect(() => {
-    if (!target) return;
-    const el = document.querySelector<HTMLElement>(`[data-tour="${target}"]`);
-    if (!el) return;
-    el.scrollIntoView({ block: "center", behavior: "smooth" });
-    let raf = 0;
-    let last = "";
-    const track = () => {
-      const r = el.getBoundingClientRect();
-      const sig = `${Math.round(r.top)},${Math.round(r.left)},${Math.round(r.width)},${Math.round(r.height)}`;
-      if (sig !== last) {
-        last = sig;
-        setRect(r);
-      }
-      raf = requestAnimationFrame(track);
-    };
-    track();
-    return () => cancelAnimationFrame(raf);
-  }, [target]);
-
+  // Nothing to point at: close.
   useEffect(() => {
-    if (target) nextRef.current?.focus();
-  }, [target]);
-
-  // Nothing (left) to point at: close.
-  useEffect(() => {
-    if (phase === "touring" && live && !step) finish();
-  }, [phase, live, step, finish]);
-
-  useEffect(() => {
-    if (phase !== "touring") return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && finish();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [phase, finish]);
+    if (phase === "touring" && live && !live.length) finish();
+  }, [phase, live, finish]);
 
   if (phase === "done" || phase === "waiting") return null;
 
@@ -133,57 +95,6 @@ export function WelcomeTour() {
     );
   }
 
-  if (!step) return null;
-
-  const vw = typeof window === "undefined" ? 390 : window.innerWidth;
-  const vh = typeof window === "undefined" ? 800 : window.innerHeight;
-  const below = !rect || rect.bottom + 200 < vh || rect.top < vh / 2;
-  const cardTop = rect ? (below ? Math.min(rect.bottom + PAD + 10, vh - 210) : Math.max(rect.top - PAD - 10 - 190, 12)) : vh / 2 - 100;
-  const total = live?.length ?? 0;
-  const last = i === total - 1;
-
-  return createPortal(
-    <div className="fixed inset-0 z-[95]" aria-live="polite">
-      {/* Dims everything except the spot being explained; tapping outside does nothing. */}
-      <div className="absolute inset-0" onClick={(e) => e.stopPropagation()} />
-      {rect ? (
-        <div
-          aria-hidden
-          className="pointer-events-none absolute rounded-[16px] transition-[top,left,width,height] duration-200"
-          style={{
-            top: rect.top - PAD,
-            left: rect.left - PAD,
-            width: rect.width + PAD * 2,
-            height: rect.height + PAD * 2,
-            boxShadow: "0 0 0 3px var(--accent), 0 0 0 9999px rgba(18,12,14,.58)",
-          }}
-        />
-      ) : null}
-      <div
-        role="dialog"
-        aria-labelledby="tour-title"
-        aria-describedby="tour-body"
-        className="absolute rounded-[18px] border-[1.5px] border-line-strong bg-bg p-5 shadow-[0_18px_40px_-20px_rgba(0,0,0,.6)]"
-        style={{ top: cardTop, left: 16, width: Math.min(vw - 32, 380), ...(vw > 412 && rect ? { left: Math.min(Math.max(rect.left, 16), vw - 396) } : {}) }}
-      >
-        <p className="eyebrow tabular text-muted">
-          {i + 1} of {total}
-        </p>
-        <h2 id="tour-title" className="display mt-1.5 text-[1.5rem] leading-tight">{step.title}</h2>
-        <p id="tour-body" className="mt-2 text-[0.92rem] leading-relaxed text-muted">{step.body}</p>
-        <div className="mt-4 flex items-center justify-between gap-2">
-          <Button size="sm" variant="ghost" onClick={finish}>Skip tour</Button>
-          <span className="flex gap-2">
-            {i > 0 ? (
-              <Button size="sm" variant="outline" onClick={() => setI(i - 1)}>Back</Button>
-            ) : null}
-            <Button ref={nextRef} size="sm" variant="accent" onClick={() => (last ? finish() : setI(i + 1))}>
-              {last ? "Done" : "Next"}
-            </Button>
-          </span>
-        </div>
-      </div>
-    </div>,
-    document.body,
-  );
+  if (!live?.length) return null;
+  return <Spotlight steps={live} onFinish={finish} />;
 }

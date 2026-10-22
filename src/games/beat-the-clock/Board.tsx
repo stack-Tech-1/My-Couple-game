@@ -36,7 +36,7 @@ export function BeatTheClockBoard({ view, me, names, sendMove, clock, sound }: G
       <div className="mx-auto flex w-full max-w-[480px] flex-col items-center gap-5 text-center">
         <p className="display text-[clamp(2.4rem,9vw,3.6rem)] leading-none">{view.target} in 60s</p>
         <p className="text-muted">Sums, odd ones out, and colour words printed in the wrong ink. Every right answer counts for both of you.</p>
-        <Button size="lg" variant="accent" disabled={view.ready[me]} onClick={() => void sendMove({ type: "ready" })}>
+        <Button data-tour="btc-ready" size="lg" variant="accent" disabled={view.ready[me]} onClick={() => void sendMove({ type: "ready" })}>
           {view.ready[me] ? `Waiting for ${partnerName}…` : "I'm ready"}
         </Button>
         {view.ready[partner] && !view.ready[me] ? <p className="text-[0.9rem] font-semibold">{partnerName} is ready.</p> : null}

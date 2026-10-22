@@ -79,6 +79,19 @@ test("two partners pair up and play Connect Four live", async ({ browser }) => {
     await pb.getByRole("button", { name: "Join" }).click();
     await expect(pb).toHaveURL(pa.url());
 
+    // First time in Connect Four, both get the how-to-play tour. Bo can see that Ada is reading it.
+    const aTour = pa.getByRole("dialog", { name: "Drop a disc" });
+    await expect(aTour).toBeVisible();
+    await pb.getByRole("dialog", { name: "Drop a disc" }).getByRole("button", { name: "Skip tour" }).click();
+    await expect(pb.getByText("Ada is reading how to play…")).toBeVisible();
+    await aTour.getByRole("button", { name: "Next" }).click();
+    await pa.getByRole("dialog", { name: "Take turns" }).getByRole("button", { name: "Next" }).click();
+    await pa.getByRole("dialog", { name: "Winning" }).getByRole("button", { name: "Done" }).click();
+    await expect(pb.getByText("Ada is reading how to play…")).toHaveCount(0);
+    for (const id of [a.id, b.id]) {
+      await expect.poll(async () => (await admin.from("profiles").select("toured_games").eq("id", id).single()).data?.toured_games).toEqual(["connect-four"]);
+    }
+
     // Whoever the seed picked goes first. First player builds a bottom row 0..3.
     const firstIsAda = await pa.getByRole("button", { name: /^Column 1/ }).isEnabled({ timeout: 20_000 }).catch(() => false);
     const [first, second] = firstIsAda ? [pa, pb] : [pb, pa];

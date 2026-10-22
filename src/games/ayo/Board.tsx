@@ -116,13 +116,16 @@ export function AyoBoard({ view, me, names, sendMove, pending, sound }: GameProp
 
   return (
     <div className="mx-auto flex w-full max-w-[640px] flex-col gap-5">
-      <Scoreline
-        left={{ name: names[me] ?? "You", score: view.stores[me], sub: `of ${TO_WIN}` }}
-        right={{ name: partnerName, score: view.stores[partner], sub: `of ${TO_WIN}` }}
-        active={view.winner ? null : myTurn ? "left" : "right"}
-      />
+      <div data-tour="ayo-score">
+        <Scoreline
+          left={{ name: names[me] ?? "You", score: view.stores[me], sub: `of ${TO_WIN}` }}
+          right={{ name: partnerName, score: view.stores[partner], sub: `of ${TO_WIN}` }}
+          active={view.winner ? null : myTurn ? "left" : "right"}
+        />
+      </div>
 
       <div
+        data-tour="ayo-board"
         className="relative rounded-[48px] border-[2px] border-[#5e3f17] p-3 sm:p-4"
         style={{ background: "linear-gradient(180deg,#c99b52,#b8893b 55%,#a87a30)", boxShadow: "inset 0 2px 0 rgba(255,255,255,.25), inset 0 -6px 0 rgba(0,0,0,.18), 0 24px 40px -30px rgba(28,20,22,.8)" }}
         role="group"
@@ -134,7 +137,7 @@ export function AyoBoard({ view, me, names, sendMove, pending, sound }: GameProp
           ))}
         </div>
         <div className="my-2 h-px bg-[rgba(94,63,23,.45)] sm:my-3" aria-hidden />
-        <div className="grid grid-cols-6 gap-2 sm:gap-3">
+        <div data-tour="ayo-mine" className="grid grid-cols-6 gap-2 sm:gap-3">
           {bottom.map((i, local) => (
             <Pit
               key={i}

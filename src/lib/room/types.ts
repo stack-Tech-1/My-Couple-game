@@ -12,6 +12,8 @@ export type Profile = {
   theme?: "day" | "night" | "auto";
   /** Welcome tour: start it, offer it, or already seen. */
   tour?: "auto" | "ask" | "done";
+  /** Games whose "how to play" tour this person has finished or skipped. */
+  toured_games?: string[];
 };
 
 export type Member = {

@@ -49,7 +49,7 @@ export function ConnectFourBoard({ view, me, names, sendMove, pending, sound }: 
 
   return (
     <div className="mx-auto flex w-full max-w-[560px] flex-col items-center">
-      <div className="mb-5 flex w-full items-center justify-between gap-4">
+      <div data-tour="c4-players" className="mb-5 flex w-full items-center justify-between gap-4">
         <PlayerChip name={names[me] ?? "You"} piece={myPiece} active={myTurn} label="you" />
         <p className="display text-center text-[1.4rem] leading-tight" aria-live="polite">{status}</p>
         <PlayerChip name={names[view.players.find((p) => p !== me) ?? ""] ?? "Partner"} piece={theirPiece} active={!view.winner && !myTurn} align="right" />
@@ -75,6 +75,7 @@ export function ConnectFourBoard({ view, me, names, sendMove, pending, sound }: 
       <div
         role="group"
         aria-label={`Connect Four board. ${status}`}
+        data-tour="c4-board"
         className="relative w-full rounded-[20px] border-[2px] border-[#2a0b14] bg-[#5b1a2b] p-[3.5%] shadow-[inset_0_-6px_0_rgba(0,0,0,.25),0_20px_40px_-28px_rgba(28,20,22,.8)]"
         onMouseLeave={() => setHover(null)}
       >

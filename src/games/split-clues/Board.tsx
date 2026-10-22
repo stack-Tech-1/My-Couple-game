@@ -52,7 +52,7 @@ export function SplitCluesBoard({ view, me, names, sendMove, pending, sound }: G
           <p className="mt-2 text-[1.05rem] leading-relaxed text-muted">{view.setup}</p>
         </div>
 
-        <div>
+        <div data-tour="sc-clues">
           <p className="eyebrow mb-3 text-muted">Only you can see these</p>
           <ul className="grid gap-3 @md:grid-cols-2">
             <AnimatePresence mode="popLayout">
@@ -82,7 +82,7 @@ export function SplitCluesBoard({ view, me, names, sendMove, pending, sound }: G
         {view.result ? (
           <Summary view={view} />
         ) : (
-          <form onSubmit={submit} className="flex flex-col gap-3">
+          <form data-tour="sc-answer" onSubmit={submit} className="flex flex-col gap-3">
             <label htmlFor="sc-answer" className="text-[0.82rem] font-semibold">
               Your answer · {view.ask}
             </label>
@@ -113,7 +113,7 @@ export function SplitCluesBoard({ view, me, names, sendMove, pending, sound }: G
         )}
       </section>
 
-      <aside aria-label="Chat" className="flex max-h-[560px] flex-col rounded-[20px] border border-line bg-raised">
+      <aside data-tour="sc-chat" aria-label="Chat" className="flex max-h-[560px] flex-col rounded-[20px] border border-line bg-raised">
         <p className="eyebrow border-b border-line px-4 py-3 text-muted">Compare notes</p>
         <div className="flex-1 space-y-2 overflow-y-auto px-4 py-3" aria-live="polite">
           {view.chat.length === 0 ? <p className="text-[0.9rem] text-muted">Read your clues to each other. Out loud works too.</p> : null}

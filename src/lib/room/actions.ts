@@ -8,6 +8,7 @@ import { purgeRoomMedia } from "@/lib/media/purge";
 import { TERMS_VERSION } from "@/lib/legal";
 import { z } from "zod";
 import { HOUSE_RULES } from "@/games/houseRules";
+import { gameMeta } from "@/games/catalog";
 import {
   inviteCodeInput,
   prefsInput,
@@ -289,6 +290,20 @@ export async function setBlocked(userId: unknown, blocked: boolean): Promise<Act
 }
 
 /** The welcome tour was finished, skipped or declined: don't show it again (Settings can replay it). */
+/** Records that this person has been through a game's how-to-play tour (finished or skipped). */
+export async function markGameToured(gameId: string): Promise<ActionResult> {
+  if (!gameMeta(gameId)) return fail("unknown game");
+  const user = await getUser();
+  if (!user) return fail("not signed in");
+  const supabase = await supabaseServer();
+  const { data } = await supabase.from("profiles").select("toured_games").eq("id", user.id).single();
+  const seen = (data?.toured_games as string[] | null) ?? [];
+  if (seen.includes(gameId)) return { ok: true, data: null };
+  const { error } = await supabase.from("profiles").update({ toured_games: [...seen, gameId] }).eq("id", user.id);
+  if (error) return fail(error);
+  return { ok: true, data: null };
+}
+
 export async function finishTour(): Promise<ActionResult> {
   const user = await getUser();
   if (!user) return fail("not signed in");

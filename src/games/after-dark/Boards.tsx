@@ -101,8 +101,10 @@ export function SpicyDiceBoard({ view, me, names, sendMove, pending, sound }: Ga
   const faceText = (list: string[]) => list.slice(0, 6).map((t) => t);
   return (
     <div className="mx-auto flex w-full max-w-[560px] flex-col items-center gap-6">
-      <HeatControl heat={view.heat} maxHeat={view.maxHeat} onChange={(h) => void sendMove({ type: "heat", heat: h })} />
-      <div className="flex gap-8">
+      <div data-tour="sd-heat">
+        <HeatControl heat={view.heat} maxHeat={view.maxHeat} onChange={(h) => void sendMove({ type: "heat", heat: h })} />
+      </div>
+      <div data-tour="sd-dice" className="flex gap-8">
         <Dice value={view.roll ? (view.roll.a % 6) + 1 : 1} rollId={view.rollId} size={96} tone="wine" faces={faceText(view.faces.action)} label={view.roll ? `What: ${view.roll.action}` : "What die"} />
         <Dice value={view.roll ? (view.roll.w % 6) + 1 : 1} rollId={view.rollId} size={96} tone="ember" faces={faceText(view.faces.where)} label={view.roll ? `Where or how: ${view.roll.where}` : "Where die"} />
       </div>
@@ -115,7 +117,7 @@ export function SpicyDiceBoard({ view, me, names, sendMove, pending, sound }: Ga
           <Status key="s">{myTurn ? "Your roll." : `${partnerName} is rolling…`}</Status>
         )}
       </AnimatePresence>
-      <div className="flex w-full gap-3">
+      <div data-tour="sd-roll" className="flex w-full gap-3">
         {view.roll ? (
           <>
             <Button size="lg" variant="accent" className="flex-1" disabled={pending} onClick={() => void sendMove({ type: "done" })}>

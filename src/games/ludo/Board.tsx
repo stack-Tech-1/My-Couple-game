@@ -138,7 +138,7 @@ export function LudoBoard({ view, me, names, sendMove, pending, sound }: GamePro
         ))}
       </div>
 
-      <svg viewBox={`0 0 ${15 * S} ${15 * S}`} className="w-full touch-manipulation select-none" role="group" aria-label={`Ludo board. ${status}`}>
+      <svg data-tour="ludo-board" viewBox={`0 0 ${15 * S} ${15 * S}`} className="w-full touch-manipulation select-none" role="group" aria-label={`Ludo board. ${status}`}>
         <rect x={0} y={0} width={15 * S} height={15 * S} rx={18} fill="var(--bg-raised)" stroke="var(--line-strong)" strokeWidth={2} />
         {/* yards */}
         {YARD_AT.map(([c, r], colour) => {
@@ -197,16 +197,18 @@ export function LudoBoard({ view, me, names, sendMove, pending, sound }: GamePro
       </svg>
 
       <div className="flex w-full items-center justify-center gap-6">
+        <div data-tour="ludo-dice" className="shrink-0">
         {two ? (
           <TwoDice view={view} choosing={myTurn && view.phase === "move" && !pending} chosen={chosen} usable={usable} onChoose={setPick} tone={view.turn === mySeat ? "ember" : "paper"} />
         ) : (
           <Dice value={view.dice ?? 1} rollId={view.rollId} size={64} tone={view.turn === mySeat ? "ember" : "paper"} label={view.dice ? `Die shows ${view.dice}` : "Die"} />
         )}
+        </div>
         <div className="min-w-0 flex-1">
           <Status className="text-left">{status}</Status>
           <p className="mt-1 text-[0.88rem] text-muted" aria-live="polite">{detail}</p>
         </div>
-        <Button size="lg" variant="accent" onClick={roll} disabled={!myTurn || view.phase !== "roll" || pending}>
+        <Button data-tour="ludo-roll" size="lg" variant="accent" onClick={roll} disabled={!myTurn || view.phase !== "roll" || pending}>
           Roll
         </Button>
       </div>

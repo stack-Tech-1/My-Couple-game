@@ -11,6 +11,8 @@ import { GAME_MODES } from "@/games/modes";
 import { cn } from "@/lib/cn";
 import { Avatar } from "@/design/Avatar";
 import { gameMeta } from "@/games/catalog";
+import { TIMED_TOURS } from "@/games/tours";
+import { GameTour, useTourDue } from "./GameTour";
 
 export function StartGame({ gameId, activeSessionId }: { gameId: string; activeSessionId: string | null }) {
   const router = useRouter();
@@ -18,6 +20,9 @@ export function StartGame({ gameId, activeSessionId }: { gameId: string; activeS
   const [busy, setBusy] = useState(false);
   const modes = GAME_MODES[gameId];
   const [mode, setMode] = useState(0);
+  // Timed games: the how-to-play tour comes before the game (and its clock) starts.
+  const tourFirst = useTourDue(gameId) && TIMED_TOURS.has(gameId);
+  const [preTour, setPreTour] = useState(false);
   const roomId = bundle.room.id;
   const friendsRoom = bundle.room.kind === "friends";
   const friends = bundle.members.filter((m) => m.profile.id !== bundle.me.profile.id && !bundle.blocked.includes(m.profile.id));
@@ -55,8 +60,12 @@ export function StartGame({ gameId, activeSessionId }: { gameId: string; activeS
     );
   }
 
-  async function start() {
+  async function start(afterTour = false) {
     if (friendsRoom && (!picked.length || !enough)) return;
+    if (tourFirst && !afterTour) {
+      setPreTour(true);
+      return;
+    }
     setBusy(true);
     try {
       const s = await gameApi.create(gameId, {
@@ -121,10 +130,19 @@ export function StartGame({ gameId, activeSessionId }: { gameId: string; activeS
             Resume game
           </Button>
         ) : null}
-        <Button size="lg" variant={activeSessionId ? "outline" : "accent"} iconRight={activeSessionId ? undefined : "arrowRight"} loading={busy} disabled={friendsRoom && (!picked.length || !enough)} onClick={start}>
+        <Button size="lg" variant={activeSessionId ? "outline" : "accent"} iconRight={activeSessionId ? undefined : "arrowRight"} loading={busy} disabled={friendsRoom && (!picked.length || !enough)} onClick={() => void start()}>
           {activeSessionId ? "Start over" : inviteLabel}
         </Button>
       </div>
+      {preTour ? (
+        <GameTour
+          gameId={gameId}
+          onDone={() => {
+            setPreTour(false);
+            void start(true);
+          }}
+        />
+      ) : null}
     </>
   );
 }

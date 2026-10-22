@@ -1,6 +1,10 @@
 import fs from "node:fs";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { TERMS_VERSION } from "../src/lib/legal";
+import { GAMES } from "../src/games/catalog";
+
+/** Test accounts have already seen every game's how-to-play tour; its own spec turns them back on. */
+const ALL_TOURED = GAMES.map((g) => g.id);
 
 function readEnv(file: string): Record<string, string> {
   const env: Record<string, string> = {};
@@ -63,9 +67,9 @@ export async function pairedRoom(names: [string, string]) {
   const cb = await clientAs(b.email);
   const now = new Date().toISOString();
   const agreed = { adult_confirmed_at: now, terms_version: TERMS_VERSION, terms_accepted_at: now };
-  // tour: "done" keeps the welcome tour out of the way; its own test turns it back on.
-  await ca.from("profiles").update({ display_name: names[0], avatar_key: "fig", avatar_hue: 12, onboarded_at: now, tour: "done", ...agreed }).eq("id", a.id);
-  await cb.from("profiles").update({ display_name: names[1], avatar_key: "moon", avatar_hue: 200, onboarded_at: now, tour: "done", ...agreed }).eq("id", b.id);
+  // tour: "done" and toured_games keep the welcome and game tours out of the way; their own tests turn them back on.
+  await ca.from("profiles").update({ display_name: names[0], avatar_key: "fig", avatar_hue: 12, onboarded_at: now, tour: "done", toured_games: ALL_TOURED, ...agreed }).eq("id", a.id);
+  await cb.from("profiles").update({ display_name: names[1], avatar_key: "moon", avatar_hue: 200, onboarded_at: now, tour: "done", toured_games: ALL_TOURED, ...agreed }).eq("id", b.id);
   const { data: room, error } = await ca.rpc("create_room", { room_name: "E2E" });
   if (error) throw error;
   const { error: joinErr } = await cb.rpc("join_room", { code: room.invite_code });
@@ -78,7 +82,7 @@ export async function onboardedUser(name: string, avatar = "fig") {
   const u = await makeUser(name.toLowerCase());
   const c = await clientAs(u.email);
   const now = new Date().toISOString();
-  await c.from("profiles").update({ display_name: name, avatar_key: avatar, avatar_hue: 40, onboarded_at: now, tour: "done", adult_confirmed_at: now, terms_version: TERMS_VERSION, terms_accepted_at: now }).eq("id", u.id);
+  await c.from("profiles").update({ display_name: name, avatar_key: avatar, avatar_hue: 40, onboarded_at: now, tour: "done", toured_games: ALL_TOURED, adult_confirmed_at: now, terms_version: TERMS_VERSION, terms_accepted_at: now }).eq("id", u.id);
   return { ...u, c };
 }
 

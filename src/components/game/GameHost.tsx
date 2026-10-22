@@ -16,8 +16,12 @@ import { useRoom } from "@/lib/realtime/RoomProvider";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import { playSound } from "@/lib/sound";
 import { ResultSheet } from "./ResultSheet";
+import { GameTour, useReaders, useTourDue } from "./GameTour";
+import { Rules } from "./Rules";
+import { tourFor } from "@/games/tours";
+import type { Rules as RulesT } from "@/games/_engine/types";
 
-export function GameHost({ initial }: { initial: SessionSnapshot }) {
+export function GameHost({ initial, rules }: { initial: SessionSnapshot; rules?: RulesT }) {
   const { bundle, send, on, setWhere, connection } = useRoom();
   const sessionId = initial.session.id;
   const store = useMemo(() => createGameStore(initial), [initial]);
@@ -27,6 +31,11 @@ export function GameHost({ initial }: { initial: SessionSnapshot }) {
   const me = bundle.me.profile.id;
   const partner = session.players.find((p) => p !== me) ?? "";
   const [resignOpen, setResignOpen] = useState(false);
+  const [rulesOpen, setRulesOpen] = useState(false);
+  const [touring, setTouring] = useState(false);
+  const hasTour = !!tourFor(session.game_id);
+  const tourDue = useTourDue(session.game_id);
+  const readers = useReaders(sessionId);
   const soundOn = bundle.me.member.sound_enabled;
   const lastStatus = useRef(session.status);
 
@@ -200,6 +209,21 @@ export function GameHost({ initial }: { initial: SessionSnapshot }) {
     [on, sessionId, store, resync],
   );
 
+  // First time in this game: the how-to-play tour, once the board is up and nothing else is open.
+  const playing = session.status === "active" && session.players.includes(me);
+  const tourStarted = useRef(false);
+  useEffect(() => {
+    if (!tourDue || !playing || tourStarted.current) return;
+    const t = setInterval(() => {
+      if (document.querySelector("dialog[open]")) return;
+      clearInterval(t);
+      tourStarted.current = true;
+      setTouring(true);
+    }, 600);
+    return () => clearInterval(t);
+  }, [tourDue, playing]);
+  const endTour = useCallback(() => setTouring(false), []);
+
   // Slow safety poll while the game is live, in case both realtime paths dropped a beat.
   useEffect(() => {
     if (session.status !== "active") return;
@@ -241,6 +265,11 @@ export function GameHost({ initial }: { initial: SessionSnapshot }) {
         <div className="text-center">
           <p className="eyebrow" style={{ color: cat.ink }}>{cat.label}</p>
           <h1 className="display text-[1.6rem]">{meta.name}</h1>
+          {rules ? (
+            <button type="button" onClick={() => setRulesOpen(true)} className="mt-0.5 text-[0.82rem] font-semibold text-muted underline underline-offset-2 hover:text-fg">
+              How to play
+            </button>
+          ) : null}
         </div>
         {session.status === "active" ? (
           <Button variant="ghost" size="sm" onClick={() => setResignOpen(true)}>
@@ -251,6 +280,12 @@ export function GameHost({ initial }: { initial: SessionSnapshot }) {
         )}
       </div>
 
+      {readers.length && session.status === "active" ? (
+        <p role="status" className="mb-5 flex items-center justify-center gap-2 rounded-[14px] border border-line bg-sunk px-4 py-2.5 text-center text-[0.9rem]">
+          <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-accent" aria-hidden />
+          {readers.map((id) => names[id] ?? "Someone").join(" and ")} {readers.length > 1 ? "are" : "is"} reading how to play…
+        </p>
+      ) : null}
       {closing && session.status === "active" ? (
         <p role="status" className="mb-5 rounded-[14px] border border-line bg-sunk px-4 py-3 text-center text-[0.9rem]">
           This session will end after this card.
@@ -261,6 +296,26 @@ export function GameHost({ initial }: { initial: SessionSnapshot }) {
       </div>
 
       {session.status !== "active" ? <ResultSheet session={session} me={me} names={names} /> : null}
+
+      {rules ? (
+        <Modal open={rulesOpen} onClose={() => setRulesOpen(false)} title={`How to play ${meta.name}`}>
+          <Rules rules={rules} />
+          {hasTour ? (
+            <div className="mt-6 flex justify-end">
+              <Button
+                variant="accent"
+                onClick={() => {
+                  setRulesOpen(false);
+                  setTouring(true);
+                }}
+              >
+                Show me around
+              </Button>
+            </div>
+          ) : null}
+        </Modal>
+      ) : null}
+      {touring ? <GameTour gameId={session.game_id} sessionId={playing ? sessionId : undefined} onDone={endTour} /> : null}
 
       <Modal
         open={resignOpen}
