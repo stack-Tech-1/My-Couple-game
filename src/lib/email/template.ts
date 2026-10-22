@@ -61,7 +61,7 @@ export function renderAnnouncement(e: AnnouncementEmail): { subject: string; htm
         </tr>
         <tr>
           <td style="padding:24px 4px 0 4px;font-family:Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:#8a7a7d;">
-            Amah &middot; a private game room for two.<br>
+            Amah &middot; game nights for two, or the whole squad.<br>
             You're getting this because you have an Amah account. <a href="${esc(e.unsubscribeUrl)}" style="color:#8a7a7d;">Stop announcement emails</a>.
           </td>
         </tr>
@@ -81,7 +81,7 @@ export function renderAnnouncement(e: AnnouncementEmail): { subject: string; htm
     ...(e.link ? ["", `${e.link.label}: ${e.link.url}`] : []),
     "",
     "--",
-    "Amah, a private game room for two.",
+    "Amah: game nights for two, or the whole squad.",
     `Stop announcement emails: ${e.unsubscribeUrl}`,
   ].join("\n");
 
