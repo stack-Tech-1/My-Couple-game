@@ -15,19 +15,24 @@ function hash(str: string): number {
 
 export type Rng = { next: () => number; int: (maxExclusive: number) => number; cursor: () => number };
 
-/** mulberry32 seeded from (seed, cursor). Store the cursor in state to continue the stream later. */
+const INC = 0x6d2b79f5;
+
+/**
+ * mulberry32 seeded from (seed, cursor). Store the cursor in state to continue the stream later.
+ * Each step only adds INC to the state, so skipping to `cursor` is one multiply, not a loop:
+ * the numbers are the same either way, and an old session's large cursor costs nothing.
+ */
 export function makeRng(seed: string, cursor = 0): Rng {
-  let a = hash(seed);
+  let a = (hash(seed) + Math.imul(cursor % 4294967296, INC)) | 0;
   let n = 0;
   const step = () => {
-    a = (a + 0x6d2b79f5) | 0;
+    a = (a + INC) | 0;
     let t = a;
     t = Math.imul(t ^ (t >>> 15), t | 1);
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
     n++;
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
-  for (let i = 0; i < cursor; i++) step();
   return { next: step, int: (max) => Math.floor(step() * max), cursor: () => cursor + n };
 }
 
