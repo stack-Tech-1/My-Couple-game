@@ -93,7 +93,7 @@ export function QuizBoard({ view, me, names, sendMove, pending, sound }: GamePro
   return (
     <div className="mx-auto flex w-full max-w-[560px] flex-col gap-5">
       {score}
-      <div className="flex justify-between gap-3 text-[0.85rem] text-muted">
+      <div data-tour="quiz-progress" className="flex justify-between gap-3 text-[0.85rem] text-muted">
         <span className="tabular">{cur.index + 1} of {view.total}</span>
         <span className="text-right">
           {two
@@ -107,7 +107,7 @@ export function QuizBoard({ view, me, names, sendMove, pending, sound }: GamePro
         <motion.div key={cur.index} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10, pointerEvents: "none" }} className="rounded-[22px] border-[1.5px] border-line-strong bg-raised p-6">
           <p className="eyebrow" style={{ color: "var(--cat-competitive-ink)" }}>{cur.ask ?? view.ask}</p>
           <h2 className={cn("mt-3 leading-tight", view.look === "emoji" ? "text-center text-[clamp(2.6rem,12vw,3.6rem)]" : "display text-[clamp(1.5rem,6vw,2.1rem)]")}>{cur.q}</h2>
-          <div className="mt-6 grid gap-2.5">
+          <div data-tour="quiz-options" className="mt-6 grid gap-2.5">
             {cur.options.map((o, k) => (
               <button key={k} type="button" disabled={locked} onClick={() => pick(k)} className="min-h-14 rounded-[14px] border-[1.5px] border-line px-4 py-3 text-left font-semibold transition-colors hover:border-line-strong hover:bg-sunk disabled:opacity-60">
                 {o}

@@ -9,7 +9,14 @@ export type TourStep = { target?: string; title: string; body: string[] };
  * Games with a clock that runs from the start. Their tour is shown before the board opens (when you
  * start or join), so reading it never costs anyone time. Their steps have no targets.
  */
-export const TIMED_TOURS = new Set(["reflex-duel", "draw-guess"]);
+export const TIMED_TOURS = new Set(["reflex-duel", "draw-guess", "this-or-that", "compliment-battle"]);
+
+/** The four quiz games share a board, so they share a tour after their own first line. */
+const quiz = (what: string): TourStep[] => [
+  { target: "quiz-options", title: "Pick an answer", body: [what, "Tap one of the four answers. You can't change it after."] },
+  { target: "quiz-progress", title: "No copying", body: ["Everyone gets the same question. The right answer only shows once you've all picked."] },
+  { title: "Winning", body: ["A point for every right answer. Most points at the end wins."] },
+];
 
 export const GAME_TOURS: Record<string, TourStep[]> = {
   "word-duel": [
@@ -72,6 +79,66 @@ export const GAME_TOURS: Record<string, TourStep[]> = {
     { target: "sd-dice", title: "Two dice", body: ["One die says what. The other says where, or how."] },
     { target: "sd-roll", title: "Roll and do it", body: ["Roll, do what the dice say, then pass the dice.", "Not feeling it? Re-roll. No questions."] },
     { target: "sd-heat", title: "Heat", body: ["Set how spicy the dice get. It never goes past what you both agreed to."] },
+  ],
+  riddles: quiz("Read the riddle. The answer is usually simpler (or cheekier) than you think."),
+  "naija-trivia": quiz("Questions about Naija: places, festivals, books and history."),
+  "pidgin-palava": quiz("A Pidgin word or phrase. Pick what it really means."),
+  "emoji-guess": quiz("The emoji tell the title of an Afrobeats hit or a Nollywood favourite."),
+  "know-me-trivia": [
+    { title: "Write about you", body: ["First, write a few questions about yourself, or borrow some from our bank.", "Add the real answer and three convincing fakes."] },
+    { title: "Answer theirs", body: ["Then answer the questions your partner wrote about them. You both answer at the same time."] },
+    { title: "Scoring", body: ["100 points for each right answer, plus a bonus for getting them in a row.", "Whoever knows the other better wins."] },
+  ],
+  "how-well": [
+    { title: "Two taps per question", body: ["First, your own honest answer.", "Then your guess for what your partner said."] },
+    { title: "The reveal", body: ["Nothing shows until you've both finished. Then it's side by side, with a point for every right guess."] },
+  ],
+  "this-or-that": [
+    { title: "Pick fast", body: ["Twelve cards, two choices each. Tap the side you'd pick.", "You get ten seconds a card. Out of time? It's skipped."] },
+    { title: "The reveal", body: ["When you've both finished, see every pick side by side, and how in tune you are."] },
+  ],
+  "story-chain": [
+    { title: "One line each", body: ["We start you off with an opening line. Then you take turns adding one sentence."] },
+    { title: "The end", body: ["After a few lines, either of you can write “The End” and give it a title.", "Save the finished story as a card to keep or share."] },
+  ],
+  "deep-questions": [
+    { title: "One card at a time", body: ["Take turns answering, out loud and face to face if you can.", "Skip any card. No explanation needed."] },
+    { title: "Go deeper when ready", body: ["The questions start light. Move to the next level when you're both ready. There's no score."] },
+  ],
+  "compliment-battle": [
+    { title: "Write", body: ["Forty-five seconds a round. Write up to five compliments for your partner.", "Specific beats generic."] },
+    { title: "Judge", body: ["Then read theirs and give each one up to three hearts. Neither of you sees the hearts until you've both judged."] },
+    { title: "Winning", body: ["Three rounds. Most hearts takes the crown. Honestly, you both win."] },
+  ],
+  "love-styles": [
+    { title: "Go with your gut", body: ["Ten either-or choices. Pick the one that would mean more to you."] },
+    { title: "Guess theirs", body: ["Then guess which style your partner will land on.", "At the end you'll see both styles side by side, and whether your guess was right."] },
+  ],
+  "same-page": [
+    { title: "Answer honestly", body: ["Ten real-life questions: money, family, children, where to live.", "You won't see each other's answers until you've both finished."] },
+    { title: "Talk about it", body: ["Matches are counted, and the differences are marked as worth a conversation. There are no wrong answers."] },
+  ],
+  "dont-laugh": [
+    { title: "Perform", body: ["On your turn, only you see the prompt. Act it out with your whole chest.", "Don't like it? Swap it once per turn."] },
+    { title: "Watch, straight-faced", body: ["On their turn, don't laugh. When they finish, be honest: did you? A cracked smile counts."] },
+    { title: "Scoring", body: ["Every laugh is a point for the performer. Most points wins."] },
+  ],
+  "most-likely": [
+    { title: "Vote", body: ["“Who's most likely to…?” Tap the person who fits best. Yourself counts, if you're honest."] },
+    { title: "Anonymous", body: ["The count shows once everyone has voted. Nobody ever sees who voted for whom."] },
+  ],
+  "truth-or-dare": [
+    { title: "Your turn", body: ["Pick truth or dare. Answer honestly, or do the dare. Then it's their turn."] },
+    { title: "Skip anything", body: ["Either of you can skip any card, instantly. No penalty, no questions."] },
+    { title: "Heat", body: ["Warm, Hot or Fire. It never goes past the lower of your two limits, and either of you can turn it down."] },
+  ],
+  "hot-seat": [
+    { title: "In the seat", body: ["One of you takes the hot seat for a run of flirty questions, then you swap.", "Answer out loud. Theatrics encouraged."] },
+    { title: "Skip anything", body: ["Either of you can skip a question. No explanation needed."] },
+  ],
+  "never-have-i": [
+    { title: "Secret answers", body: ["A statement appears. You each tap “I have” or “I haven't” in secret.", "Then you both find out."] },
+    { title: "Skip anything", body: ["Either of you can skip a card. No one sees why."] },
   ],
   "reflex-duel": [
     { title: "Wait for it", body: ["The screen stays dark for a few seconds.", "When it flashes, tap anywhere, as fast as you can."] },

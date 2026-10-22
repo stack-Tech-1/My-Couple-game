@@ -3,6 +3,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { gameMeta } from "./catalog";
 import { GAME_TOURS, TIMED_TOURS } from "./tours";
+import { GAME_LOGIC } from "./logic";
 
 /** Every board's source, to check tour targets against. */
 function sources(dir: string): string {
@@ -15,10 +16,8 @@ function sources(dir: string): string {
 describe("game tours", () => {
   const boards = sources(path.join(__dirname));
 
-  it("cover the first batch of games", () => {
-    for (const id of ["word-duel", "whot", "ludo", "ayo", "draw-guess", "split-clues", "memory-match", "reflex-duel", "beat-the-clock", "in-sync", "connect-four", "spicy-dice"]) {
-      expect(GAME_TOURS[id], id).toBeDefined();
-    }
+  it("every playable game has one (a new game needs a tour too)", () => {
+    for (const id of Object.keys(GAME_LOGIC)) expect(GAME_TOURS[id], id).toBeDefined();
   });
 
   it("belong to real games and say something", () => {
