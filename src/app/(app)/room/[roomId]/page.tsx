@@ -9,6 +9,7 @@ import { PlayNext } from "@/components/room/PlayNext";
 import { Moments } from "@/components/room/Moments";
 import { Library } from "@/components/room/Library";
 import { Greeting } from "@/components/room/Greeting";
+import { Birthdays } from "@/components/room/Birthdays";
 import { InstallPrompt } from "@/components/room/InstallPrompt";
 import { NotifyPrompt } from "@/components/room/NotifyPrompt";
 import { vapidKeys } from "@/lib/push/server";
@@ -47,6 +48,7 @@ export default async function RoomHome({ params }: { params: Promise<{ roomId: s
   return (
     <div className="pt-8 sm:pt-12">
       <Greeting />
+      <Birthdays />
       <InstallPrompt />
       {paired ? <NotifyPrompt publicKey={keys?.publicKey ?? null} /> : null}
       {!paired ? <InvitePanel /> : null}

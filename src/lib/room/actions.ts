@@ -10,6 +10,7 @@ import { z } from "zod";
 import { HOUSE_RULES } from "@/games/houseRules";
 import { gameMeta } from "@/games/catalog";
 import { MAX_DISPLAY_NAME } from "@/lib/config";
+import { daysIn } from "@/lib/birthdays";
 import {
   inviteCodeInput,
   prefsInput,
@@ -74,6 +75,22 @@ export async function updateProfile(input: unknown): Promise<ActionResult> {
         .insert(rooms.map((r) => ({ room_id: r.id, kind: "renamed", actor_id: user.id, payload: { from: before.display_name, to: parsed.data.display_name } })));
     }
   }
+  revalidatePath("/room", "layout");
+  return { ok: true, data: null };
+}
+
+/** Your birthday (day and month only), or null to remove it. */
+export async function setBirthday(input: unknown): Promise<ActionResult> {
+  const parsed = z
+    .union([z.null(), z.object({ month: z.number().int().min(1).max(12), day: z.number().int().min(1).max(31) })])
+    .refine((b) => !b || b.day <= daysIn(b.month), "That date doesn't exist.")
+    .safeParse(input);
+  if (!parsed.success) return { ok: false, error: firstIssue(parsed.error) };
+  const user = await getUser();
+  if (!user) return fail("not signed in");
+  const b = parsed.data;
+  const { error } = await (await supabaseServer()).from("profiles").update({ birth_month: b?.month ?? null, birth_day: b?.day ?? null }).eq("id", user.id);
+  if (error) return fail(error);
   revalidatePath("/room", "layout");
   return { ok: true, data: null };
 }

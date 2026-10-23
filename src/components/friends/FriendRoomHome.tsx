@@ -1,4 +1,5 @@
 import { getRoom, startChecklist } from "@/lib/room/server";
+import { Birthdays } from "@/components/room/Birthdays";
 import { WelcomeTour } from "@/components/room/WelcomeTour";
 import { GettingStarted } from "@/components/room/GettingStarted";
 import { activeSessions, scoreboard } from "@/lib/games/server";
@@ -35,6 +36,7 @@ export async function FriendRoomHome({ roomId }: { roomId: string }) {
       {!isOwner && bundle.members.length < FRIEND_ROOM_SIZE ? (
         <p className="mt-4 text-muted">Want someone else in? {owner ? `${owner.profile.display_name} has the invite code.` : "The room's owner has the invite code."}</p>
       ) : null}
+      <Birthdays />
       <GettingStarted roomId={roomId} items={checklist} />
       <WelcomeTour />
       <ActiveGames sessions={active} me={me} />

@@ -19,6 +19,9 @@ export type Profile = {
    * every screen shows me) and real_name the name they chose. Never sent to anyone else.
    */
   real_name?: string;
+  /** Birthday, day and month only (never a year). Both set or both null. */
+  birth_month?: number | null;
+  birth_day?: number | null;
 };
 
 export type Member = {

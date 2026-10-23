@@ -42,7 +42,8 @@ export async function removePushSubscription(endpoint: unknown): Promise<ActionR
 }
 
 export async function setPushPrefs(prefs: unknown): Promise<ActionResult> {
-  const parsed = z.object(Object.fromEntries(PUSH_KINDS.map((k) => [k, z.boolean()]))).safeParse(prefs);
+  // Partial: an older app version doesn't know the newer kinds, and a missing kind counts as on.
+  const parsed = z.object(Object.fromEntries(PUSH_KINDS.map((k) => [k, z.boolean().optional()]))).safeParse(prefs);
   if (!parsed.success) return { ok: false, error: "Those settings didn't add up." };
   const user = await getUser();
   if (!user) return fail("not signed in");

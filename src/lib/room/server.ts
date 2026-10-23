@@ -60,7 +60,7 @@ export const getRoom = cache(async (roomId: string): Promise<RoomBundle | null> 
   if (!room || !member) return null;
 
   const [{ data: profiles }, { data: nicks }] = await Promise.all([
-    supabase.from("profiles").select("id, display_name, avatar_key, avatar_hue, onboarded_at, theme, tour, toured_games").in("id", members.map((m) => m.user_id)),
+    supabase.from("profiles").select("id, display_name, avatar_key, avatar_hue, onboarded_at, theme, tour, toured_games, birth_month, birth_day").in("id", members.map((m) => m.user_id)),
     supabase.from("nicknames").select("target_id, nickname"), // RLS: only the ones I wrote
   ]);
   // My pet names replace real names on my screens only.
