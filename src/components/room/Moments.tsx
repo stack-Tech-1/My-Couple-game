@@ -45,6 +45,11 @@ export function Moments({ moments }: { moments: Moment[] }) {
         return `Ticked off the bucket list: ${typeof m.payload.title === "string" ? m.payload.title : "something big"}.`;
       case "daily_both":
         return "You both answered today's question.";
+      case "renamed": {
+        const to = typeof m.payload.to === "string" ? m.payload.to : "someone new";
+        if (m.actor_id === bundle.me.profile.id) return `You changed your name to ${to}.`;
+        return `${typeof m.payload.from === "string" ? m.payload.from : "Someone"} is now ${to}.`;
+      }
       default:
         return `${nameOf(m.actor_id)} did a thing.`;
     }

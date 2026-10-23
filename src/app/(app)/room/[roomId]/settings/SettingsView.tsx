@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ProfileEditor } from "@/components/profile/ProfileEditor";
 import { useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/design/Button";
@@ -122,8 +123,9 @@ export function SettingsView({ announcementEmails, feedback, push }: { announcem
         </Link>
       </Section>
 
-      <Section title="Just for you">
-        <p className="text-[0.82rem] font-semibold">Theme</p>
+      <Section title="Just for you" id="you">
+        <ProfileEditor />
+        <p className="mt-8 text-[0.82rem] font-semibold">Theme</p>
         <div role="radiogroup" aria-label="Theme" className="mt-2 grid grid-cols-3 gap-2">
           {([
             ["day", "sun", "Day"],

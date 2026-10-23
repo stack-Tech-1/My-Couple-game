@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { supabaseAdmin, supabaseServer } from "@/lib/supabase/server";
 import { friendlyError } from "@/lib/errors";
-import { getUser } from "./server";
+import { getMyRooms, getUser } from "./server";
 import { purgeRoomMedia } from "@/lib/media/purge";
 import { TERMS_VERSION } from "@/lib/legal";
 import { z } from "zod";
@@ -41,6 +41,38 @@ export async function saveProfile(input: unknown, agreed?: unknown): Promise<Act
     .update({ ...parsed.data, ...consent(), onboarded_at: new Date().toISOString() })
     .eq("id", user.id);
   if (error) return fail(error);
+  revalidatePath("/room", "layout");
+  return { ok: true, data: null };
+}
+
+/**
+ * Change your name or avatar after onboarding. One name everywhere: every room you're in gets a
+ * "Tolu is now Tee" moment, which also refreshes everyone's screen live. Name changes are capped
+ * at a few a day; avatar changes aren't.
+ */
+export async function updateProfile(input: unknown): Promise<ActionResult> {
+  const parsed = profileInput.safeParse(input);
+  if (!parsed.success) return { ok: false, error: firstIssue(parsed.error) };
+  const user = await getUser();
+  if (!user) return fail("not signed in");
+  const supabase = await supabaseServer();
+  const { data: before } = await supabase.from("profiles").select("display_name").eq("id", user.id).single();
+  const renamed = !!before && before.display_name !== parsed.data.display_name;
+  if (renamed) {
+    const { data: allowed, error: limitError } = await supabaseAdmin().rpc("server_rate_limit", { uid: user.id, action: "rename", max_hits: 3, window_seconds: 86400 });
+    if (limitError) return fail(limitError);
+    if (allowed !== true) return { ok: false, error: "That's a lot of new names for one day. Try again tomorrow." };
+  }
+  const { error } = await supabase.from("profiles").update(parsed.data).eq("id", user.id);
+  if (error) return fail(error);
+  if (renamed) {
+    const rooms = await getMyRooms();
+    if (rooms.length) {
+      await supabaseAdmin()
+        .from("moments")
+        .insert(rooms.map((r) => ({ room_id: r.id, kind: "renamed", actor_id: user.id, payload: { from: before.display_name, to: parsed.data.display_name } })));
+    }
+  }
   revalidatePath("/room", "layout");
   return { ok: true, data: null };
 }

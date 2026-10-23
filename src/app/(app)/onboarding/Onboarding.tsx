@@ -3,11 +3,11 @@
 import { useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { Avatar, AVATAR_HUES, AVATAR_MOTIFS, type AvatarMotif } from "@/design/Avatar";
+import { Avatar, type AvatarMotif } from "@/design/Avatar";
+import { AvatarPicker, motifOf } from "@/components/profile/AvatarPicker";
 import { Button } from "@/design/Button";
 import { TextField } from "@/design/Field";
 import { Logo } from "@/design/Logo";
-import { cn } from "@/lib/cn";
 import { saveProfile } from "@/lib/room/actions";
 import { NewRoomForm } from "@/components/friends/NewRoomForm";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -20,7 +20,7 @@ export function Onboarding({ profile, startAt, next }: { profile: Profile; start
   const router = useRouter();
   const [step, setStep] = useState<Step>(startAt);
   const [name, setName] = useState(profile.display_name);
-  const [motif, setMotif] = useState<AvatarMotif>((profile.avatar_key in AVATAR_MOTIFS ? profile.avatar_key : "fig") as AvatarMotif);
+  const [motif, setMotif] = useState<AvatarMotif>(motifOf(profile.avatar_key));
   const [hue, setHue] = useState<number>(profile.avatar_hue);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -68,42 +68,7 @@ export function Onboarding({ profile, startAt, next }: { profile: Profile; start
               </div>
             </div>
 
-            <fieldset className="mt-8">
-              <legend className="text-[0.82rem] font-semibold">Your mark</legend>
-              <div role="radiogroup" className="mt-3 grid grid-cols-4 gap-3 sm:grid-cols-8">
-                {(Object.keys(AVATAR_MOTIFS) as AvatarMotif[]).map((m) => (
-                  <button
-                    key={m}
-                    type="button"
-                    role="radio"
-                    aria-checked={motif === m}
-                    aria-label={m}
-                    onClick={() => setMotif(m)}
-                    className={cn("flex aspect-square items-center justify-center rounded-full border-[1.5px] transition-transform", motif === m ? "scale-105 border-line-strong" : "border-transparent hover:border-line")}
-                  >
-                    <Avatar name={m} motif={m} hue={hue} size={44} />
-                  </button>
-                ))}
-              </div>
-            </fieldset>
-
-            <fieldset className="mt-6">
-              <legend className="text-[0.82rem] font-semibold">Colour</legend>
-              <div role="radiogroup" className="mt-3 flex flex-wrap gap-3">
-                {AVATAR_HUES.map((h) => (
-                  <button
-                    key={h}
-                    type="button"
-                    role="radio"
-                    aria-checked={hue === h}
-                    aria-label={`Colour ${h}`}
-                    onClick={() => setHue(h)}
-                    className={cn("h-9 w-9 rounded-full border-[1.5px] transition-transform", hue === h ? "scale-110 border-line-strong ring-2 ring-offset-2 ring-offset-bg" : "border-transparent")}
-                    style={{ background: `hsl(${h} 52% 72%)`, ["--tw-ring-color" as string]: `hsl(${h} 40% 30%)` }}
-                  />
-                ))}
-              </div>
-            </fieldset>
+            <AvatarPicker motif={motif} hue={hue} onMotif={setMotif} onHue={setHue} />
 
             <label className="mt-8 flex cursor-pointer items-start gap-3 rounded-[14px] border-[1.5px] border-line bg-raised p-4">
               <input type="checkbox" required checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--accent)]" />
