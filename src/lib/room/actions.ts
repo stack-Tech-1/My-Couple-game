@@ -9,6 +9,7 @@ import { TERMS_VERSION } from "@/lib/legal";
 import { z } from "zod";
 import { HOUSE_RULES } from "@/games/houseRules";
 import { gameMeta } from "@/games/catalog";
+import { MAX_DISPLAY_NAME } from "@/lib/config";
 import {
   inviteCodeInput,
   prefsInput,
@@ -73,6 +74,24 @@ export async function updateProfile(input: unknown): Promise<ActionResult> {
         .insert(rooms.map((r) => ({ room_id: r.id, kind: "renamed", actor_id: user.id, payload: { from: before.display_name, to: parsed.data.display_name } })));
     }
   }
+  revalidatePath("/room", "layout");
+  return { ok: true, data: null };
+}
+
+/** Give someone you share a room with a pet name only you see. An empty name removes it. */
+export async function setNickname(targetId: unknown, nickname: unknown): Promise<ActionResult> {
+  const target = z.uuid().safeParse(targetId);
+  const nick = z.string().trim().max(MAX_DISPLAY_NAME, "Shorter, please. It has to fit on a scoreboard.").safeParse(nickname ?? "");
+  if (!target.success) return fail("unknown person");
+  if (!nick.success) return { ok: false, error: firstIssue(nick.error) };
+  const user = await getUser();
+  if (!user) return fail("not signed in");
+  if (target.data === user.id) return { ok: false, error: "Pet names are for other people. Change your own name above." };
+  const supabase = await supabaseServer();
+  const { error } = nick.data
+    ? await supabase.from("nicknames").upsert({ owner_id: user.id, target_id: target.data, nickname: nick.data, updated_at: new Date().toISOString() })
+    : await supabase.from("nicknames").delete().eq("owner_id", user.id).eq("target_id", target.data);
+  if (error) return fail(error);
   revalidatePath("/room", "layout");
   return { ok: true, data: null };
 }

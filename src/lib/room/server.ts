@@ -59,8 +59,18 @@ export const getRoom = cache(async (roomId: string): Promise<RoomBundle | null> 
   const member = members.find((m) => m.user_id === user.id);
   if (!room || !member) return null;
 
-  const { data: profiles } = await supabase.from("profiles").select("id, display_name, avatar_key, avatar_hue, onboarded_at, theme, tour, toured_games").in("id", members.map((m) => m.user_id));
-  const byId = new Map(((profiles ?? []) as Profile[]).map((p) => [p.id, p]));
+  const [{ data: profiles }, { data: nicks }] = await Promise.all([
+    supabase.from("profiles").select("id, display_name, avatar_key, avatar_hue, onboarded_at, theme, tour, toured_games").in("id", members.map((m) => m.user_id)),
+    supabase.from("nicknames").select("target_id, nickname"), // RLS: only the ones I wrote
+  ]);
+  // My pet names replace real names on my screens only.
+  const nickFor = new Map((nicks ?? []).map((n) => [n.target_id as string, n.nickname as string]));
+  const byId = new Map(
+    ((profiles ?? []) as Profile[]).map((p) => {
+      const nick = p.id === user.id ? undefined : nickFor.get(p.id);
+      return [p.id, nick ? { ...p, display_name: nick, real_name: p.display_name } : p];
+    }),
+  );
   const people = members.flatMap((m) => {
     const profile = byId.get(m.user_id);
     return profile ? [{ profile, member: m }] : [];

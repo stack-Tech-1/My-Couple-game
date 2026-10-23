@@ -4,7 +4,7 @@ import { OPERATOR } from "@/lib/legal";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { type PushKind } from "./types";
 
-type Payload = { title: string; body: string; url: string; tag?: string; quiet?: boolean };
+import { withPetName, type Payload } from "./petname";
 
 /** Someone counts as "here" if their app sent a heartbeat this recently (see Heartbeat). */
 const HERE_MS = 70_000;
@@ -81,7 +81,13 @@ export async function notifyPartner(roomId: string, fromUserId: string, kind: Pu
   ]);
   const skip = new Set((blockers ?? []).map((b) => b.blocker_id as string));
   const to = (members ?? []).map((m) => m.user_id as string).filter((id) => !skip.has(id) && (!only || only.includes(id)));
-  const sent = await Promise.all(to.map((id) => notify(id, kind, payload)));
+  // Anyone who gave the sender a pet name sees it in the notification too ("Baby just played").
+  const [{ data: nicks }, real] = await Promise.all([
+    to.length ? admin.from("nicknames").select("owner_id, nickname").eq("target_id", fromUserId).in("owner_id", to) : Promise.resolve({ data: [] }),
+    displayName(fromUserId),
+  ]);
+  const nickOf = new Map((nicks ?? []).map((n) => [n.owner_id as string, n.nickname as string]));
+  const sent = await Promise.all(to.map((id) => notify(id, kind, withPetName(payload, real, nickOf.get(id)))));
   return sent.reduce((a, b) => a + b, 0);
 }
 

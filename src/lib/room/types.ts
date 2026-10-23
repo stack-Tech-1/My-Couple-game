@@ -14,6 +14,11 @@ export type Profile = {
   tour?: "auto" | "ask" | "done";
   /** Games whose "how to play" tour this person has finished or skipped. */
   toured_games?: string[];
+  /**
+   * Set when I've given this person a pet name: display_name then holds the pet name (that's what
+   * every screen shows me) and real_name the name they chose. Never sent to anyone else.
+   */
+  real_name?: string;
 };
 
 export type Member = {
