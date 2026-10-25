@@ -22,7 +22,18 @@ export type Profile = {
   /** Birthday, day and month only (never a year). Both set or both null. */
   birth_month?: number | null;
   birth_day?: number | null;
+  /** About me: favourites shared with roommates. Every key optional. */
+  about?: About;
 };
+
+export const ABOUT_FIELDS = {
+  food: { label: "Favourite food", placeholder: "Jollof, obviously", max: 60 },
+  song: { label: "Song or artist on repeat", placeholder: "Asake, Tems, Sade…", max: 60 },
+  place: { label: "Happy place", placeholder: "Lekki beach at sunset", max: 60 },
+  line: { label: "One line about you", placeholder: "I will beat you at Ayo. Respectfully.", max: 140 },
+} as const;
+export type AboutKey = keyof typeof ABOUT_FIELDS;
+export type About = Partial<Record<AboutKey, string>>;
 
 export type Member = {
   room_id: string;

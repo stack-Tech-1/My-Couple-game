@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { openPerson } from "@/components/profile/PersonCard";
 import { useRouter } from "next/navigation";
 import { Avatar } from "@/design/Avatar";
 import { Button } from "@/design/Button";
@@ -65,7 +66,9 @@ export function FriendPeople() {
           const name = p.profile.display_name;
           return (
             <li key={p.profile.id} className="flex flex-wrap items-center gap-3 py-3">
-              <Avatar name={name} motif={p.profile.avatar_key} hue={p.profile.avatar_hue} size={38} />
+              <button type="button" onClick={() => openPerson(p.profile.id)} aria-label={self ? "Your card" : `About ${name}`} className="rounded-full">
+                <Avatar name={name} motif={p.profile.avatar_key} hue={p.profile.avatar_hue} size={38} />
+              </button>
               <span className="min-w-0 flex-1">
                 <span className="block truncate font-semibold">
                   {name}

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { openPerson, PersonCardHost } from "@/components/profile/PersonCard";
 import { Avatar } from "@/design/Avatar";
 import { Icon } from "@/design/icons";
 import { useRoom } from "@/lib/realtime/RoomProvider";
@@ -33,9 +34,13 @@ export function RoomHeader({ feedbackUnread = 0 }: { feedbackUnread?: number }) 
             <p className="text-[0.75rem] leading-tight text-muted" aria-live="polite">{partner ? activity : "invite pending"}</p>
           </div>
           <div className={friendsRoom ? "hidden" : "flex -space-x-2"}>
-            <Avatar name={me.profile.display_name} motif={me.profile.avatar_key} hue={me.profile.avatar_hue} size={34} />
+            <button type="button" onClick={() => openPerson(me.profile.id)} aria-label="Your card" className="rounded-full">
+              <Avatar name={me.profile.display_name} motif={me.profile.avatar_key} hue={me.profile.avatar_hue} size={34} />
+            </button>
             {partner ? (
-              <Avatar name={partner.profile.display_name} motif={partner.profile.avatar_key} hue={partner.profile.avatar_hue} size={34} online={partnerOnline} />
+              <button type="button" onClick={() => openPerson(partner.profile.id)} aria-label={`About ${partner.profile.display_name}`} className="rounded-full">
+                <Avatar name={partner.profile.display_name} motif={partner.profile.avatar_key} hue={partner.profile.avatar_hue} size={34} online={partnerOnline} />
+              </button>
             ) : (
               <span className="flex h-[34px] w-[34px] items-center justify-center rounded-full border-[1.5px] border-dashed border-muted text-muted" aria-label="Empty seat">
                 <Icon name="plus" size={16} />
@@ -55,6 +60,7 @@ export function RoomHeader({ feedbackUnread = 0 }: { feedbackUnread?: number }) 
           </Link>
         </div>
       </div>
+      <PersonCardHost />
     </header>
   );
 }
@@ -64,9 +70,11 @@ function FriendFaces() {
   const { members } = useRoom().bundle;
   return (
     <div className="flex items-center gap-2">
-      <div className="flex -space-x-2" role="img" aria-label={`${members.length} ${members.length === 1 ? "person" : "people"} in this room`}>
+      <div className="flex -space-x-2" role="group" aria-label={`${members.length} ${members.length === 1 ? "person" : "people"} in this room`}>
         {members.slice(0, 4).map((m) => (
-          <Avatar key={m.profile.id} name={m.profile.display_name} motif={m.profile.avatar_key} hue={m.profile.avatar_hue} size={34} />
+          <button key={m.profile.id} type="button" onClick={() => openPerson(m.profile.id)} aria-label={`About ${m.profile.display_name}`} className="rounded-full">
+            <Avatar name={m.profile.display_name} motif={m.profile.avatar_key} hue={m.profile.avatar_hue} size={34} />
+          </button>
         ))}
       </div>
       {members.length > 4 ? <span className="text-[0.82rem] font-semibold text-muted">+{members.length - 4}</span> : null}

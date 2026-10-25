@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { AboutEditor } from "@/components/profile/AboutEditor";
 import { ProfileEditor } from "@/components/profile/ProfileEditor";
 import { PetNames } from "@/components/profile/PetNames";
 import { BirthdayEditor } from "@/components/profile/BirthdayEditor";
@@ -128,6 +129,7 @@ export function SettingsView({ announcementEmails, feedback, push }: { announcem
       <Section title="Just for you" id="you">
         <ProfileEditor />
         <BirthdayEditor />
+        <AboutEditor />
         <PetNames />
         <p className="mt-8 text-[0.82rem] font-semibold">Theme</p>
         <div role="radiogroup" aria-label="Theme" className="mt-2 grid grid-cols-3 gap-2">

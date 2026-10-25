@@ -11,7 +11,11 @@ import { HOUSE_RULES } from "@/games/houseRules";
 import { gameMeta } from "@/games/catalog";
 import { MAX_DISPLAY_NAME } from "@/lib/config";
 import { daysIn } from "@/lib/birthdays";
+import { topStyles } from "@/games/love-styles/logic";
+import type { LoveStyle } from "@/content/together-quizzes";
 import {
+  ABOUT_FIELDS,
+  type AboutKey,
   inviteCodeInput,
   prefsInput,
   profileInput,
@@ -77,6 +81,47 @@ export async function updateProfile(input: unknown): Promise<ActionResult> {
   }
   revalidatePath("/room", "layout");
   return { ok: true, data: null };
+}
+
+/** Your About me favourites. Empty answers are dropped. */
+export async function setAbout(input: unknown): Promise<ActionResult> {
+  const shape = Object.fromEntries(
+    (Object.keys(ABOUT_FIELDS) as AboutKey[]).map((k) => [k, z.string().trim().max(ABOUT_FIELDS[k].max, `${ABOUT_FIELDS[k].label}: a little shorter, please.`).optional()]),
+  );
+  const parsed = z.object(shape).safeParse(input);
+  if (!parsed.success) return { ok: false, error: firstIssue(parsed.error) };
+  const about = Object.fromEntries(Object.entries(parsed.data).filter(([, v]) => typeof v === "string" && v.length > 0));
+  const user = await getUser();
+  if (!user) return fail("not signed in");
+  const { error } = await (await supabaseServer()).from("profiles").update({ about }).eq("id", user.id);
+  if (error) return fail(error);
+  revalidatePath("/room", "layout");
+  return { ok: true, data: null };
+}
+
+/**
+ * Someone's love style, from the latest Love Styles game you finished together (or your own, from
+ * your latest game). Read from your own view of that game, so it's only ever known to the two players.
+ */
+export async function loveStyleOf(targetId: unknown): Promise<ActionResult<LoveStyle | null>> {
+  const target = z.uuid().safeParse(targetId);
+  if (!target.success) return fail("unknown person");
+  const user = await getUser();
+  if (!user) return fail("not signed in");
+  const supabase = await supabaseServer();
+  const { data: game } = await supabase
+    .from("game_sessions")
+    .select("id")
+    .eq("game_id", "love-styles")
+    .eq("status", "finished")
+    .contains("players", [user.id, target.data])
+    .order("finished_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!game) return { ok: true, data: null };
+  const { data: v } = await supabase.from("game_views").select("view").eq("session_id", game.id).eq("user_id", user.id).maybeSingle();
+  const profile = (v?.view as { result?: { profiles?: Record<string, Record<LoveStyle, number>> } } | null)?.result?.profiles?.[target.data];
+  return { ok: true, data: profile ? (topStyles(profile)[0] ?? null) : null };
 }
 
 /** Your birthday (day and month only), or null to remove it. */
