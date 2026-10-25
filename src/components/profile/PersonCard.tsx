@@ -68,9 +68,14 @@ export function PersonCardHost() {
             <p className="mt-2 text-muted">{mine ? "Nothing here yet." : `${person.display_name} hasn't filled this in yet.`}</p>
           ) : null}
           {mine ? (
-            <Link prefetch={false} href={`/room/${bundle.room.id}/settings#you`} onClick={() => setId(null)} className="mt-6 inline-block font-semibold underline underline-offset-2">
-              Edit your card
-            </Link>
+            <p className="mt-6 flex gap-5">
+              <Link prefetch={false} href={`/room/${bundle.room.id}/settings#you`} onClick={() => setId(null)} className="font-semibold underline underline-offset-2">
+                Edit your card
+              </Link>
+              <Link prefetch={false} href={`/room/${bundle.room.id}/you`} onClick={() => setId(null)} className="font-semibold underline underline-offset-2">
+                Your stats
+              </Link>
+            </p>
           ) : null}
         </div>
       ) : null}

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Avatar, type AvatarMotif } from "@/design/Avatar";
@@ -50,6 +51,9 @@ export function ProfileEditor() {
         <div className="min-w-0 flex-1">
           <p className="truncate text-[1.1rem] font-semibold">{profile.display_name}</p>
           <p className="text-[0.85rem] text-muted">Your name and mark, in every room.</p>
+          <Link prefetch={false} href={`/room/${bundle.room.id}/you`} className="text-[0.85rem] font-semibold underline underline-offset-2">
+            See your stats
+          </Link>
         </div>
         <Button variant="outline" size="sm" onClick={open}>
           Edit
