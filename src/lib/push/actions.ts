@@ -1,6 +1,7 @@
 "use server";
 
 import { after } from "next/server";
+import { isTimeZone } from "./quiet";
 import { z } from "zod";
 import { friendlyError } from "@/lib/errors";
 import { getMyRoom, getUser } from "@/lib/room/server";
@@ -51,11 +52,26 @@ export async function setPushPrefs(prefs: unknown): Promise<ActionResult> {
   return error ? fail(error) : { ok: true, data: null };
 }
 
+/** Quiet hours (whole hours, in the phone's time zone), or null to turn them off. */
+export async function setQuietHours(input: unknown): Promise<ActionResult> {
+  const hour = z.number().int().min(0).max(23);
+  const parsed = z.union([z.null(), z.object({ start: hour, end: hour, timeZone: z.string().max(64).refine(isTimeZone, "Unknown time zone.") })]).safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Those hours didn't add up." };
+  const user = await getUser();
+  if (!user) return fail("not signed in");
+  const q = parsed.data;
+  const { error } = await (await supabaseServer())
+    .from("profiles")
+    .update(q ? { quiet_start: q.start, quiet_end: q.end, time_zone: q.timeZone } : { quiet_start: null, quiet_end: null })
+    .eq("id", user.id);
+  return error ? fail(error) : { ok: true, data: null };
+}
+
 /** A test notification to all of the caller's own devices, to check it works. */
 export async function sendTestPush(): Promise<ActionResult<{ sent: number }>> {
   const user = await getUser();
   if (!user) return fail("not signed in");
-  const sent = await notify(user.id, "nudges", { title: "Notifications are on", body: "This is how Amah will let you know it's your turn.", url: "/room", tag: "test" }, { evenIfHere: true });
+  const sent = await notify(user.id, "nudges", { title: "Notifications are on", body: "This is how Amah will let you know it's your turn.", url: "/room", tag: "test" }, { evenIfHere: true, evenIfQuiet: true });
   return { ok: true, data: { sent } };
 }
 

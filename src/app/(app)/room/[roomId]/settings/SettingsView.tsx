@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { QuietHours, type Quiet } from "@/components/room/QuietHours";
 import { AboutEditor } from "@/components/profile/AboutEditor";
 import { ProfileEditor } from "@/components/profile/ProfileEditor";
 import { PetNames } from "@/components/profile/PetNames";
@@ -28,7 +29,7 @@ import type { FeedbackThread } from "@/lib/feedback/types";
 import { afterDarkOpen } from "@/lib/room/afterDark";
 import { setOptIn } from "@/lib/afterdark/actions";
 
-export function SettingsView({ announcementEmails, feedback, push }: { announcementEmails: boolean; feedback: { threads: FeedbackThread[]; unread: number }; push: { publicKey: string | null; prefs: PushPrefs } }) {
+export function SettingsView({ announcementEmails, feedback, push }: { announcementEmails: boolean; feedback: { threads: FeedbackThread[]; unread: number }; push: { publicKey: string | null; prefs: PushPrefs; quiet: Quiet } }) {
   const { bundle } = useRoom();
   const router = useRouter();
   const { room, me, partner, members, rooms } = bundle;
@@ -160,6 +161,7 @@ export function SettingsView({ announcementEmails, feedback, push }: { announcem
 
       <Section title="Notifications" id="notifications">
         <NotificationSettings publicKey={push.publicKey} prefs={push.prefs} />
+        <QuietHours initial={push.quiet} />
       </Section>
 
       <Section title="House rules" id="house-rules">

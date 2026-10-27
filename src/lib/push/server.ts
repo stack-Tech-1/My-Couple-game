@@ -5,6 +5,7 @@ import { supabaseAdmin } from "@/lib/supabase/server";
 import { type PushKind } from "./types";
 
 import { withPetName, type Payload } from "./petname";
+import { inQuietHours } from "./quiet";
 
 /** Someone counts as "here" if their app sent a heartbeat this recently (see Heartbeat). */
 const HERE_MS = 70_000;
@@ -31,19 +32,21 @@ export function vapidKeys() {
  * now (they'll see it there) or have that kind switched off. Never throws: a failed notification
  * must never fail the action that caused it.
  */
-export async function notify(userId: string, kind: PushKind, payload: Payload, opts: { evenIfHere?: boolean } = {}): Promise<number> {
+export async function notify(userId: string, kind: PushKind, payload: Payload, opts: { evenIfHere?: boolean; evenIfQuiet?: boolean } = {}): Promise<number> {
   try {
     const keys = await vapidKeys();
     if (!keys) return 0;
     const admin = supabaseAdmin();
     const [{ data: prof }, { data: here }, { data: subs }] = await Promise.all([
-      admin.from("profiles").select("push_prefs").eq("id", userId).maybeSingle(),
+      admin.from("profiles").select("push_prefs, quiet_start, quiet_end, time_zone").eq("id", userId).maybeSingle(),
       admin.from("user_presence").select("seen_at").eq("user_id", userId).maybeSingle(),
       admin.from("push_subscriptions").select("id, endpoint, p256dh, auth").eq("user_id", userId),
     ]);
     if (!subs?.length) return 0;
     const prefs = (prof?.push_prefs ?? {}) as Partial<Record<PushKind, boolean>>;
     if (prefs[kind] === false) return 0;
+    // Quiet hours: nothing buzzes; it's all waiting in the app when they're back.
+    if (!opts.evenIfQuiet && inQuietHours(prof?.quiet_start as number | null, prof?.quiet_end as number | null, prof?.time_zone as string | null, new Date())) return 0;
     if (!opts.evenIfHere && here?.seen_at && Date.now() - Date.parse(here.seen_at as string) < HERE_MS) return 0;
 
     webpush.setVapidDetails(`mailto:${OPERATOR.email}`, keys.publicKey, keys.privateKey);

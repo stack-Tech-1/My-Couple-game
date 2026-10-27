@@ -11,11 +11,11 @@ export const metadata: Metadata = { title: "Settings" };
 export default async function SettingsPage() {
   const user = await getUser();
   const [{ data }, feedback, keys] = await Promise.all([
-    user ? (await supabaseServer()).from("profiles").select("announcement_emails, push_prefs").eq("id", user.id).maybeSingle() : Promise.resolve({ data: null }),
+    user ? (await supabaseServer()).from("profiles").select("announcement_emails, push_prefs, quiet_start, quiet_end").eq("id", user.id).maybeSingle() : Promise.resolve({ data: null }),
     getMyFeedback(),
     vapidKeys(),
   ]);
   const saved = (data?.push_prefs ?? {}) as Partial<PushPrefs>;
   const pushPrefs = Object.fromEntries(PUSH_KINDS.map((k) => [k, saved[k] !== false])) as PushPrefs;
-  return <SettingsView announcementEmails={data?.announcement_emails !== false} feedback={feedback} push={{ publicKey: keys?.publicKey ?? null, prefs: pushPrefs }} />;
+  return <SettingsView announcementEmails={data?.announcement_emails !== false} feedback={feedback} push={{ publicKey: keys?.publicKey ?? null, prefs: pushPrefs, quiet: { start: (data?.quiet_start as number | null) ?? null, end: (data?.quiet_end as number | null) ?? null } }} />;
 }
