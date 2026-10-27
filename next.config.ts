@@ -3,6 +3,8 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // The share poster draws text with these (read from disk at request time).
+  outputFileTracingIncludes: { "/room/[roomId]/poster": ["./assets/fonts/*.ttf"] },
   images: {
     remotePatterns: [{ protocol: "https", hostname: "*.supabase.co" }],
   },

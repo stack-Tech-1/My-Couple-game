@@ -1,10 +1,9 @@
 "use client";
 
-import { Button } from "@/design/Button";
-import { toast } from "@/design/toast";
 import { gameMeta } from "@/games/catalog";
 import { useRoom } from "@/lib/realtime/RoomProvider";
 import type { Week } from "@/lib/progress/server";
+import { SharePoster } from "./SharePoster";
 
 const range = (start: string) => {
   const s = new Date(`${start}T00:00:00Z`);
@@ -29,26 +28,6 @@ export function WeeklyRecap({ week }: { week: Week }) {
     ["Messages", week.messages],
     ["Hearts sent", week.nudges],
   ];
-
-  const text = [
-    `Our week on Amah (${range(week.start)}):`,
-    `${week.shared_days}/7 days together, ${week.games} games${top ? ` (mostly ${top})` : ""}, ${week.dailies} Daily Questions, ${week.nudges} hearts.`,
-    partner && (myWins || theirWins) ? `Score: ${me.display_name} ${myWins}, ${partner.display_name} ${theirWins}.` : "",
-  ]
-    .filter(Boolean)
-    .join("\n");
-
-  async function share() {
-    try {
-      if (navigator.share) await navigator.share({ text });
-      else {
-        await navigator.clipboard.writeText(text);
-        toast.success("Copied.", "Paste it anywhere you like.");
-      }
-    } catch {
-      // share sheet dismissed
-    }
-  }
 
   return (
     <section aria-labelledby="recap-h" className="rounded-[22px] border border-line bg-raised p-5">
@@ -76,9 +55,7 @@ export function WeeklyRecap({ week }: { week: Week }) {
         ))}
       </dl>
       <div className="mt-4 flex justify-end">
-        <Button variant="ghost" size="sm" icon="link" onClick={() => void share()}>
-          Share our week
-        </Button>
+        <SharePoster roomId={bundle.room.id} label="Share our poster" />
       </div>
     </section>
   );

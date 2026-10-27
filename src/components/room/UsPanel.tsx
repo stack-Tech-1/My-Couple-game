@@ -5,6 +5,7 @@ import { Icon } from "@/design/icons";
 import { useToasts } from "@/design/toast";
 import { cn } from "@/lib/cn";
 import { badgesOf, levelOf, xpOf, type Stats } from "@/lib/progress/model";
+import { SharePoster } from "./SharePoster";
 
 const SEEN_KEY = (roomId: string) => `amah:badges-seen:${roomId}`;
 
@@ -90,9 +91,12 @@ export function UsPanel({ roomId, stats }: { roomId: string; stats: Stats }) {
           </li>
         ))}
       </ul>
-      <button type="button" onClick={() => setAll((v) => !v)} className="mt-3 text-[0.85rem] font-semibold text-muted underline underline-offset-2 hover:text-fg">
-        {all ? "Show less" : `All badges (${earned.length} of ${badges.length})`}
-      </button>
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+        <button type="button" onClick={() => setAll((v) => !v)} className="text-[0.85rem] font-semibold text-muted underline underline-offset-2 hover:text-fg">
+          {all ? "Show less" : `All badges (${earned.length} of ${badges.length})`}
+        </button>
+        <SharePoster roomId={roomId} label="Share our level" />
+      </div>
     </section>
   );
 }

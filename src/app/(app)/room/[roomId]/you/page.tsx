@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Avatar } from "@/design/Avatar";
 import { Icon } from "@/design/icons";
+import { SharePoster } from "@/components/room/SharePoster";
 import { gameMeta } from "@/games/catalog";
 import { getUser } from "@/lib/room/server";
 import { supabaseServer } from "@/lib/supabase/server";
@@ -52,6 +53,9 @@ export default async function YourAmahPage({ params }: { params: Promise<{ roomI
             <Big label="Win rate" value={pct === null ? "–" : `${pct}%`} sub="games with a winner" />
             <Big label="Best win streak" value={s.bestStreak} sub={s.currentStreak > 1 ? `on ${s.currentStreak} right now` : undefined} />
           </dl>
+          <div className="mt-4">
+            <SharePoster roomId={roomId} label="Share my stats" variant="outline" />
+          </div>
           {s.coopPlayed ? (
             <p className="mt-4 text-muted">
               Team games: <strong className="text-fg">{s.coopWins}</strong> won together out of {s.coopPlayed}.
