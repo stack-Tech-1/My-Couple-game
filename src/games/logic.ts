@@ -1,5 +1,7 @@
 import type { AnyGameLogic } from "./_engine/types";
 import { connectFour } from "./connect-four/logic";
+import { chess } from "./chess/logic";
+import { ticTacToe } from "./tic-tac-toe/logic";
 import { whot } from "./whot/logic";
 import { ludo } from "./ludo/logic";
 import { ayo } from "./ayo/logic";
@@ -27,7 +29,7 @@ import { mostLikely } from "./most-likely/logic";
  * Server-safe registry of game logic (no React). The move API and tests use this.
  * Adding a game = one line here + one line in registry.tsx.
  */
-const all: AnyGameLogic[] = [connectFour, whot, ludo, ayo, wordDuel, reflexDuel, drawGuess, knowMeTrivia, splitClues, inSync, memoryMatch, beatTheClock, howWell, thisOrThat, storyChain, deepQuestions, complimentBattle, truthOrDare, spicyDice, hotSeat, neverHaveI, riddles, naijaTrivia, pidginPalava, emojiGuess, loveStyles, samePage, dontLaugh, mostLikely];
+const all: AnyGameLogic[] = [connectFour, chess, ticTacToe, whot, ludo, ayo, wordDuel, reflexDuel, drawGuess, knowMeTrivia, splitClues, inSync, memoryMatch, beatTheClock, howWell, thisOrThat, storyChain, deepQuestions, complimentBattle, truthOrDare, spicyDice, hotSeat, neverHaveI, riddles, naijaTrivia, pidginPalava, emojiGuess, loveStyles, samePage, dontLaugh, mostLikely];
 
 export const GAME_LOGIC: Record<string, AnyGameLogic> = Object.fromEntries(all.map((g) => [g.id, g]));
 

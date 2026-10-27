@@ -22,6 +22,25 @@ function Misprint({ accent, children }: { accent: string; children: ReactNode })
 }
 
 const art: Record<string, (a: string) => ReactNode> = {
+  chess: (a) => (
+    <>
+      {[0, 1, 2, 3].map((r) =>
+        [0, 1, 2, 3].map((c) => (r + c) % 2 ? <rect key={`${r}${c}`} x={46 + c * 17} y={20 + r * 17} width={17} height={17} fill="currentColor" opacity={0.14} /> : null),
+      )}
+      <rect x="46" y="20" width="68" height="68" {...S} />
+      <path d="M72 64h16M74 64c0-6 2-9 2-14h8c0 5 2 8 2 14M76 50l-4-8h16l-4 8M80 42v-8M76 37h8" {...S} fill={a} />
+      <path d="M40 100h80" {...S} />
+    </>
+  ),
+  "tic-tac-toe": (a) => (
+    <>
+      <path d="M66 22v66M94 22v66M52 44h56M52 66h56" {...S} />
+      <path d="M56 26l8 12M64 26l-8 12M84 48l8 12M92 48l-8 12" {...S} stroke={a} strokeWidth={3} />
+      <circle cx="80" cy="77" r="6" {...S} />
+      <circle cx="102" cy="32" r="6" {...S} />
+      <path d="M40 100h80" {...S} />
+    </>
+  ),
   "connect-four": (a) => (
     <>
       <rect x="34" y="18" width="92" height="76" rx="8" {...S} />

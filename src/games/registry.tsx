@@ -4,6 +4,8 @@ import type { ComponentType } from "react";
 import type { GameProps } from "./_engine/types";
 import { GAME_LOGIC } from "./logic";
 import { ConnectFourBoard } from "./connect-four/Board";
+import { ChessBoard } from "./chess/Board";
+import { TicTacToeBoard } from "./tic-tac-toe/Board";
 import { WhotTable } from "./whot/Table";
 import { LudoBoard } from "./ludo/Board";
 import { AyoBoard } from "./ayo/Board";
@@ -34,6 +36,8 @@ import { MostLikelyBoard } from "./most-likely/Board";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- heterogeneous registry, each component is typed at its definition
 const components: Record<string, ComponentType<GameProps<any, any>>> = {
   "connect-four": ConnectFourBoard,
+  chess: ChessBoard,
+  "tic-tac-toe": TicTacToeBoard,
   whot: WhotTable,
   ludo: LudoBoard,
   ayo: AyoBoard,

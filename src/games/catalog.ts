@@ -78,6 +78,8 @@ export const GAMES: GameMeta[] = [
   { id: "ayo", name: "Ayo", category: "competitive", estimatedMinutes: 12, scored: true, tagline: "Sow, count, capture. The oldest trash talk there is." },
   { id: "word-duel", name: "Word Duel", category: "competitive", estimatedMinutes: 5, scored: true, maxPlayers: 8, tagline: "Same five letters. You only see their colours." },
   { id: "reflex-duel", name: "Reflex Duel", category: "competitive", estimatedMinutes: 3, scored: true, maxPlayers: 8, tagline: "Wait for it. Wait for it. Don't." },
+  { id: "chess", name: "Chess", category: "competitive", estimatedMinutes: 20, scored: true, tagline: "The oldest grudge match there is. Take your time." },
+  { id: "tic-tac-toe", name: "X and O", category: "competitive", estimatedMinutes: 4, scored: true, tagline: "Tic-tac-toe, first to three. Quick, petty, perfect." },
   { id: "connect-four", name: "Connect Four", category: "competitive", estimatedMinutes: 6, scored: true, tagline: "Four in a row, and a lifetime of grudges." },
   { id: "draw-guess", name: "Draw & Guess", category: "competitive", estimatedMinutes: 10, scored: true, maxPlayers: 8, tagline: "It's a horse. Obviously it's a horse." },
   { id: "riddles", name: "Riddle Me This", category: "competitive", estimatedMinutes: 6, scored: true, maxPlayers: 8, tagline: "Simple words, twisted answers. Get your mind out of the gutter." },
@@ -114,7 +116,7 @@ export const GAMES: GameMeta[] = [
 ];
 
 /** The games friend rooms get (for now, played one friend against another). */
-export const FRIEND_GAMES = ["whot", "ludo", "ayo", "word-duel", "reflex-duel", "connect-four", "draw-guess", "riddles", "dont-laugh", "most-likely"] as const;
+export const FRIEND_GAMES = ["whot", "ludo", "ayo", "word-duel", "reflex-duel", "connect-four", "chess", "tic-tac-toe", "draw-guess", "riddles", "dont-laugh", "most-likely"] as const;
 export const isFriendGame = (id: string) => (FRIEND_GAMES as readonly string[]).includes(id);
 
 export const gameMeta = (id: string): GameMeta | undefined => GAMES.find((g) => g.id === id);

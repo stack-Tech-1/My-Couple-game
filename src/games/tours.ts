@@ -48,6 +48,16 @@ export const GAME_TOURS: Record<string, TourStep[]> = {
     { title: "Capture", body: ["If your last seed lands on your partner's side and makes that pit 2 or 3, you take them.", "The pits just before it can be taken too, if they're also 2 or 3."] },
     { target: "ayo-score", title: "Winning", body: ["Captured seeds go in your store. First to 25 wins."] },
   ],
+  chess: [
+    { target: "chess-board", title: "Tap, then tap", body: ["Tap one of your pieces. Dots show every square it can move to.", "Tap a dot to move there. Illegal moves simply aren't offered."] },
+    { target: "chess-players", title: "Your colour", body: ["Your side is always at the bottom. Captured pieces collect under each name."] },
+    { target: "chess-draw", title: "Draws", body: ["Offer a draw whenever you like. Your partner can accept or play on."] },
+    { title: "Winning", body: ["Checkmate wins. You swap colours in the rematch."] },
+  ],
+  "tic-tac-toe": [
+    { target: "ttt-board", title: "Three in a row", body: ["Tap a square to mark it. Three in a line wins the round."] },
+    { target: "ttt-score", title: "First to three", body: ["Win three rounds to take the match.", "You take turns starting each round."] },
+  ],
   "connect-four": [
     { target: "c4-board", title: "Drop a disc", body: ["Tap a column. Your disc falls to the lowest empty space."] },
     { target: "c4-players", title: "Take turns", body: ["You each have a colour. It's lit up when it's your go."] },
