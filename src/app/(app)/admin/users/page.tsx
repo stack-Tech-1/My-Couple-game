@@ -27,7 +27,7 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
   return (
     <div>
       <h1 className="display text-[2.6rem] leading-none">Users</h1>
-      <p className="mt-2 max-w-2xl text-[0.9rem] text-muted">Everyone with an account, and who they&apos;re paired with. Account facts only, never what anyone has written or shared.</p>
+      <p className="mt-2 max-w-2xl text-[0.9rem] text-muted">Everyone with an account. Account facts only, never what anyone has written or shared.</p>
 
       <form action="/admin/users" className="mt-8 flex flex-wrap items-end gap-3">
         <label className="flex min-w-[14rem] flex-1 flex-col gap-1.5">
@@ -57,12 +57,11 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
       </p>
 
       <div className="mt-3 overflow-x-auto rounded-[18px] border border-line bg-raised">
-        <table className="w-full min-w-[46rem] text-[0.88rem]">
-          <caption className="sr-only">Accounts and their partners</caption>
+        <table className="w-full min-w-[34rem] text-[0.88rem]">
+          <caption className="sr-only">Accounts</caption>
           <thead className="text-left text-[0.78rem] text-muted">
             <tr>
               <th className="px-4 py-3 font-semibold">Person</th>
-              <th className="px-4 py-3 font-semibold">Paired with</th>
               <th className="px-4 py-3 font-semibold">Joined</th>
               <th className="px-4 py-3 font-semibold">Last active</th>
               <th className="px-4 py-3 font-semibold">
@@ -83,17 +82,6 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
                     </p>
                     <p className="text-muted">{u.email}</p>
                   </td>
-                  <td className="px-4 py-3">
-                    {u.partner_id ? (
-                      <Link prefetch={false} href={href({ q: u.partner_email ?? "", filter: "all", page: 0 })} className="hover:underline">
-                        <span className="font-semibold">{u.partner_name || "No name yet"}</span>
-                        <span className="block text-muted">{u.partner_email}</span>
-                      </Link>
-                    ) : (
-                      <span className="text-muted">{u.room_id ? "Waiting for a partner" : "No room yet"}</span>
-                    )}
-                    {u.paired_at ? <span className="block text-[0.75rem] text-muted">since {day(u.paired_at)}</span> : null}
-                  </td>
                   <td className="whitespace-nowrap px-4 py-3 tabular-nums">{day(u.created_at)}</td>
                   <td className="whitespace-nowrap px-4 py-3 tabular-nums">{day(u.last_active)}</td>
                   <td className="px-4 py-3 text-right">
@@ -106,7 +94,7 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
             })}
             {!rows.length ? (
               <tr>
-                <td colSpan={5} className="px-4 py-10 text-center text-muted">
+                <td colSpan={4}className="px-4 py-10 text-center text-muted">
                   Nobody matches.
                 </td>
               </tr>

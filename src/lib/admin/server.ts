@@ -5,6 +5,7 @@ import type { User } from "@supabase/supabase-js";
 import { getUser } from "@/lib/room/server";
 import { supabaseAdmin, supabaseServer } from "@/lib/supabase/server";
 import type { Announcement } from "@/components/room/AnnouncementBar";
+import { gameMeta } from "@/games/catalog";
 
 /** Is the signed-in user an admin? Checked against the database every request. */
 export const currentAdmin = cache(async (): Promise<User | null> => {
@@ -104,7 +105,30 @@ export type AdminFeedback = {
   screenshot_url: string | null;
   created_at: string;
   replies: { id: string; from_team: boolean; body: string; created_at: string }[];
+  /** The last game they started before sending this, so odd feedback has context. */
+  last_game: { name: string; status: string; started_at: string } | null;
 };
+
+/** Each sender's most recent game started before their feedback (what they were most likely talking about). */
+async function lastGamesFor(rows: { id: string; user_id: string | null; created_at: string }[]): Promise<Map<string, AdminFeedback["last_game"]>> {
+  const admin = supabaseAdmin();
+  const out = new Map<string, AdminFeedback["last_game"]>();
+  await Promise.all(
+    rows.map(async (r) => {
+      if (!r.user_id) return;
+      const { data } = await admin
+        .from("game_sessions")
+        .select("game_id, status, created_at")
+        .contains("players", [r.user_id])
+        .lte("created_at", r.created_at)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (data) out.set(r.id, { name: gameMeta(data.game_id as string)?.name ?? (data.game_id as string), status: data.status as string, started_at: data.created_at as string });
+    }),
+  );
+  return out;
+}
 
 async function emailsFor(ids: (string | null)[]): Promise<Map<string, string>> {
   const out = new Map<string, string>();
@@ -125,7 +149,7 @@ export async function listFeedback(status: string): Promise<AdminFeedback[]> {
   const { data } = await q;
   const rows = (data ?? []) as (Omit<AdminFeedback, "email" | "replies" | "screenshot_url"> & { screenshot_path: string | null })[];
   if (!rows.length) return [];
-  const [{ data: replies }, emails, signed] = await Promise.all([
+  const [{ data: replies }, emails, signed, games] = await Promise.all([
     admin.from("feedback_replies").select("id, feedback_id, from_team, body, created_at").in("feedback_id", rows.map((r) => r.id)).order("created_at"),
     emailsFor(rows.map((r) => r.user_id)),
     (async () => {
@@ -134,6 +158,7 @@ export async function listFeedback(status: string): Promise<AdminFeedback[]> {
       const { data: urls } = await admin.storage.from("feedback").createSignedUrls(paths, 3600);
       return new Map((urls ?? []).filter((u) => u.signedUrl && u.path).map((u) => [u.path!, u.signedUrl]));
     })(),
+    lastGamesFor(rows),
   ]);
   const byThread = new Map<string, AdminFeedback["replies"]>();
   for (const r of (replies ?? []) as (AdminFeedback["replies"][number] & { feedback_id: string })[]) byThread.set(r.feedback_id, [...(byThread.get(r.feedback_id) ?? []), r]);
@@ -142,6 +167,7 @@ export async function listFeedback(status: string): Promise<AdminFeedback[]> {
     email: r.user_id ? (emails.get(r.user_id) ?? null) : null,
     screenshot_url: screenshot_path ? (signed.get(screenshot_path) ?? null) : null,
     replies: byThread.get(r.id) ?? [],
+    last_game: games.get(r.id) ?? null,
   }));
 }
 

@@ -53,6 +53,9 @@ test("feedback loop, suggestions, reports and the user list, in two browsers", a
   const dish = `Jollof ${Date.now() % 100000}`;
 
   try {
+    // Bo just abandoned a Ludo game, so the inbox can say what the feedback is likely about.
+    await admin.from("game_sessions").insert({ room_id: roomId, players: [a.id, b.id], status: "abandoned", outcome: "abandoned", game_id: "ludo" });
+
     // --- Bo sends feedback with a screenshot, and suggests a card.
     await pb.goto(await signInPath(b.email, `/room/${roomId}/settings#feedback`));
     const hub = pb.locator("#feedback");
@@ -75,6 +78,7 @@ test("feedback loop, suggestions, reports and the user list, in two browsers", a
     const item = pa.getByRole("listitem").filter({ hasText: bug });
     await expect(item).toBeVisible();
     await expect(item.getByRole("img", { name: "Screenshot attached to this feedback" })).toBeVisible();
+    await expect(item.getByText(/Last game: Ludo · ended early · started \d+ min before this/)).toBeVisible();
     await item.getByText("Device details").click();
     await expect(item.getByText("page")).toBeVisible();
     await item.getByRole("textbox", { name: /Reply/ }).fill("Thanks Bo, fixing it this week.");
@@ -114,13 +118,12 @@ test("feedback loop, suggestions, reports and the user list, in two browsers", a
     await rep.getByRole("button", { name: "Mark resolved" }).click();
     await expect(rep).toBeHidden();
 
-    // --- The user list shows pairs; search and filter work; Manage opens the account.
+    // --- The user list: everyone, no partner column; search and filter work; Manage opens the account.
     await pa.goto(`/admin/users?q=${encodeURIComponent(b.email)}`);
-    // Searching Bo's email finds Bo, and Ada too (as Bo's partner). Bo's own row names Ada.
-    await expect(pa.getByRole("row").filter({ hasText: b.email })).toHaveCount(2);
     const row = pa.getByRole("row").filter({ has: pa.getByRole("link", { name: `Manage ${b.email}` }) });
-    await expect(row).toContainText("Ada");
-    await expect(row).toContainText(a.email);
+    await expect(row).toContainText("Bo");
+    await expect(row).not.toContainText(a.email);
+    await expect(pa.getByRole("columnheader", { name: "Paired with" })).toHaveCount(0);
     await pa.goto("/admin/users?filter=admins");
     await expect(pa.getByRole("link", { name: `Manage ${a.email}` })).toBeVisible();
     await expect(pa.getByRole("link", { name: `Manage ${b.email}` })).toHaveCount(0);

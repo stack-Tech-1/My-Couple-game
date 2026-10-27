@@ -11,6 +11,17 @@ import type { AdminFeedback, AdminReport, AdminSuggestion } from "@/lib/admin/se
 import { FEEDBACK_KIND_LABEL, FEEDBACK_STATUS_LABEL, FEEDBACK_STATUSES, REPORT_STATUSES, type FeedbackKind, type FeedbackStatus } from "@/lib/feedback/types";
 import { REPORT_LABELS, type ReportReason } from "@/lib/room/types";
 
+const GAME_STATUS: Record<string, string> = { active: "still going", finished: "finished", abandoned: "ended early" };
+
+/** How long before `to` the time `from` was, roughly: "4 min", "2 hr", "3 days". */
+function ago(from: string, to: string): string {
+  const min = Math.max(0, Math.round((Date.parse(to) - Date.parse(from)) / 60_000));
+  if (min < 60) return `${min} min`;
+  const hr = Math.round(min / 60);
+  if (hr < 48) return `${hr} hr`;
+  return `${Math.round(hr / 24)} days`;
+}
+
 const when = (iso: string) => new Date(iso).toLocaleString(undefined, { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 const manage = (email: string | null) => (email ? `/admin/users?email=${encodeURIComponent(email)}#manage` : null);
 const REPORT_STATUS_LABEL: Record<string, string> = { new: "New", reviewing: "Reviewing", resolved: "Resolved", dismissed: "Dismissed" };
@@ -97,7 +108,16 @@ export function FeedbackItem({ f }: { f: AdminFeedback }) {
           </select>
         </label>
       </div>
-      <p className="mt-3 whitespace-pre-wrap">{f.body}</p>
+      <p className="mt-3 text-[0.82rem] text-muted">
+        {f.last_game ? (
+          <>
+            Last game: <b className="text-fg">{f.last_game.name}</b> · {GAME_STATUS[f.last_game.status] ?? f.last_game.status} · started {ago(f.last_game.started_at, f.created_at)} before this
+          </>
+        ) : (
+          "No games played before this."
+        )}
+      </p>
+      <p className="mt-2 whitespace-pre-wrap">{f.body}</p>
       {f.screenshot_url ? (
         <a href={f.screenshot_url} target="_blank" rel="noreferrer" className="mt-3 inline-block">
           {/* eslint-disable-next-line @next/next/no-img-element -- signed, short-lived */}
