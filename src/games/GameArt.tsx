@@ -32,6 +32,19 @@ const art: Record<string, (a: string) => ReactNode> = {
       <path d="M40 100h80" {...S} />
     </>
   ),
+  draughts: (a) => (
+    <>
+      {[0, 1, 2, 3].map((r) =>
+        [0, 1, 2, 3].map((c) => ((r + c) % 2 ? <rect key={`${r}${c}`} x={46 + c * 17} y={20 + r * 17} width={17} height={17} fill="currentColor" opacity={0.14} /> : null)),
+      )}
+      <rect x="46" y="20" width="68" height="68" {...S} />
+      <ellipse cx="71.5" cy="62" rx="12" ry="5" {...S} fill={a} />
+      <path d="M59.5 62v-5M83.5 62v-5" {...S} />
+      <ellipse cx="71.5" cy="57" rx="12" ry="5" {...S} fill={a} />
+      <ellipse cx="94" cy="38" rx="8" ry="3.5" {...S} fill="var(--bg-raised)" />
+      <path d="M40 100h80" {...S} />
+    </>
+  ),
   "tic-tac-toe": (a) => (
     <>
       <path d="M66 22v66M94 22v66M52 44h56M52 66h56" {...S} />

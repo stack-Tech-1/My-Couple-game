@@ -54,6 +54,12 @@ export const GAME_TOURS: Record<string, TourStep[]> = {
     { target: "chess-draw", title: "Draws", body: ["Offer a draw whenever you like. Your partner can accept or play on."] },
     { title: "Winning", body: ["Checkmate wins. You swap colours in the rematch."] },
   ],
+  draughts: [
+    { target: "draughts-board", title: "Tap, then tap", body: ["Tap one of your pieces, then tap a dot to move there.", "For a double jump, tap each landing square in turn."] },
+    { title: "Capturing is compulsory", body: ["If you can capture, you must, and you must take the most pieces you can.", "When that happens, the pieces that have to move get an orange ring."] },
+    { title: "Flying kings", body: ["Reach the far row to become a king. Kings move and capture any distance along a diagonal."] },
+    { target: "draughts-draw", title: "Winning", body: ["Take all their pieces, or leave them with no move.", "You can offer a draw any time."] },
+  ],
   "tic-tac-toe": [
     { target: "ttt-board", title: "Three in a row", body: ["Tap a square to mark it. Three in a line wins the round."] },
     { target: "ttt-score", title: "First to three", body: ["Win three rounds to take the match.", "You take turns starting each round."] },
