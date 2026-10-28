@@ -10,6 +10,7 @@ import { MemoryLane } from "./MemoryLane";
 import { DateNight } from "./DateNight";
 import { BucketList } from "./BucketList";
 import { dateIdeas } from "@/lib/content/server";
+import { GameBackdrop } from "@/components/game/GameBackdrop";
 
 /** Library entries that are ongoing room features rather than turn-based sessions. */
 export const FEATURES = new Set(["daily-question", "love-notes", "memory-lane", "date-night", "bucket-list"]);
@@ -28,18 +29,20 @@ export async function FeaturePage({ gameId, roomId, bundle }: { gameId: string; 
   else body = <BucketList items={await getBucket(roomId)} />;
 
   return (
-    <div className="@container mx-auto max-w-3xl pt-8">
-      <Link prefetch={false} href={`/room/${roomId}`} className="inline-flex items-center gap-1.5 text-[0.9rem] font-semibold text-muted hover:text-fg">
-        <Icon name="arrowLeft" size={16} /> Library
+    <div className="@container relative isolate mx-auto max-w-3xl pt-6 sm:pt-8">
+      {/* Each keepsake sits on its own colour and adire motif, like the games. */}
+      <GameBackdrop gameId={gameId} category={meta.category} />
+      <Link prefetch={false} href={`/room/${roomId}/games`} className="glass inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[0.9rem] font-semibold">
+        <Icon name="arrowLeft" size={16} /> Games
       </Link>
       {gameId === "daily-question" ? null : (
-        <header className="mb-8 mt-6">
+        <header className="glass mb-4 mt-5 rounded-[28px] p-5 sm:mb-6 sm:p-7">
           <p className="eyebrow" style={{ color: cat.ink }}>{cat.label}</p>
           <h1 className="display mt-2 text-[clamp(2.6rem,9vw,4rem)]">{meta.name}</h1>
           <p className="mt-2 text-[1.05rem] text-muted">{meta.tagline}</p>
         </header>
       )}
-      <div className={gameId === "daily-question" ? "mt-8" : undefined}>{body}</div>
+      <div className={gameId === "daily-question" ? "mt-6" : "glass rounded-[28px] p-4 sm:p-6"}>{body}</div>
     </div>
   );
 }

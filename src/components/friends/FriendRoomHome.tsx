@@ -12,6 +12,9 @@ import { FRIEND_ROOM_SIZE } from "@/lib/room/types";
 import Link from "next/link";
 import { Icon } from "@/design/icons";
 import { gameMeta } from "@/games/catalog";
+import { PageBackdrop } from "@/components/room/HomeBackdrop";
+import { GamesPeek } from "@/components/room/GamesPeek";
+import { PAGE_LOOKS } from "@/games/look";
 
 /** Home of a friend room: who's here, the leaderboard, your games in progress, and the friend library. */
 export async function FriendRoomHome({ roomId }: { roomId: string }) {
@@ -26,15 +29,18 @@ export async function FriendRoomHome({ roomId }: { roomId: string }) {
   const nameOf = (id: string) => bundle.members.find((m) => m.profile.id === id)?.profile.display_name ?? "Someone";
   // Games the others are playing right now, to watch.
   const watchable = active.filter((s) => !s.players.includes(me) && gameMeta(s.game_id));
+  const look = PAGE_LOOKS.friends;
 
   return (
-    <div className="pt-8 sm:pt-12">
-      <p className="eyebrow text-muted">Friend room · {bundle.members.length} {bundle.members.length === 1 ? "person" : "people"}</p>
-      <h1 className="display mt-2 text-[clamp(2.6rem,9vw,4.2rem)] leading-[1.02]">{bundle.room.name}</h1>
+    <div className="relative isolate pt-8 sm:pt-12">
+      {/* Phones: deep teal with the oko canoe, everyone in the same boat. */}
+      <PageBackdrop motif={look.motif} bg={look.bg} ink={look.ink} glow={look.glow} height={600} />
+      <p className="eyebrow text-muted max-sm:text-[#ffd65c]">Friend room · {bundle.members.length} {bundle.members.length === 1 ? "person" : "people"}</p>
+      <h1 className="display mt-2 text-[clamp(2.6rem,9vw,4.2rem)] leading-[1.02] max-sm:text-[#f6efe6]">{bundle.room.name}</h1>
       <InstallPrompt />
       {isOwner && bundle.members.length < FRIEND_ROOM_SIZE ? <InvitePanel /> : null}
       {!isOwner && bundle.members.length < FRIEND_ROOM_SIZE ? (
-        <p className="mt-4 text-muted">Want someone else in? {owner ? `${owner.profile.display_name} has the invite code.` : "The room's owner has the invite code."}</p>
+        <p className="glass mt-4 rounded-[18px] p-4 text-muted">Want someone else in? {owner ? `${owner.profile.display_name} has the invite code.` : "The room's owner has the invite code."}</p>
       ) : null}
       <Birthdays />
       <GettingStarted roomId={roomId} items={checklist} />
@@ -46,7 +52,7 @@ export async function FriendRoomHome({ roomId }: { roomId: string }) {
           <ul className="mt-3 flex flex-col gap-2">
             {watchable.map((s) => (
               <li key={s.id}>
-                <Link prefetch={false} href={`/room/${roomId}/watch/${s.id}`} className="flex items-center gap-3 rounded-[16px] border-[1.5px] border-line bg-raised px-4 py-3 hover:border-line-strong">
+                <Link prefetch={false} href={`/room/${roomId}/watch/${s.id}`} className="glass flex items-center gap-3 rounded-[16px] px-4 py-3">
                   <span className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-accent" aria-hidden />
                   <span className="min-w-0 flex-1">
                     <span className="block font-semibold">{gameMeta(s.game_id)!.name}</span>
@@ -62,9 +68,9 @@ export async function FriendRoomHome({ roomId }: { roomId: string }) {
         </section>
       ) : null}
 
-      <div className="mt-14 grid gap-x-12 gap-y-14 lg:grid-cols-[1fr_2.2fr]">
-        <section aria-labelledby="people-h">
-          <h2 id="people-h" data-tour="people" className="eyebrow border-t-[1.5px] border-line-strong pt-5 text-muted">{anyWins ? "Who's winning" : "Who's here"}</h2>
+      <div className="mt-14 grid gap-x-12 gap-y-14 lg:grid-cols-[1fr_2.2fr] max-sm:mt-8 max-sm:gap-y-8">
+        <section aria-labelledby="people-h" className="max-sm:glass max-sm:rounded-[24px] max-sm:p-5">
+          <h2 id="people-h" data-tour="people" className="eyebrow border-t-[1.5px] border-line-strong pt-5 text-muted max-sm:border-t-0 max-sm:pt-0">{anyWins ? "Who's winning" : "Who's here"}</h2>
           <ol className="mt-5 flex flex-col gap-3">
             {ranked.map((m, i) => (
               <li key={m.profile.id} className="flex items-center gap-3">
@@ -87,7 +93,11 @@ export async function FriendRoomHome({ roomId }: { roomId: string }) {
           </ol>
           {bundle.members.length === 1 ? <p className="mt-4 text-[0.9rem] text-muted">Just you so far. Games need at least one friend.</p> : null}
         </section>
-        <Library />
+        {/* Phones get a peek here; the full shelf lives in the Games tab. */}
+        <GamesPeek />
+        <div className="hidden sm:block">
+          <Library />
+        </div>
       </div>
     </div>
   );

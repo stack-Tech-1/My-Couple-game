@@ -67,7 +67,7 @@ export function SignInForm({ next, linkError, google: googleEnabled }: { next: s
   }
 
   return (
-    <div className="min-w-0 rounded-[22px] border-[1.5px] border-line-strong bg-raised p-6 sm:p-8">
+    <div className="min-w-0 rounded-[22px] border-[1.5px] border-line-strong bg-raised p-6 sm:p-8 max-md:glass">
       <AnimatePresence mode="wait" initial={false}>
         {sentTo ? (
           <motion.div key="sent" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>

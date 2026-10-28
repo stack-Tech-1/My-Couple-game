@@ -54,7 +54,11 @@ export function TicTacToeBoard({ view, me, names, sendMove, pending, sound }: Ga
       </p>
 
       <div role="grid" aria-label={`Noughts and crosses board. ${status}`} data-tour="ttt-board" className="grid w-full grid-cols-3 gap-2 rounded-[22px] bg-[#5b1a2b] p-2">
-        {view.board.map((c, i) => (
+        {[0, 1, 2].map((r) => (
+          <div key={r} role="row" className="contents">
+        {view.board.slice(r * 3, r * 3 + 3).map((c, j) => {
+          const i = r * 3 + j;
+          return (
           <button
             key={i}
             type="button"
@@ -66,6 +70,9 @@ export function TicTacToeBoard({ view, me, names, sendMove, pending, sound }: Ga
           >
             {c ? <MarkSvg mark={c} fresh={view.last === i && !reduce} win={line.has(i)} /> : null}
           </button>
+          );
+        })}
+          </div>
         ))}
       </div>
 

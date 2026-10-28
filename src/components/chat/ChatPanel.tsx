@@ -13,6 +13,8 @@ import { StickerImage, VoiceNote } from "./Bubbles";
 import { StickerTray } from "./StickerTray";
 import { ReportDialog } from "@/components/safety/ReportDialog";
 import { useDataSaver, voiceBitrate } from "@/lib/dataSaver";
+import { AdireFill } from "@/design/adire";
+import { PAGE_LOOKS } from "@/games/look";
 
 const dayKey = (iso: string) => new Date(iso).toDateString();
 function dayLabel(iso: string): string {
@@ -118,15 +120,22 @@ export function ChatPanel(props: Props) {
       transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
       className="fixed inset-x-0 bottom-0 top-16 z-[86] flex flex-col border-line bg-bg sm:left-auto sm:w-[400px] sm:border-l-[1.5px] sm:shadow-[-24px_0_60px_-40px_rgba(28,20,22,.6)]"
     >
-      <div className="flex items-center gap-3 border-b border-line px-4 py-3">
+      {/* Plum with isan waves: the conversation keeps going. */}
+      <div className="relative isolate flex items-center gap-3 overflow-hidden px-4 py-3 text-[#f6efe6]">
+        <div aria-hidden className="absolute inset-0 -z-10">
+          <AdireFill motif={PAGE_LOOKS.chat.motif} bg={PAGE_LOOKS.chat.bg} ink={PAGE_LOOKS.chat.ink} />
+          <div className="absolute inset-0" style={{ background: PAGE_LOOKS.chat.glow }} />
+        </div>
         <Avatar name={name} motif={partner.avatar_key} hue={partner.avatar_hue} size={36} online={online} />
         <div className="min-w-0 flex-1">
           <p className="truncate text-[0.95rem] font-semibold leading-tight">{name}</p>
-          <p className="text-[0.78rem] leading-tight text-muted">
+          <p className="text-[0.78rem] leading-tight text-[#f6efe6]/75">
             {group ? (typing ? `${typingName ?? "Someone"} is typing…` : `${group.members} ${group.members === 1 ? "person" : "people"}`) : typing ? "typing…" : online ? "here now" : "away"}
           </p>
         </div>
-        <IconButton icon="close" label="Close chat" onClick={onClose} />
+        <span className="[&_button:hover]:bg-white/10 [&_button]:text-[#f6efe6]">
+          <IconButton icon="close" label="Close chat" onClick={onClose} />
+        </span>
       </div>
 
       <div
@@ -136,6 +145,7 @@ export function ChatPanel(props: Props) {
           stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
         }}
         className="flex-1 overflow-y-auto overscroll-contain px-4 py-4"
+        style={{ background: "radial-gradient(80% 40% at 100% 0%, color-mix(in srgb, #4a1f3d 9%, transparent), transparent 70%), radial-gradient(70% 40% at 0% 100%, color-mix(in srgb, #e8563a 7%, transparent), transparent 70%)" }}
         aria-live="polite"
         aria-relevant="additions"
       >
@@ -324,7 +334,7 @@ function Composer({ roomId, me, partner, onSendText, onSendSticker, onSendVoice,
 
   return (
     <div>
-      <form onSubmit={send} className="flex items-end gap-1.5 border-t border-line px-2.5 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
+      <form onSubmit={send} className="glass flex items-end gap-1.5 rounded-t-[22px] border-x-0 border-b-0 px-2.5 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
         <button
           type="button"
           onClick={() => setTray((t) => !t)}
@@ -408,7 +418,7 @@ function RecordingBar({ recorder, onCancel, onSend }: { recorder: Recorder; onCa
   }, [recorder]);
 
   return (
-    <div className="flex items-center gap-2 border-t border-line px-2.5 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3" role="group" aria-label="Recording a voice message">
+    <div className="glass flex items-center gap-2 rounded-t-[22px] border-x-0 border-b-0 px-2.5 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3" role="group" aria-label="Recording a voice message">
       <button type="button" onClick={onCancel} aria-label="Discard recording" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-accent-ink hover:bg-sunk">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
           <path d="M4.6 6.6h14.8M9.4 6.6V4.8c0-.6.4-1 1-1h3.2c.6 0 1 .4 1 1v1.8M6.8 6.6l.8 12.2c0 .8.7 1.4 1.5 1.4h5.8c.8 0 1.5-.6 1.5-1.4l.8-12.2" />

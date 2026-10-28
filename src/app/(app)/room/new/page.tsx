@@ -6,6 +6,8 @@ import { Icon } from "@/design/icons";
 import { getMyProfile, getMyRooms, homeRoomId } from "@/lib/room/server";
 import { NewRoomForm } from "@/components/friends/NewRoomForm";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { PageBackdrop } from "@/components/room/HomeBackdrop";
+import { PAGE_LOOKS } from "@/games/look";
 
 export const metadata: Metadata = { title: "New room" };
 export const dynamic = "force-dynamic";
@@ -20,21 +22,23 @@ export default async function NewRoomPage() {
   const friendRooms = rooms.filter((r) => r.kind === "friends").length;
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-2xl flex-col px-4 py-5 sm:px-8">
-      <div className="flex items-center justify-between">
+    <div className="relative isolate mx-auto flex min-h-dvh max-w-2xl flex-col px-4 py-5 sm:px-8">
+      {/* Phones: burnt orange with ade crowns. */}
+      <PageBackdrop motif={PAGE_LOOKS.newroom.motif} bg={PAGE_LOOKS.newroom.bg} ink={PAGE_LOOKS.newroom.ink} glow={PAGE_LOOKS.newroom.glow} height={440} />
+      <div className="flex items-center justify-between max-sm:text-[#f6efe6]">
         <Logo />
         <span className="flex items-center gap-2">
         <ThemeToggle />
         {home ? (
-          <Link prefetch={false} href={`/room/${home}`} className="inline-flex items-center gap-1.5 text-[0.9rem] font-semibold text-muted hover:text-fg">
+          <Link prefetch={false} href={`/room/${home}`} className="inline-flex items-center gap-1.5 text-[0.9rem] font-semibold text-muted hover:text-fg max-sm:text-[#f6efe6]/85">
             <Icon name="arrowLeft" size={16} /> Back
           </Link>
         ) : null}
         </span>
       </div>
       <div className="flex flex-1 flex-col py-12">
-        <h1 className="display text-[clamp(2.6rem,9vw,3.8rem)]">Another room.</h1>
-        <p className="mt-3 mb-10 text-muted">Start a friend room for your best friend or your group, or join one with a code. Everything in your other rooms stays where it is.</p>
+        <h1 className="display text-[clamp(2.6rem,9vw,3.8rem)] max-sm:text-[#f6efe6]">Another room.</h1>
+        <p className="mt-3 mb-10 text-muted max-sm:text-[#f6efe6]/85">Start a friend room for your best friend or your group, or join one with a code. Everything in your other rooms stays where it is.</p>
         <NewRoomForm name={profile.display_name} hasCouple={hasCouple} friendRooms={friendRooms} />
       </div>
     </div>

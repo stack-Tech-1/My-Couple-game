@@ -6,6 +6,8 @@ import { useStore } from "zustand";
 import { Button } from "@/design/Button";
 import { Modal } from "@/design/Modal";
 import { Icon } from "@/design/icons";
+import { GameBackdrop } from "./GameBackdrop";
+import { cn } from "@/lib/cn";
 import { toast } from "@/design/toast";
 import { gameMeta, CATEGORIES } from "@/games/catalog";
 import { gameComponent } from "@/games/registry";
@@ -257,8 +259,10 @@ export function GameHost({ initial, rules }: { initial: SessionSnapshot; rules?:
   const cat = CATEGORIES[meta.category];
 
   return (
-    <div className={session.status === "active" ? "pt-6" : "pb-56 pt-6"}>
-      <div className="mb-8 flex items-center justify-between gap-4">
+    <div className={cn("isolate", session.status === "active" ? "pt-4 sm:pt-6" : "pb-56 pt-4 sm:pt-6")}>
+      {/* Each game sits on its own adire pattern (After Dark keeps its own dark room). */}
+      {meta.category !== "spicy" ? <GameBackdrop gameId={session.game_id} category={meta.category} /> : null}
+      <div className={cn("mb-5 flex items-center justify-between gap-3 sm:mb-8", meta.category !== "spicy" && "glass rounded-[22px] px-3 py-2.5")}>
         <Link prefetch={false} href={`/room/${session.room_id}`} className="inline-flex items-center gap-1.5 text-[0.9rem] font-semibold text-muted hover:text-fg">
           <Icon name="arrowLeft" size={16} /> Room
         </Link>
@@ -291,7 +295,7 @@ export function GameHost({ initial, rules }: { initial: SessionSnapshot; rules?:
           This session will end after this card.
         </p>
       ) : null}
-      <div className="@container">
+      <div className={cn("@container", meta.category !== "spicy" && "glass rounded-[28px] px-3 py-5 sm:px-6 sm:py-8")}>
       <Component view={view} me={me} partner={partner} names={names} sendMove={sendMove} pending={pending} broadcast={broadcast} sound={sound} clock={clock} />
       </div>
 

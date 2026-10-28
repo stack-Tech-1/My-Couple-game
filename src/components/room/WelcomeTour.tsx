@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/design/Button";
-import { Spotlight } from "@/design/Spotlight";
+import { findTourTarget, Spotlight } from "@/design/Spotlight";
 import { finishTour } from "@/lib/room/actions";
 import { useRoom } from "@/lib/realtime/RoomProvider";
 
@@ -71,7 +71,7 @@ export function WelcomeTour() {
   }, [state, replay, router]);
 
   useEffect(() => {
-    if (phase === "touring" && !live) setLive(steps.filter((s) => document.querySelector(`[data-tour="${s.target}"]`)));
+    if (phase === "touring" && !live) setLive(steps.filter((s) => findTourTarget(s.target)));
   }, [phase, live, steps]);
 
   // Nothing to point at: close.

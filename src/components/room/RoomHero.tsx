@@ -33,9 +33,12 @@ export function RoomHero({ mine, theirs, stats }: { mine: number; theirs: number
   const level = stats ? levelOf(xpOf(stats)) : null;
 
   return (
-    <section aria-labelledby="room-hero" className="relative -mx-4 overflow-hidden px-5 pb-7 pt-6 text-[#f6efe6] sm:mx-0 sm:rounded-[28px] sm:px-8 sm:pb-9 sm:pt-8">
-      <AdireFill motif="agbole" bg={INDIGO_LOOK.bg} ink={INDIGO_LOOK.ink} />
-      <div aria-hidden className="pointer-events-none absolute inset-0" style={{ background: `linear-gradient(180deg, rgba(24,32,63,0), rgba(24,32,63,.55))` }} />
+    <section aria-labelledby="room-hero" className="glass-dark relative mt-4 overflow-hidden rounded-[30px] px-5 pb-6 pt-5 text-[#f6efe6] sm:mt-0 sm:rounded-[28px] sm:border-0 sm:px-8 sm:pb-9 sm:pt-8">
+      {/* Larger screens print the pattern on the card itself; phones see it behind the page instead. */}
+      <div aria-hidden className="absolute inset-0 hidden sm:block">
+        <AdireFill motif="agbole" bg={INDIGO_LOOK.bg} ink={INDIGO_LOOK.ink} />
+        <div className="absolute inset-0" style={{ background: `linear-gradient(180deg, rgba(24,32,63,0), rgba(24,32,63,.55))` }} />
+      </div>
       <div className="relative">
         <h1 id="room-hero" className="text-[1rem] font-semibold opacity-85" style={{ opacity: part ? 0.85 : 0, transition: "opacity 300ms" }}>
           {GREETING[part ?? "evening"]}, {me.profile.display_name}.
@@ -43,10 +46,14 @@ export function RoomHero({ mine, theirs, stats }: { mine: number; theirs: number
 
         <div className="mt-5 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
           <Person name={me.profile.display_name} motif={me.profile.avatar_key} hue={me.profile.avatar_hue} lead={mine > theirs} />
-          <p className="display tabular whitespace-nowrap text-center leading-none" aria-label={partner ? `${mine} to ${theirs}` : `${mine} wins`}>
-            <span className="text-[clamp(3.6rem,15vw,6.5rem)]">{mine}</span>
-            <span className="mx-2 text-[clamp(1.3rem,5vw,2rem)] opacity-60">to</span>
-            <span className="text-[clamp(3.6rem,15vw,6.5rem)]">{partner ? theirs : "?"}</span>
+          <p className="display tabular whitespace-nowrap text-center leading-none">
+            <span className="text-[clamp(3.6rem,15vw,6.5rem)]" aria-label={`${me.profile.display_name}: ${mine} wins`}>{mine}</span>
+            <span aria-hidden className="mx-2 text-[clamp(1.3rem,5vw,2rem)] opacity-60">to</span>
+            {partner ? (
+              <span className="text-[clamp(3.6rem,15vw,6.5rem)]" aria-label={`${partner.profile.display_name}: ${theirs} wins`}>{theirs}</span>
+            ) : (
+              <span aria-hidden className="text-[clamp(3.6rem,15vw,6.5rem)]">?</span>
+            )}
           </p>
           {partner ? (
             <Person name={partner.profile.display_name} motif={partner.profile.avatar_key} hue={partner.profile.avatar_hue} lead={theirs > mine} />

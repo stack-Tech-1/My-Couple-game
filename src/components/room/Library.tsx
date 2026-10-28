@@ -3,15 +3,15 @@
 import Link from "next/link";
 import { Icon } from "@/design/icons";
 import { useRoom } from "@/lib/realtime/RoomProvider";
-import { CATEGORIES, CATEGORY_ORDER, gamesIn, isFriendGame, type GameMeta } from "@/games/catalog";
-import { GameArt } from "@/games/GameArt";
+import { CATEGORIES, CATEGORY_ORDER, gamesIn, isFriendGame } from "@/games/catalog";
 import { cn } from "@/lib/cn";
 import { afterDarkOpen } from "@/lib/room/afterDark";
 import { useGameFlags } from "@/lib/games/FlagsProvider";
 import { AdireFill } from "@/design/adire";
-import { CATEGORY_LOOKS, lookFor, type Look } from "@/games/look";
+import { CATEGORY_LOOKS } from "@/games/look";
+import { GameCard } from "./GameCard";
 
-export function Library() {
+export function Library({ heading = true }: { heading?: boolean }) {
   const { bundle } = useRoom();
   const spicyOpen = afterDarkOpen(bundle);
   const { isOff, isNew } = useGameFlags();
@@ -19,7 +19,7 @@ export function Library() {
 
   return (
     <section aria-labelledby="library-h">
-      <h2 id="library-h" data-tour="library" className="eyebrow border-t-[1.5px] border-line-strong pt-5 text-muted">The library</h2>
+      <h2 id="library-h" data-tour="library" className={heading ? "eyebrow border-t-[1.5px] border-line-strong pt-5 text-muted" : "sr-only"}>The library</h2>
       <div className="mt-6 space-y-14">
         {CATEGORY_ORDER.map((c) => {
           const cat = CATEGORIES[c];
@@ -30,12 +30,12 @@ export function Library() {
           if (!games.length && c !== "spicy") return null;
           if (c === "spicy") return <AfterDarkEntry key={c} roomId={bundle.room.id} open={spicyOpen} />;
           return (
-            <div key={c}>
+            <div key={c} id={`shelf-${c}`} className="scroll-mt-24">
               <CategoryBanner category={c} label={cat.label} count={games.length} blurb={friendsRoom && c === "competitive" ? "Loser buys the next round of suya." : cat.blurb} />
               <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {games.map((g, i) => (
                   <li key={g.id} className={cn(i === 0 && "col-span-2 sm:col-span-1 sm:row-span-2")}>
-                    <Tile game={g} roomId={bundle.room.id} look={lookFor(g.id, g.category)} large={i === 0} fresh={isNew(g.id)} />
+                    <GameCard game={g} roomId={bundle.room.id} size={i === 0 ? "large" : "normal"} fresh={isNew(g.id)} />
                   </li>
                 ))}
               </ul>
@@ -64,26 +64,13 @@ function CategoryBanner({ category, label, count, blurb }: { category: keyof typ
   );
 }
 
-function Tile({ game, roomId, look, large, fresh }: { game: GameMeta; roomId: string; look: Look; large: boolean; fresh: boolean }) {
-  return (
-    <Link prefetch={false}
-      href={`/room/${roomId}/games/${game.id}`}
-      className="group relative flex h-full flex-col overflow-hidden rounded-[18px] border border-line bg-raised transition-[border-color,transform] duration-200 hover:-translate-y-0.5 hover:border-line-strong"
-    >
-      {/* The game's panel: its colour and motif, with the drawing inked on top. Always light, so it reads the same at night. */}
-      <div className={cn("relative flex items-center justify-center", large ? "py-8" : "py-4")} style={{ color: "#1c1416", ["--bg-raised" as string]: "#fbf7f1" }}>
-        <AdireFill motif={look.motif} bg={look.bg} ink={look.ink} />
-        <GameArt id={game.id} accent={look.accent} className={cn("relative w-auto transition-transform duration-300 group-hover:scale-[1.05]", large ? "h-32" : "h-20")} />
-        {fresh ? <span className="absolute right-2.5 top-2.5 rounded-full bg-[#1c1416] px-2 py-0.5 text-[0.68rem] font-bold text-[#fbf7f1]">New</span> : null}
-      </div>
-      <div className="mt-auto px-3.5 pb-3.5 pt-3">
-        <p className={cn("font-bold leading-tight", large && "display text-[1.6rem] font-normal")}>{game.name}</p>
-        {large ? <p className="mt-1 text-[0.88rem] text-muted">{game.tagline}</p> : null}
-        <p className="mt-1 flex items-center gap-1 text-[0.78rem] text-muted"><Icon name="clock" size={12} /> {game.estimatedMinutes} min</p>
-      </div>
-    </Link>
-  );
+/** The After Dark door: one panel, never a list of its games. Couple rooms only. */
+export function AfterDarkPanel() {
+  const { bundle } = useRoom();
+  if (bundle.room.kind === "friends") return null;
+  return <AfterDarkEntry roomId={bundle.room.id} open={afterDarkOpen(bundle)} />;
 }
+
 function AfterDarkEntry({ roomId, open }: { roomId: string; open: boolean }) {
   return (
     <div className="relative overflow-hidden rounded-[22px] bg-[#120c0e] p-7 text-[#f4e4da]">

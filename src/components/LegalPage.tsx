@@ -2,20 +2,24 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { Logo } from "@/design/Logo";
 import { ThemeToggle } from "./ThemeToggle";
+import { PageBackdrop } from "./room/HomeBackdrop";
+import { PAGE_LOOKS } from "@/games/look";
 
 export function LegalPage({ title, updated, summary, children }: { title: string; updated: string; summary?: ReactNode; children: ReactNode }) {
   return (
-    <div className="relative z-[1] mx-auto max-w-2xl px-4 pb-24 pt-6 sm:px-8">
-      <div className="flex items-center justify-between">
+    <div className="relative isolate z-[1] mx-auto max-w-2xl px-4 pb-24 pt-6 sm:px-8">
+      {/* Phones: wine with the digi mirror (reflect before you agree). */}
+      <PageBackdrop motif={PAGE_LOOKS.legal.motif} bg={PAGE_LOOKS.legal.bg} ink={PAGE_LOOKS.legal.ink} glow={PAGE_LOOKS.legal.glow} height={480} />
+      <div className="flex items-center justify-between max-sm:text-[#f6efe6]">
         <Link prefetch={false} href="/" className="inline-block rounded-md">
           <Logo />
         </Link>
         <ThemeToggle />
       </div>
-      <h1 className="display mt-16 text-[clamp(2.6rem,7vw,4rem)]">{title}</h1>
-      <p className="mt-3 text-[0.9rem] text-muted">Last updated {updated}</p>
+      <h1 className="display mt-16 text-[clamp(2.6rem,7vw,4rem)] max-sm:mt-12 max-sm:text-[#f6efe6]">{title}</h1>
+      <p className="mt-3 text-[0.9rem] text-muted max-sm:text-[#f6efe6]/80">Last updated {updated}</p>
       {summary ? (
-        <aside aria-label="In short" className="mt-8 rounded-[18px] border-[1.5px] border-line-strong bg-raised p-5 [&_li]:mt-1.5 [&_ul]:list-disc [&_ul]:pl-5">
+        <aside aria-label="In short" className="glass mt-8 rounded-[22px] p-5 [&_li]:mt-1.5 [&_ul]:list-disc [&_ul]:pl-5">
           <p className="eyebrow text-muted">In short</p>
           <div className="mt-3 text-[0.95rem] leading-relaxed">{summary}</div>
         </aside>

@@ -85,20 +85,21 @@ export function ChessBoard({ view, me, names, sendMove, pending, sound }: GamePr
         <Side name={partnerName} color={theirColor} active={!view.winner && !myTurn} took={view.captured[view.myColor]} lost={view.captured[theirColor]} />
       </div>
 
+      <div className="relative w-full">
       <div
         role="grid"
         aria-label={`Chess board, you play ${view.myColor === "w" ? "white" : "black"}. ${status}`}
         data-tour="chess-board"
         className="grid w-full grid-cols-8 overflow-hidden rounded-[14px] border-[2px] border-[#2a0b14] shadow-[0_20px_40px_-28px_rgba(28,20,22,.8)]"
       >
-        {order.map((i) => {
+        {Array.from({ length: 8 }, (_, r) => (
+          <div key={r} role="row" className="contents">
+        {order.slice(r * 8, r * 8 + 8).map((i) => {
           const sq = squareAt(i);
           const piece = view.board[i];
           const dark = (Math.floor(i / 8) + (i % 8)) % 2 === 1;
           const isTarget = targets.has(sq);
           const isLast = view.last && (view.last.from === sq || view.last.to === sq);
-          const row = flip ? 7 - Math.floor(i / 8) : Math.floor(i / 8);
-          const col = flip ? 7 - (i % 8) : i % 8;
           return (
             <button
               key={sq}
@@ -112,8 +113,7 @@ export function ChessBoard({ view, me, names, sendMove, pending, sound }: GamePr
               {isLast ? <span aria-hidden className="absolute inset-0 bg-[rgba(232,86,58,.28)]" /> : null}
               {selected === sq ? <span aria-hidden className="absolute inset-0 bg-[rgba(232,86,58,.5)]" /> : null}
               {view.check === sq ? <span aria-hidden className="absolute inset-0 bg-[radial-gradient(circle,rgba(220,38,38,.85)_0%,rgba(220,38,38,.35)_55%,transparent_75%)]" /> : null}
-              {col === 0 ? <span aria-hidden className={cn("absolute left-[4%] top-[2%] text-[0.62rem] font-bold", dark ? "text-[#f1e2cc]" : "text-[#a8705a]")}>{sq[1]}</span> : null}
-              {row === 7 ? <span aria-hidden className={cn("absolute bottom-[1%] right-[5%] text-[0.62rem] font-bold", dark ? "text-[#f1e2cc]" : "text-[#a8705a]")}>{sq[0]}</span> : null}
+
               {piece ? <PieceGlyph piece={piece} /> : null}
               {isTarget ? (
                 piece ? (
@@ -125,6 +125,24 @@ export function ChessBoard({ view, me, names, sendMove, pending, sound }: GamePr
             </button>
           );
         })}
+          </div>
+        ))}
+      </div>
+      {/* Rank and file letters sit on their own layer, so a square's name stays just its name. */}
+      <div aria-hidden className="pointer-events-none absolute inset-[2px] grid grid-cols-8">
+        {order.map((i) => {
+          const sq = squareAt(i);
+          const dark = (Math.floor(i / 8) + (i % 8)) % 2 === 1;
+          const row = flip ? 7 - Math.floor(i / 8) : Math.floor(i / 8);
+          const col = flip ? 7 - (i % 8) : i % 8;
+          return (
+            <span key={sq} className="relative aspect-square">
+              {col === 0 ? <span className={cn("absolute left-[4%] top-[2%] text-[0.62rem] font-bold", dark ? "text-[#f1e2cc]" : "text-[#a8705a]")}>{sq[1]}</span> : null}
+              {row === 7 ? <span className={cn("absolute bottom-[1%] right-[5%] text-[0.62rem] font-bold", dark ? "text-[#f1e2cc]" : "text-[#a8705a]")}>{sq[0]}</span> : null}
+            </span>
+          );
+        })}
+      </div>
       </div>
 
       <div data-tour="chess-players" className="mt-2 w-full">

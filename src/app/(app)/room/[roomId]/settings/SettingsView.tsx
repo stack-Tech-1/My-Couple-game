@@ -28,6 +28,8 @@ import type { PushPrefs } from "@/lib/push/types";
 import type { FeedbackThread } from "@/lib/feedback/types";
 import { afterDarkOpen } from "@/lib/room/afterDark";
 import { setOptIn } from "@/lib/afterdark/actions";
+import { PageBackdrop } from "@/components/room/HomeBackdrop";
+import { PAGE_LOOKS } from "@/games/look";
 
 export function SettingsView({ announcementEmails, feedback, push }: { announcementEmails: boolean; feedback: { threads: FeedbackThread[]; unread: number }; push: { publicKey: string | null; prefs: PushPrefs; quiet: Quiet } }) {
   const { bundle } = useRoom();
@@ -84,11 +86,13 @@ export function SettingsView({ announcementEmails, feedback, push }: { announcem
   }
 
   return (
-    <div className="mx-auto max-w-2xl pt-8">
-      <Link prefetch={false} href={`/room/${room.id}`} className="inline-flex items-center gap-1.5 text-[0.9rem] font-semibold text-muted hover:text-fg">
+    <div className="relative isolate mx-auto max-w-2xl pt-8">
+      {/* Phones: brass-brown with ogbo squares (long life). */}
+      <PageBackdrop motif={PAGE_LOOKS.settings.motif} bg={PAGE_LOOKS.settings.bg} ink={PAGE_LOOKS.settings.ink} glow={PAGE_LOOKS.settings.glow} height={520} />
+      <Link prefetch={false} href={`/room/${room.id}`} className="inline-flex items-center gap-1.5 text-[0.9rem] font-semibold text-muted hover:text-fg max-sm:text-[#f6efe6]/85">
         <Icon name="arrowLeft" size={16} /> Room
       </Link>
-      <h1 className="display mt-6 text-[clamp(2.6rem,8vw,3.8rem)]">Settings</h1>
+      <h1 className="display mt-6 text-[clamp(2.6rem,8vw,3.8rem)] max-sm:text-[#f6efe6]">Settings</h1>
 
       <Section title="The room">
         {friendsRoom && !isOwner ? (
@@ -298,7 +302,7 @@ export function SettingsView({ announcementEmails, feedback, push }: { announcem
 
 function Section({ title, id, children }: { title: string; id?: string; children: React.ReactNode }) {
   return (
-    <section id={id} aria-labelledby={`${id ?? title}-h`} className="mt-12 scroll-mt-24 border-t-[1.5px] border-line-strong pt-5">
+    <section id={id} aria-labelledby={`${id ?? title}-h`} className="mt-12 scroll-mt-24 border-t-[1.5px] border-line-strong pt-5 max-sm:glass max-sm:mt-4 max-sm:rounded-[24px] max-sm:p-5 max-sm:first-of-type:mt-8">
       <h2 id={`${id ?? title}-h`} className="eyebrow mb-5 text-muted">{title}</h2>
       {children}
     </section>

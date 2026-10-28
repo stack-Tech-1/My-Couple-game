@@ -29,8 +29,8 @@ export function RoomPreview() {
 
   return (
     <div aria-hidden className="relative mx-auto w-full max-w-[380px] select-none">
-      <div className="absolute inset-0 translate-x-3 translate-y-3 rotate-[2.5deg] rounded-[26px] border border-line bg-sunk" />
-      <div className="relative overflow-hidden rounded-[26px] border-[1.5px] border-line-strong bg-bg">
+      <div className="absolute inset-0 translate-x-3 translate-y-3 rotate-[2.5deg] rounded-[26px] border border-line bg-sunk max-md:hidden" />
+      <div className="relative overflow-hidden rounded-[26px] border-[1.5px] border-line-strong bg-bg max-md:bg-[color-mix(in_srgb,var(--bg)_88%,transparent)] max-md:text-fg max-md:backdrop-blur-xl">
         <div className="flex items-center justify-between border-b border-line px-5 py-4">
           <div>
             <p className="eyebrow text-muted">Room</p>

@@ -38,7 +38,8 @@ test("your Amah: wins, win rate, streak, favourites and head to head, with pet n
     // Reachable from Settings.
     await page.goto(`/room/${roomId}/settings`);
     await page.getByRole("link", { name: "See your stats" }).click();
-    await expect(page.getByRole("heading", { name: "Your Amah" })).toBeVisible();
+    // A couple's version of the page is the Us tab: their shared level on top, then your record.
+    await expect(page.getByRole("heading", { level: 1, name: "Us", exact: true })).toBeVisible();
   } finally {
     await cleanup([a.id, b.id]);
     await ctx.close();

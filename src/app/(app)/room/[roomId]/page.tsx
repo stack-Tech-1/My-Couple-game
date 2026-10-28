@@ -8,6 +8,8 @@ import { PlayNext } from "@/components/room/PlayNext";
 import { Moments } from "@/components/room/Moments";
 import { Library } from "@/components/room/Library";
 import { RoomHero } from "@/components/room/RoomHero";
+import { HomeBackdrop } from "@/components/room/HomeBackdrop";
+import { GamesPeek } from "@/components/room/GamesPeek";
 import { Birthdays } from "@/components/room/Birthdays";
 import { InstallPrompt } from "@/components/room/InstallPrompt";
 import { NotifyPrompt } from "@/components/room/NotifyPrompt";
@@ -45,7 +47,8 @@ export default async function RoomHome({ params }: { params: Promise<{ roomId: s
   const paired = !!bundle.partner;
 
   return (
-    <div className="pt-0 sm:pt-8">
+    <div className="relative isolate pt-0 sm:pt-8">
+      <HomeBackdrop />
       <RoomHero mine={mine} theirs={theirs} stats={progress} />
       <Birthdays />
       <InstallPrompt />
@@ -73,7 +76,11 @@ export default async function RoomHome({ params }: { params: Promise<{ roomId: s
 
       <div className="mt-14 grid gap-x-12 gap-y-14 lg:grid-cols-[1fr_2.2fr]">
         <Moments moments={moments} />
-        <Library />
+        {/* Phones get a peek here; the full shelf lives in the Games tab. */}
+        <GamesPeek />
+        <div className="hidden sm:block">
+          <Library />
+        </div>
       </div>
     </div>
   );

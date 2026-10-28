@@ -40,7 +40,7 @@ test("after dark: consent, PIN, heat cap, discretion, skip, opt-out and quick ex
   try {
     await pa.goto(await signInPath(a.email, `/room/${roomId}`));
     await pb.goto(await signInPath(b.email, `/room/${roomId}`));
-    await expect(pa.getByText("After dark is locked.")).toBeVisible();
+    await expect(pa.getByText("After dark is locked.").filter({ visible: true })).toBeVisible();
 
     // Two keys: each confirms and opts in on their own phone. Ada allows Fire, Bo only Warm.
     await consent(pa, roomId, "Fire");
@@ -112,7 +112,7 @@ test("after dark: consent, PIN, heat cap, discretion, skip, opt-out and quick ex
     await pa.getByRole("button", { name: /Quick exit/ }).click();
     await expect(pa).toHaveURL(new RegExp(`/room/${roomId}$`));
     await expect(pa.locator("html")).not.toHaveAttribute("data-theme", "afterdark");
-    await expect(pa.getByText("After dark is locked.")).toBeVisible();
+    await expect(pa.getByText("After dark is locked.").filter({ visible: true })).toBeVisible();
 
     expect(errors).toEqual([]);
   } finally {

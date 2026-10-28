@@ -57,7 +57,8 @@ test("admin: numbers, game switches, announcements and user management", async (
     await expect.poll(async () => ((await admin.from("app_config").select("value").eq("key", "games").single()).data!.value as { off: string[] }).off).toContain("ludo");
     if (SHOTS) await pa.screenshot({ path: `${SHOTS}/admin-games.png`, fullPage: true });
 
-    await pb.goto(await signInPath(b.email, `/room/${roomId}`));
+    // On a phone the whole shelf lives in the Games tab.
+    await pb.goto(await signInPath(b.email, `/room/${roomId}/games`));
     const library = pb.getByRole("region", { name: "The library" });
     await expect(library.getByRole("link", { name: /Word Duel/ })).toContainText("New");
     await expect(library.getByRole("link", { name: /Ludo/ })).toHaveCount(0);

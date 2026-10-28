@@ -66,7 +66,7 @@ export function TogetherCard({ countdowns }: { countdowns: Countdown[] }) {
   }
 
   return (
-    <section aria-labelledby="together-h" className="rounded-[22px] border border-line bg-raised p-5">
+    <section aria-labelledby="together-h" className="rounded-[22px] glass p-5">
       <h2 id="together-h" className="eyebrow text-muted">
         Together
       </h2>
@@ -161,7 +161,7 @@ export function MoodCard({ moods }: { moods: Mood[] }) {
   }
 
   return (
-    <section aria-labelledby="mood-h" className="rounded-[22px] border border-line bg-raised p-5">
+    <section aria-labelledby="mood-h" className="rounded-[22px] glass p-5">
       <h2 id="mood-h" className="eyebrow text-muted">
         How are you today?
       </h2>
@@ -233,7 +233,7 @@ export function ChallengeCard({ challenge }: { challenge: ChallengeState }) {
 
   if (!challenge) {
     return (
-      <section aria-labelledby="challenge-h" className="rounded-[22px] border border-line bg-raised p-5">
+      <section aria-labelledby="challenge-h" className="rounded-[22px] glass p-5">
         <h2 id="challenge-h" className="eyebrow text-muted">
           30-day challenge
         </h2>
@@ -264,7 +264,7 @@ export function ChallengeCard({ challenge }: { challenge: ChallengeState }) {
   const days = all ? pack.days.map((_, i) => i + 1).slice(0, challenge.today).reverse() : [challenge.today];
 
   return (
-    <section aria-labelledby="challenge-h" className="rounded-[22px] border border-line bg-raised p-5">
+    <section aria-labelledby="challenge-h" className="rounded-[22px] glass p-5">
       <div className="flex items-baseline justify-between gap-3">
         <h2 id="challenge-h" className="eyebrow text-muted">
           {pack.name}

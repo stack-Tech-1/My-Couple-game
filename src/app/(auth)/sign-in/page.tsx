@@ -8,6 +8,8 @@ import { safeNext } from "@/lib/safeNext";
 import { getUser } from "@/lib/room/server";
 import { SignInForm } from "./SignInForm";
 import { NotConfigured } from "@/components/NotConfigured";
+import { PatternLayer } from "@/components/landing/PatternLayer";
+import { PAGE_LOOKS } from "@/games/look";
 
 export const metadata: Metadata = { title: "Sign in", robots: { index: false } };
 
@@ -37,26 +39,29 @@ export default async function SignIn({ searchParams }: { searchParams: Promise<R
   const creating = sp.intent === "create";
   const providers = await enabledProviders();
   const joining = next.startsWith("/join/");
+  // Phones: clay-red cowries to sign in; ocean-blue oniko when someone has invited you.
+  const look = joining ? PAGE_LOOKS.join : PAGE_LOOKS.signin;
 
   return (
-    <div className="relative z-[1] mx-auto flex min-h-dvh max-w-6xl flex-col px-4 py-5 sm:px-8">
+    <div className="relative isolate z-[1] mx-auto flex min-h-dvh max-w-6xl flex-col px-4 py-5 sm:px-8 max-md:text-[#f6efe6]">
+      <PatternLayer motif={look.motif} bg={look.bg} ink={look.ink} glow={look.glow} />
       <div className="flex items-center justify-between">
         <Link prefetch={false} href="/" className="rounded-md">
           <Logo />
         </Link>
         <ThemeToggle />
       </div>
-      <div className="grid flex-1 items-center gap-16 py-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+      <div className="grid flex-1 items-center gap-16 py-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] max-md:content-start max-md:gap-8 max-md:py-8">
         <div className="max-w-md">
-          <p className="eyebrow text-accent-ink">{joining ? "You've been invited" : creating ? "New room" : "Welcome back"}</p>
+          <p className="eyebrow text-accent-ink max-md:text-[#ffd65c]">{joining ? "You've been invited" : creating ? "New room" : "Welcome back"}</p>
           <h1 className="display mt-4 text-[clamp(2.8rem,8vw,4.6rem)]">
             {joining ? "Someone saved you a seat." : creating ? "Let's get you a room." : "Pull up a chair."}
           </h1>
-          <p className="mt-5 text-[1.05rem] leading-relaxed text-muted">
+          <p className="mt-5 text-[1.05rem] leading-relaxed text-muted max-md:text-[#f6efe6]/85">
             No passwords. We&apos;ll email you a link{providers.google ? ", or you can use Google" : ""}. Your partner signs in on their own phone.
           </p>
         </div>
-        <div className="w-full max-w-md lg:justify-self-end">
+        <div className="w-full max-w-md text-fg lg:justify-self-end">
           <SignInForm next={next} linkError={sp.error === "link"} google={providers.google} />
         </div>
       </div>

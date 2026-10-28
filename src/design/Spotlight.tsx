@@ -24,7 +24,7 @@ export function Spotlight({ steps, onFinish, eyebrow }: { steps: SpotlightStep[]
   useLayoutEffect(() => {
     setRect(null);
     if (!target) return;
-    const el = document.querySelector<HTMLElement>(`[data-tour="${target}"]`);
+    const el = findTourTarget(target);
     if (!el) return;
     el.scrollIntoView({ block: "center", behavior: "smooth" });
     let raf = 0;
@@ -113,4 +113,9 @@ export function Spotlight({ steps, onFinish, eyebrow }: { steps: SpotlightStep[]
     </div>,
     document.body,
   );
+}
+
+/** The first element marked for this tour stop that's actually on screen (phones and desktop can mark different ones). */
+export function findTourTarget(target: string): HTMLElement | null {
+  return [...document.querySelectorAll<HTMLElement>(`[data-tour="${target}"]`)].find((el) => el.getClientRects().length > 0) ?? null;
 }

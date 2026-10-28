@@ -25,7 +25,7 @@ export function PlayNext() {
   const look = lookFor(game.id, game.category);
 
   return (
-    <section aria-labelledby="playnext" className="relative overflow-hidden rounded-[22px] border-[1.5px] border-line-strong bg-raised">
+    <section aria-labelledby="playnext" className="relative overflow-hidden rounded-[22px] glass">
       <div className="flex items-start justify-between p-6 pb-0">
         <p id="playnext" className="eyebrow" style={{ color: cat.ink }}>Tonight&apos;s pick · {cat.label}</p>
         <span className="flex items-center gap-1 text-[0.8rem] text-muted">

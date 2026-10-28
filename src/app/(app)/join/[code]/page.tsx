@@ -7,6 +7,8 @@ import { peekInvite } from "@/lib/room/actions";
 import { MAX_FRIEND_ROOMS } from "@/lib/room/types";
 import { JoinButton } from "./JoinButton";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { PatternLayer } from "@/components/landing/PatternLayer";
+import { PAGE_LOOKS } from "@/games/look";
 
 export const metadata: Metadata = { title: "You're invited" };
 export const dynamic = "force-dynamic";
@@ -85,12 +87,16 @@ export default async function JoinPage({ params }: { params: Promise<{ code: str
   }
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-xl flex-col px-4 py-5 sm:px-8">
-      <div className="flex items-center justify-between">
+    <div className="relative isolate mx-auto flex min-h-dvh max-w-xl flex-col px-4 py-5 sm:px-8">
+      {/* Phones: ocean blue with oniko rings, and the invite on a sheet of glass. */}
+      <PatternLayer motif={PAGE_LOOKS.join.motif} bg={PAGE_LOOKS.join.bg} ink={PAGE_LOOKS.join.ink} glow={PAGE_LOOKS.join.glow} />
+      <div className="flex items-center justify-between max-md:text-[#f6efe6]">
         <Link prefetch={false} href="/"><Logo /></Link>
         <ThemeToggle />
       </div>
-      <div className="flex flex-1 flex-col justify-center py-12">{body}</div>
+      <div className="flex flex-1 flex-col justify-center py-12">
+        <div className="max-md:glass max-md:rounded-[28px] max-md:p-6">{body}</div>
+      </div>
     </div>
   );
 }

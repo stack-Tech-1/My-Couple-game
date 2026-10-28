@@ -11,6 +11,8 @@ import { GAME_LOGIC } from "@/games/logic";
 import { activeSessions } from "@/lib/games/server";
 import { Rules } from "@/components/game/Rules";
 import { StartGame } from "@/components/game/StartGame";
+import { GameBackdrop } from "@/components/game/GameBackdrop";
+import { lookFor } from "@/games/look";
 import { FeaturePage, FEATURES } from "@/components/romantic/FeaturePage";
 import { AfterDarkShell } from "@/components/afterdark/AfterDarkShell";
 import { FantasyMatch } from "@/components/afterdark/FantasyMatch";
@@ -78,24 +80,28 @@ export default async function GamePage({ params }: { params: Promise<{ roomId: s
   const me = bundle.me.profile.id;
   const active = logic ? (await activeSessions(roomId)).find((s) => s.game_id === game.id && s.players.includes(me)) : undefined;
 
+  const look = lookFor(game.id, game.category);
+
   return (
-    <div className="pt-8">
-      <Link prefetch={false} href={`/room/${roomId}`} className="inline-flex items-center gap-1.5 text-[0.9rem] font-semibold text-muted hover:text-fg">
-        <Icon name="arrowLeft" size={16} /> Library
+    <div className="relative isolate pt-6 sm:pt-8">
+      {/* The same pattern the game is played on. */}
+      <GameBackdrop gameId={game.id} category={game.category} />
+      <Link prefetch={false} href={`/room/${roomId}/games`} className="glass inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[0.9rem] font-semibold">
+        <Icon name="arrowLeft" size={16} /> Games
       </Link>
-      <div className="mt-8 grid items-center gap-10 md:grid-cols-[1fr_1fr]">
-        <div>
+      <div className="mt-6 grid items-center gap-6 md:mt-8 md:grid-cols-[1fr_1fr] md:gap-10">
+        <div className="glass order-2 rounded-[28px] p-5 sm:p-8 md:order-1">
           <p className="eyebrow" style={{ color: cat.ink }}>{cat.label}</p>
           <h1 className="display mt-3 text-[clamp(2.8rem,9vw,5rem)]">{game.name}</h1>
           <p className="mt-4 text-[1.1rem] text-muted">{game.tagline}</p>
           {logic ? <StartGame gameId={game.id} activeSessionId={active?.id ?? null} /> : null}
         </div>
-        <div className="text-fg">
-          <GameArt id={game.id} accent={cat.color} className="mx-auto h-auto w-full max-w-sm" />
+        <div className="order-1 md:order-2" style={{ color: "#1c1416", ["--bg-raised" as string]: "#fbf7f1" }}>
+          <GameArt id={game.id} accent={look.accent} className="mx-auto h-auto w-full max-w-[16rem] drop-shadow-[0_18px_24px_rgba(28,20,22,.25)] md:max-w-sm" />
         </div>
       </div>
       {logic ? (
-        <section aria-labelledby="rules-h" className="mt-16 max-w-3xl border-t-[1.5px] border-line-strong pt-5">
+        <section aria-labelledby="rules-h" className="glass mt-6 max-w-3xl rounded-[28px] p-5 sm:mt-12 sm:p-8">
           <h2 id="rules-h" className="eyebrow mb-6 text-muted">How to play</h2>
           <Rules rules={logic.rules} />
         </section>

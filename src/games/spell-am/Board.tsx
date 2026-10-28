@@ -10,7 +10,7 @@ import { analyse, BONUS, LETTER_VALUES, LIVE_MS, QUICK_ROUNDS, RACK, SIZE, type 
 type Pending = { cell: number; letter: string; blank: boolean; rackIdx: number };
 
 const BONUS_STYLE: Record<Exclude<Bonus, null>, { label: string; bg: string; fg: string; name: string }> = {
-  tw: { label: "3W", bg: "#c8553d", fg: "#fff", name: "triple word" },
+  tw: { label: "3W", bg: "#a63e28", fg: "#fff", name: "triple word" },
   dw: { label: "2W", bg: "#eba596", fg: "#5b1a2b", name: "double word" },
   tl: { label: "3L", bg: "#3f6f8f", fg: "#fff", name: "triple letter" },
   dl: { label: "2L", bg: "#b5d2e3", fg: "#1f3d52", name: "double letter" },
@@ -129,7 +129,10 @@ export function SpellAmBoard({ view, me, names, sendMove, pending, sound, clock 
         className="grid w-full gap-[2px] rounded-[12px] bg-[#5b1a2b] p-[3px]"
         style={{ gridTemplateColumns: `repeat(${SIZE}, minmax(0, 1fr))` }}
       >
-        {view.board.map((tile, cell) => {
+        {Array.from({ length: SIZE }, (_, r) => (
+          <div key={r} role="row" className="contents">
+        {view.board.slice(r * SIZE, r * SIZE + SIZE).map((tile, j) => {
+          const cell = r * SIZE + j;
           const mine = pendingAt.get(cell);
           const bonus = BONUS[cell] ?? null;
           const letter = tile?.l ?? mine?.letter;
@@ -140,7 +143,7 @@ export function SpellAmBoard({ view, me, names, sendMove, pending, sound, clock 
               type="button"
               role="gridcell"
               onClick={() => tapCell(cell)}
-              aria-label={`Row ${Math.floor(cell / SIZE) + 1}, column ${(cell % SIZE) + 1}${letter ? `, ${letter.toUpperCase()}${mine ? ", yours to move" : ""}` : bonus ? `, ${BONUS_STYLE[bonus].name}` : ""}`}
+              aria-label={squareLabel(cell, letter, !!blank, !!mine, bonus)}
               className={cn("relative aspect-square select-none rounded-[3px]", !letter && "bg-[#f5ead9]")}
               style={!letter && bonus ? { background: BONUS_STYLE[bonus].bg, color: BONUS_STYLE[bonus].fg } : undefined}
             >
@@ -154,6 +157,8 @@ export function SpellAmBoard({ view, me, names, sendMove, pending, sound, clock 
             </button>
           );
         })}
+          </div>
+        ))}
       </div>
 
       <div className="mt-2 min-h-6 text-center text-[0.85rem]" aria-live="polite">
@@ -210,7 +215,7 @@ export function SpellAmBoard({ view, me, names, sendMove, pending, sound, clock 
               onClick={() => tapRack(i)}
               disabled={!myTurn || gone}
               aria-pressed={picked}
-              aria-label={`${l === "?" ? "Blank tile" : `${l.toUpperCase()}, ${LETTER_VALUES[l]} points`}${gone ? ", on the board" : ""}`}
+              aria-label={`${l === "?" ? "Blank tile" : `${l.toUpperCase()} ${LETTER_VALUES[l]}, ${LETTER_VALUES[l] === 1 ? "1 point" : `${LETTER_VALUES[l]} points`}`}${gone ? ", on the board" : ""}`}
               className={cn("relative aspect-square w-[min(12.5vw,3.4rem)] rounded-[8px] transition-transform", gone && "opacity-25", picked && "-translate-y-2")}
             >
               <TileFace letter={l === "?" ? "" : l} blank={l === "?"} tone={picked ? "picked" : "set"} big />
@@ -290,6 +295,14 @@ export function SpellAmBoard({ view, me, names, sendMove, pending, sound, clock 
   );
 }
 
+/** A square's spoken name starts with what's printed on it ("W 4", "2L"), then where it is. */
+function squareLabel(cell: number, letter: string | undefined, blank: boolean, mine: boolean, bonus: Bonus): string {
+  const where = `row ${Math.floor(cell / SIZE) + 1}, column ${(cell % SIZE) + 1}`;
+  if (letter) return `${letter.toUpperCase()}${blank ? ", blank" : ` ${LETTER_VALUES[letter]}`}, ${where}${mine ? ", yours to move" : ""}`;
+  if (bonus) return `${BONUS_STYLE[bonus].label}, ${BONUS_STYLE[bonus].name}, ${where}`;
+  return `R${where.slice(1)}`;
+}
+
 function describe(e: LogEntry): string {
   switch (e.kind) {
     case "play": {
@@ -323,6 +336,8 @@ function TileFace({ letter, blank, tone, big }: { letter: string; blank: boolean
       style={{ background: bg, boxShadow: "inset 0 -2px 0 rgba(28,20,22,.15)" }}
     >
       <span className={cn(big ? "text-[clamp(1rem,5vw,1.5rem)]" : "text-[clamp(0.6rem,3vw,1rem)]", blank && "text-[#8a6f66]")}>{letter}</span>
+      {/* A real space, so the tile reads as "E 1", matching its spoken name. */}
+      {" "}
       {!blank && letter ? (
         <span className={cn("absolute bottom-[4%] right-[8%] font-semibold leading-none", big ? "text-[0.6rem]" : "text-[clamp(0.32rem,1.4vw,0.5rem)]")}>{LETTER_VALUES[letter]}</span>
       ) : null}

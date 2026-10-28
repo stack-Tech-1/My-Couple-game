@@ -14,6 +14,7 @@ import { TermsGate } from "@/components/room/TermsGate";
 import { TERMS_VERSION } from "@/lib/legal";
 import { unreadReplies } from "@/lib/feedback/server";
 import { Heartbeat } from "@/components/room/Heartbeat";
+import { TabBar } from "@/components/room/TabBar";
 
 export const dynamic = "force-dynamic";
 
@@ -51,7 +52,8 @@ export default async function RoomLayout({ children, params }: { children: React
         <AnnouncementBar items={announcements} />
         <InviteListener />
         <Heartbeat userId={bundle.me.profile.id} />
-        <main className="mx-auto max-w-6xl px-4 pb-24 sm:px-8">{children}</main>
+        <main className="mx-auto max-w-6xl px-4 pb-32 sm:px-8 sm:pb-24">{children}</main>
+        <TabBar />
         {terms !== "ok" ? <TermsGate firstTime={terms === "first"} /> : null}
       </GameFlagsProvider>
     </RoomProvider>

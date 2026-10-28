@@ -8,6 +8,7 @@ import { Icon } from "@/design/icons";
 import { useRoom } from "@/lib/realtime/RoomProvider";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import type { SessionSnapshot } from "@/lib/games/types";
+import { GameBackdrop } from "./GameBackdrop";
 
 /**
  * Watching a live friend-room game. The board is the game's own, inert (no taps, no focus), fed with
@@ -70,8 +71,10 @@ export function Spectator({ initial }: { initial: SessionSnapshot }) {
   const playing = session.players.map((p) => names[p] ?? "Someone");
 
   return (
-    <div className="pb-24 pt-6">
-      <div className="mb-6 flex items-center justify-between gap-4">
+    <div className="isolate pb-24 pt-4 sm:pt-6">
+      {/* Watching sits on the same pattern as playing. */}
+      <GameBackdrop gameId={session.game_id} category={meta.category} />
+      <div className="glass mb-4 flex items-center justify-between gap-4 rounded-[22px] px-3 py-2.5 sm:mb-6">
         <Link prefetch={false} href={`/room/${session.room_id}`} className="inline-flex items-center gap-1.5 text-[0.9rem] font-semibold text-muted hover:text-fg">
           <Icon name="arrowLeft" size={16} /> Room
         </Link>
@@ -81,7 +84,7 @@ export function Spectator({ initial }: { initial: SessionSnapshot }) {
         </div>
         <span className="w-[72px]" />
       </div>
-      <p className="mb-6 rounded-[14px] border border-line bg-sunk px-4 py-3 text-center text-[0.9rem]" role="status">
+      <p className="glass mb-4 rounded-[18px] px-4 py-3 text-center text-[0.9rem] sm:mb-6" role="status">
         {live ? (
           <>
             <span className="mr-2 inline-block h-2 w-2 animate-pulse rounded-full bg-accent align-middle" aria-hidden />
@@ -91,7 +94,7 @@ export function Spectator({ initial }: { initial: SessionSnapshot }) {
           <>That game is over. {session.winner ? `${names[session.winner] ?? "Someone"} won.` : ""}</>
         )}
       </p>
-      <div inert className="@container pointer-events-none select-none">
+      <div inert className="@container glass pointer-events-none select-none rounded-[28px] px-3 py-5 sm:px-6 sm:py-8">
         <Component view={snap.view} me={me} partner={session.players[0]!} names={names} sendMove={noop} pending={false} broadcast={broadcast} sound={silent} clock={clock} />
       </div>
     </div>

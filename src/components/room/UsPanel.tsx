@@ -42,7 +42,7 @@ export function UsPanel({ roomId, stats }: { roomId: string; stats: Stats }) {
   const shown = all ? badges : [...earned, ...next];
 
   return (
-    <section aria-labelledby="us-h" className="rounded-[22px] border-[1.5px] border-line-strong bg-raised p-5">
+    <section aria-labelledby="us-h" className="rounded-[22px] glass p-5">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h2 id="us-h" className="eyebrow text-muted">

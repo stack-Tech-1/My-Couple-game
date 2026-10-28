@@ -231,6 +231,10 @@ function ChatInner() {
   // Blocked people's messages are never shown (or counted).
   const visible = useMemo(() => (blocked.length ? messages.filter((m) => !blocked.includes(m.sender_id)) : messages), [messages, blocked]);
   const unread = countUnread(visible, me, myReadAt);
+  // The phone tab bar shows the same count on its Chat tab.
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent("amah:chat-unread", { detail: unread }));
+  }, [unread]);
   const newestFromPartner = visible.findLast((m) => m.sender_id !== me)?.created_at ?? null;
 
   useEffect(() => {

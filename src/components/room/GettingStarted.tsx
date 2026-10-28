@@ -36,7 +36,7 @@ export function GettingStarted({ roomId, items }: { roomId: string; items: Start
   };
 
   return (
-    <section aria-labelledby="start-h" className="mt-8 rounded-[20px] border-[1.5px] border-line bg-raised p-5">
+    <section aria-labelledby="start-h" className="mt-8 rounded-[20px] glass p-5">
       <div className="flex items-baseline justify-between gap-3">
         <h2 id="start-h" className="font-semibold">Getting started</h2>
         <span className="tabular text-[0.85rem] text-muted">

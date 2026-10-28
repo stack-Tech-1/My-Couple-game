@@ -36,7 +36,7 @@ export function DailyQuestion({ daily, full = false }: { daily: DailyState; full
   const both = !!daily.mine && !!daily.theirs;
 
   return (
-    <section aria-labelledby="daily-h" className={cn("rounded-[22px] border-[1.5px] border-line-strong bg-raised p-6", full && "sm:p-8")}>
+    <section aria-labelledby="daily-h" className={cn("rounded-[22px] glass p-6", full && "sm:p-8")}>
       <div className="flex items-center justify-between gap-3">
         <p id="daily-h" className="eyebrow" style={{ color: "var(--cat-personal-ink)" }}>
           Today&apos;s question

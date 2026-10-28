@@ -89,7 +89,7 @@ export function NaijaLandlordBoard({ view, me, names, sendMove, pending, sound, 
 
       <div
         data-tour="nl-board"
-        role="grid"
+        role="group"
         aria-label={`Naija Landlord board. ${status}`}
         className="relative grid w-full grid-cols-6 grid-rows-6 gap-[3px] rounded-[16px] border-[2px] border-[#2a0b14] bg-[#2a0b14] p-[3px]"
       >
@@ -101,7 +101,7 @@ export function NaijaLandlordBoard({ view, me, names, sendMove, pending, sound, 
           return (
             <div
               key={i}
-              role="gridcell"
+              role="img"
               aria-label={spaceLabel(sp, i, view, name)}
               style={{ gridRow: row + 1, gridColumn: col + 1 }}
               className={cn(

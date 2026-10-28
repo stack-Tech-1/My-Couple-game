@@ -95,8 +95,11 @@ export function DraughtsBoard({ view, me, names, sendMove, pending, sound }: Gam
         data-tour="draughts-board"
         className="grid w-full grid-cols-10 overflow-hidden rounded-[14px] border-[2px] border-[#2a0b14] shadow-[0_20px_40px_-28px_rgba(28,20,22,.8)]"
       >
-        {cells.map((sq, i) =>
-          sq === null ? (
+        {Array.from({ length: 10 }, (_, r) => (
+          <div key={r} role="row" className="contents">
+        {cells.slice(r * 10, r * 10 + 10).map((sq, j) => {
+          const i = r * 10 + j;
+          return sq === null ? (
             <div key={`l${i}`} aria-hidden className="aspect-square bg-[#f1e2cc]" />
           ) : (
             <Square
@@ -112,8 +115,10 @@ export function DraughtsBoard({ view, me, names, sendMove, pending, sound }: Gam
               fading={jumping.has(sq)}
               clickable={myTurn && (movable.has(sq) || nextSteps.has(sq))}
             />
-          ),
-        )}
+          );
+        })}
+          </div>
+        ))}
       </div>
 
       <div data-tour="draughts-players" className="mt-2 w-full">

@@ -93,8 +93,11 @@ test("romantic features work end to end", async ({ browser }) => {
     await pb.waitForLoadState("networkidle");
     await pa.getByRole("button", { name: "Spin", exact: true }).click();
     await expect(pa.getByRole("button", { name: "Spin again" })).toBeVisible();
-    const pickA = await pa.locator("h2").first().textContent();
-    await expect(pb.locator("h2").first()).toHaveText(pickA!);
+    // The idea is the date card's heading (closed pop-ups elsewhere on the page have their own).
+    const idea = (p: typeof pa) => p.locator("main h2").filter({ hasText: /\S/ }).first();
+    const pickA = await idea(pa).textContent();
+    expect(pickA).toBeTruthy();
+    await expect(idea(pb)).toHaveText(pickA!);
     await shot(pa, "date-night");
     await pa.getByRole("button", { name: "Save to bucket list" }).click();
     await expect(pa.getByText("Added to your bucket list.")).toBeVisible();

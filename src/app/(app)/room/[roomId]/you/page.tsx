@@ -4,7 +4,11 @@ import { Avatar } from "@/design/Avatar";
 import { Icon } from "@/design/icons";
 import { SharePoster } from "@/components/room/SharePoster";
 import { gameMeta } from "@/games/catalog";
-import { getUser } from "@/lib/room/server";
+import { getRoom, getUser } from "@/lib/room/server";
+import { getProgress } from "@/lib/progress/server";
+import { UsPanel } from "@/components/room/UsPanel";
+import { PageBackdrop } from "@/components/room/HomeBackdrop";
+import { PAGE_LOOKS } from "@/games/look";
 import { supabaseServer } from "@/lib/supabase/server";
 import { personalStats, type GameRow } from "@/lib/stats/personal";
 
@@ -34,20 +38,32 @@ export default async function YourAmahPage({ params }: { params: Promise<{ roomI
   const nick = new Map((nicks ?? []).map((n) => [n.target_id as string, n.nickname as string]));
   const who = new Map((people ?? []).map((p) => [p.id as string, { ...p, display_name: nick.get(p.id as string) ?? (p.display_name as string) }]));
   const pct = s.winRate === null ? null : Math.round(s.winRate * 100);
+  // Couples: the shared level and badges sit at the top of the Us tab.
+  const bundle = await getRoom(roomId);
+  const couple = bundle?.room.kind !== "friends" && !!bundle?.partner;
+  const progress = couple ? await getProgress(roomId) : null;
+  const look = PAGE_LOOKS.us;
 
   return (
-    <div className="pb-24 pt-6">
-      <Link prefetch={false} href={`/room/${roomId}`} className="inline-flex items-center gap-1.5 text-[0.9rem] font-semibold text-muted hover:text-fg">
+    <div className="relative isolate pb-24 pt-6">
+      <PageBackdrop motif={look.motif} bg={look.bg} ink={look.ink} glow={look.glow} height={560} />
+      <Link prefetch={false} href={`/room/${roomId}`} className="inline-flex items-center gap-1.5 text-[0.9rem] font-semibold text-muted hover:text-fg max-sm:text-[#f6efe6]/85">
         <Icon name="arrowLeft" size={16} /> Room
       </Link>
-      <p className="eyebrow mt-8 text-muted">Across all your rooms</p>
-      <h1 className="display mt-2 text-[clamp(2.6rem,9vw,4rem)] leading-[1.02]">Your Amah</h1>
+      <p className="eyebrow mt-8 text-muted max-sm:mt-6 max-sm:text-[#ffd65c]">{couple ? "The two of you, and you" : "Across all your rooms"}</p>
+      <h1 className="display mt-2 text-[clamp(2.6rem,9vw,4rem)] leading-[1.02] max-sm:text-[#f6efe6]">{couple ? "Us" : "Your Amah"}</h1>
+      {progress ? (
+        <div className="mt-6">
+          <UsPanel roomId={roomId} stats={progress} />
+        </div>
+      ) : null}
+      {couple ? <h2 className="display mt-10 text-[1.8rem]">Your record</h2> : null}
 
       {s.played === 0 ? (
-        <p className="mt-8 max-w-prose text-[1.05rem] leading-relaxed text-muted">No finished games yet. Play one and your numbers start here: wins, streaks, favourites and who you beat most.</p>
+        <p className="glass mt-8 max-w-prose rounded-[22px] p-5 text-[1.05rem] leading-relaxed text-muted">No finished games yet. Play one and your numbers start here: wins, streaks, favourites and who you beat most.</p>
       ) : (
         <>
-          <dl className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <dl className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <Big label="Games played" value={s.played} />
             <Big label="Wins" value={s.wins} sub={`${s.losses} lost · ${s.ties} tied`} />
             <Big label="Win rate" value={pct === null ? "–" : `${pct}%`} sub="games with a winner" />
@@ -62,7 +78,7 @@ export default async function YourAmahPage({ params }: { params: Promise<{ roomI
             </p>
           ) : null}
 
-          <section aria-labelledby="fav-h" className="mt-12 border-t-[1.5px] border-line-strong pt-5">
+          <section aria-labelledby="fav-h" className="glass mt-8 rounded-[22px] p-5">
             <h2 id="fav-h" className="eyebrow mb-4 text-muted">Your favourites</h2>
             <ol className="flex flex-col gap-2">
               {s.topGames.map((g, i) => (
@@ -78,7 +94,7 @@ export default async function YourAmahPage({ params }: { params: Promise<{ roomI
           </section>
 
           {s.vs.length ? (
-            <section aria-labelledby="vs-h" className="mt-12 border-t-[1.5px] border-line-strong pt-5">
+            <section aria-labelledby="vs-h" className="glass mt-4 rounded-[22px] p-5">
               <h2 id="vs-h" className="eyebrow mb-4 text-muted">Head to head</h2>
               <ul className="flex flex-col divide-y divide-line">
                 {s.vs.map((v) => {
@@ -109,7 +125,7 @@ export default async function YourAmahPage({ params }: { params: Promise<{ roomI
 
 function Big({ label, value, sub }: { label: string; value: number | string; sub?: string }) {
   return (
-    <div className="rounded-[18px] border-[1.5px] border-line bg-raised p-4">
+    <div className="glass rounded-[18px] p-4">
       <dt className="text-[0.82rem] text-muted">{label}</dt>
       <dd className="display tabular mt-1 text-[2.4rem] leading-none">{value}</dd>
       {sub ? <dd className="mt-1.5 text-[0.78rem] text-muted">{sub}</dd> : null}

@@ -34,7 +34,7 @@ const shots = async (name: string, ...pages: Page[]) => {
 test("naija landlord: rolling, buying and the feed in two browsers", async ({ browser }) => {
   const { pa, pb, errors, done } = await open(browser, "naija-landlord");
   try {
-    await expect(pa.getByRole("grid", { name: /Naija Landlord board/ })).toBeVisible();
+    await expect(pa.getByRole("group", { name: /Naija Landlord board/ })).toBeVisible();
     // Each player starts with one free street, and ₦1.5M.
     await expect(pa.getByText("₦1.5M", { exact: true })).toHaveCount(2);
 
@@ -72,7 +72,7 @@ test("spell am: a bad word is refused by name, a good one scores", async ({ brow
 
     // Read the rack: "A, 1 points".
     const tiles = starter.locator('[data-tour="sa-rack"] button');
-    await expect(starter.getByRole("button", { name: /points$|^Blank tile$/ })).toHaveCount(7);
+    await expect(starter.getByRole("button", { name: /points?$|^Blank tile$/ })).toHaveCount(7);
     const labels = await tiles.evaluateAll((els) => els.map((e) => e.getAttribute("aria-label") ?? ""));
     // Blanks ("Blank tile") are left out of the search by giving them a letter no word uses.
     const letters = labels.map((l) => (l.startsWith("Blank") ? "#" : l[0]!.toLowerCase()));
@@ -84,9 +84,9 @@ test("spell am: a bad word is refused by name, a good one scores", async ({ brow
 
     const place = async ([i, j]: [number, number]) => {
       await tiles.nth(i).click();
-      await starter.getByRole("gridcell", { name: /^Row 6, column 6,/ }).click();
+      await starter.getByRole("gridcell", { name: /row 6, column 6(,|$)/i }).click();
       await tiles.nth(j).click();
-      await starter.getByRole("gridcell", { name: /^Row 6, column 7/ }).click();
+      await starter.getByRole("gridcell", { name: /row 6, column 7(,|$)/i }).click();
     };
 
     await place(bad!);

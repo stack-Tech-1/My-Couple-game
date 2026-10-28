@@ -9,6 +9,8 @@ import { Suspense } from "react";
 import { CATEGORIES, CATEGORY_ORDER, GAMES, gamesIn } from "@/games/catalog";
 import { GameArt } from "@/games/GameArt";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { PatternLayer } from "@/components/landing/PatternLayer";
+import { CATEGORY_LOOKS, INDIGO_LOOK } from "@/games/look";
 
 export const metadata: Metadata = {
   title: { absolute: `${APP_NAME}: games for the people closest to you` },
@@ -37,18 +39,18 @@ export default function Landing() {
       <Suspense fallback={null}>
         <DeletedNotice />
       </Suspense>
-      <header className="mx-auto flex max-w-6xl items-center justify-between px-4 py-5 sm:px-8">
+      <header className="relative z-10 mx-auto flex max-w-6xl items-center justify-between px-4 py-5 sm:px-8 max-md:text-[#f6efe6]">
         <Link prefetch={false} href="/" aria-label={`${APP_NAME} home`} className="rounded-md">
           <Logo />
         </Link>
         <nav className="flex items-center gap-2">
           <ThemeToggle />
-          <Link prefetch={false} href="/sign-in" className="rounded-full px-4 py-2 text-[0.92rem] font-semibold hover:bg-sunk">
+          <Link prefetch={false} href="/sign-in" className="rounded-full px-4 py-2 text-[0.92rem] font-semibold hover:bg-sunk max-md:hover:bg-white/10">
             Sign in
           </Link>
           <Link prefetch={false}
             href="/sign-in?intent=create"
-            className="rounded-full bg-fg px-4 py-2 text-[0.92rem] font-semibold text-bg hover:opacity-90"
+            className="rounded-full bg-fg px-4 py-2 text-[0.92rem] font-semibold text-bg hover:opacity-90 max-md:bg-[#f6efe6] max-md:text-[#1c1416]"
           >
             Start a room
           </Link>
@@ -57,14 +59,22 @@ export default function Landing() {
 
       <main>
         {/* Hero */}
-        <section className="mx-auto grid max-w-6xl items-center gap-14 px-4 pb-20 pt-8 sm:px-8 lg:grid-cols-[1.15fr_1fr] lg:pt-16">
+        <section className="relative isolate mx-auto grid max-w-6xl items-center gap-14 px-4 pb-20 pt-8 sm:px-8 lg:grid-cols-[1.15fr_1fr] lg:pt-16 max-md:gap-10 max-md:pb-12 max-md:text-[#f6efe6]">
+          {/* Phones: the hero (and the header above it) sit on indigo adire with an ember glow. */}
+          <PatternLayer
+            className="-top-[80px]"
+            motif="agbole"
+            bg={INDIGO_LOOK.bg}
+            ink={INDIGO_LOOK.ink}
+            glow="radial-gradient(70% 30% at 100% 0%, rgba(232,86,58,.55), transparent 70%), radial-gradient(70% 25% at 0% 62%, rgba(242,183,5,.2), transparent 70%), linear-gradient(180deg, rgba(24,32,63,.1), rgba(24,32,63,.5))"
+          />
           <div>
-            <p className="eyebrow text-accent-ink">Made for couples. Bring your best friends too.</p>
+            <p className="eyebrow text-accent-ink max-md:text-[#ffb59f]">Made for couples. Bring your best friends too.</p>
             <h1 className="display mt-5 text-[clamp(3.1rem,9vw,6.4rem)]">
               Games for the people <span className="display-wonk mr-[0.12em] italic">closest</span>{" "}
               <span className="scribble">to you</span>.
             </h1>
-            <p className="mt-7 max-w-[34rem] text-[1.12rem] leading-relaxed text-muted">
+            <p className="mt-7 max-w-[34rem] text-[1.12rem] leading-relaxed text-muted max-md:text-[#f6efe6]/85">
               A private room for the two of you: cards, board games, trivia about each other, love notes that unlock
               on a date you choose, and an after-dark corner you both have to open. And when the group chat wants a
               rematch, a friend room fits up to eight. Everyone plays from their own phone, live.
@@ -76,14 +86,14 @@ export default function Landing() {
               >
                 Make your room <Icon name="arrowRight" size={20} />
               </Link>
-              <span className="text-[0.9rem] text-muted">Free. Takes about forty seconds.</span>
+              <span className="text-[0.9rem] text-muted max-md:text-[#f6efe6]/80">Free. Takes about forty seconds.</span>
             </div>
           </div>
           <RoomPreview />
         </section>
 
         {/* Ledger strip */}
-        <section aria-label="At a glance" className="border-y border-line-strong">
+        <section aria-label="At a glance" className="border-y border-line-strong max-md:glass max-md:mx-4 max-md:mt-8 max-md:overflow-hidden max-md:rounded-[24px]">
           <dl className="mx-auto grid max-w-6xl grid-cols-2 divide-line sm:grid-cols-4 sm:divide-x">
             {[
               [String(GAMES.length), "games, from Whot to love notes"],
@@ -111,7 +121,25 @@ export default function Landing() {
             </h2>
           </div>
 
-          <ol className="mt-14 border-t border-line-strong">
+          <ul className="mt-8 space-y-3 md:hidden">
+            {CATEGORY_ORDER.map((c) => {
+              const l = CATEGORY_LOOKS[c];
+              const names = gamesIn(c).map((g) => g.name);
+              return (
+                <li key={c} className="relative isolate h-32 overflow-hidden rounded-[24px]">
+                  <PatternLayer motif={l.motif} bg={l.bg} ink={l.ink} />
+                  <div className={`absolute inset-x-2.5 bottom-2.5 rounded-[16px] px-4 py-2.5 ${l.fg === "#1c1416" ? "glass" : "glass-dark text-[#f6efe6]"}`}>
+                    <h3 className="display text-[1.35rem]">{CATEGORIES[c].label}</h3>
+                    <p className={`mt-0.5 line-clamp-1 text-[0.82rem] ${l.fg === "#1c1416" ? "text-muted" : "opacity-80"}`}>
+                      {c === "spicy" ? CATEGORIES[c].blurb : `${names.slice(0, 5).join(", ")}${names.length > 5 ? ` and ${names.length - 5} more` : ""}`}
+                    </p>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+
+          <ol className="mt-14 border-t border-line-strong max-md:hidden">
             {CATEGORY_ORDER.map((c, i) => {
               const cat = CATEGORIES[c];
               const games = gamesIn(c);
@@ -142,12 +170,13 @@ export default function Landing() {
         </section>
 
         {/* How it works */}
-        <section className="bg-fg text-bg" aria-labelledby="how">
+        <section className="relative isolate bg-fg text-bg max-md:text-[#f6efe6]" aria-labelledby="how">
+          <PatternLayer motif="dundun" bg="#1d2750" ink="#2a3668" glow="radial-gradient(70% 50% at 100% 100%, rgba(232,86,58,.35), transparent 70%)" />
           <div className="mx-auto max-w-6xl px-4 py-24 sm:px-8">
             <h2 id="how" className="display text-[clamp(2.4rem,6vw,4rem)]">
               Three steps. One of them is texting.
             </h2>
-            <ol className="mt-14 grid gap-12 md:grid-cols-3">
+            <ol className="mt-14 grid gap-12 md:grid-cols-3 max-md:mt-8 max-md:gap-3">
               {(
                 [
                   ["door", "Make a room", "Sign in with an email link or Google, pick a little mark for your avatar, name your room."],
@@ -155,7 +184,7 @@ export default function Landing() {
                   ["dice", "Play, anywhere", "Pick a game and their phone lights up with an invite. Scores, streaks and moments stack up as you go."],
                 ] as [IconName, string, string][]
               ).map(([icon, title, body], i) => (
-                <li key={title} className="border-t border-[color-mix(in_srgb,var(--bg)_30%,transparent)] pt-6">
+                <li key={title} className="border-t border-[color-mix(in_srgb,var(--bg)_30%,transparent)] pt-6 max-md:glass-dark max-md:rounded-[22px] max-md:p-5">
                   <div className="flex items-center justify-between">
                     <Icon name={icon} size={28} />
                     <span className="display tabular text-[1.2rem] opacity-60">0{i + 1}</span>
@@ -188,7 +217,7 @@ export default function Landing() {
                 ["A group chat", "Voice notes, stickers and trash talk, following you into every game."],
                 ["One owner", "Whoever starts the room invites people and can remove them. Nobody else gets a key."],
               ].map(([t, b]) => (
-                <div key={t} className="border-t border-line-strong pt-4">
+                <div key={t} className="border-t border-line-strong pt-4 max-md:glass max-md:rounded-[18px] max-md:p-4">
                   <h3 className="font-bold">{t}</h3>
                   <p className="mt-2 leading-relaxed text-muted">{b}</p>
                 </div>
@@ -198,7 +227,8 @@ export default function Landing() {
         </section>
 
         {/* After dark */}
-        <section className="relative overflow-hidden bg-[#120c0e] text-[#f4e4da]" aria-labelledby="afterdark">
+        <section className="relative isolate overflow-hidden bg-[#120c0e] text-[#f4e4da]" aria-labelledby="afterdark">
+          <PatternLayer motif="olokoto" bg="#120c0e" ink="#24161a" />
           <div
             aria-hidden
             className="pointer-events-none absolute inset-0"
@@ -252,7 +282,7 @@ export default function Landing() {
                 ["Photos stay private", "Memory Lane photos sit in private storage and load through short-lived links."],
                 ["Leave cleanly", "Delete your account and everything you wrote goes with it. One button, no email to support."],
               ].map(([t, b]) => (
-                <div key={t} className="border-t border-line-strong pt-4">
+                <div key={t} className="border-t border-line-strong pt-4 max-md:glass max-md:rounded-[18px] max-md:p-4">
                   <h3 className="font-bold">{t}</h3>
                   <p className="mt-2 leading-relaxed text-muted">{b}</p>
                 </div>
@@ -262,14 +292,15 @@ export default function Landing() {
         </section>
 
         {/* Closing CTA */}
-        <section className="border-t border-line-strong">
-          <div className="mx-auto flex max-w-6xl flex-col items-start gap-8 px-4 py-24 sm:px-8 md:flex-row md:items-end md:justify-between">
+        <section className="border-t border-line-strong max-md:relative max-md:isolate max-md:mx-4 max-md:overflow-hidden max-md:rounded-[30px] max-md:border-t-0 max-md:text-[#f6efe6]">
+          <PatternLayer motif="agbole" bg={INDIGO_LOOK.bg} ink={INDIGO_LOOK.ink} glow="radial-gradient(80% 80% at 100% 0%, rgba(232,86,58,.5), transparent 70%)" />
+          <div className="mx-auto flex max-w-6xl flex-col items-start gap-8 px-4 py-24 sm:px-8 md:flex-row md:items-end md:justify-between max-md:px-6 max-md:py-10">
             <h2 className="display max-w-3xl text-[clamp(2.6rem,7vw,5rem)]">
-              Tonight&apos;s plans: <span className="text-accent-ink">beat them at Whot.</span>
+              Tonight&apos;s plans: <span className="text-accent-ink max-md:text-[#ffb59f]">beat them at Whot.</span>
             </h2>
             <Link prefetch={false}
               href="/sign-in?intent=create"
-              className="inline-flex h-14 shrink-0 items-center gap-2 rounded-full bg-fg px-7 text-[1.05rem] font-semibold text-bg hover:opacity-90"
+              className="inline-flex h-14 shrink-0 items-center gap-2 rounded-full bg-fg px-7 text-[1.05rem] font-semibold text-bg hover:opacity-90 max-md:bg-accent max-md:text-on-accent"
             >
               Make your room <Icon name="arrowRight" size={20} />
             </Link>
