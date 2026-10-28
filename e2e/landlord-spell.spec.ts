@@ -60,7 +60,7 @@ test("naija landlord: rolling, buying and the feed in two browsers", async ({ br
   }
 });
 
-const DICT = new Set(fs.readFileSync("assets/words/spell-am.txt", "utf8").split("\n"));
+const DICT = new Set(fs.readFileSync("assets/words/spell-am.txt", "utf8").split(/\r?\n/));
 
 test("spell am: a bad word is refused by name, a good one scores", async ({ browser }) => {
   const { pa, pb, errors, done } = await open(browser, "spell-am", "Full game");

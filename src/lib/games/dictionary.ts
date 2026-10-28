@@ -12,7 +12,7 @@ let loading: Promise<Set<string>> | null = null;
 function load(): Promise<Set<string>> {
   loading ??= readFile(path.join(process.cwd(), "assets/words/spell-am.txt"), "utf8")
     .then((text) => {
-      const words = new Set(text.split("\n").filter(Boolean));
+      const words = new Set(text.split(/\r?\n/).filter(Boolean));
       for (const w of NAIJA_WORDS) words.add(w);
       return words;
     })

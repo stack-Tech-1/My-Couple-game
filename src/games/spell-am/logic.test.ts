@@ -4,7 +4,7 @@ import { MoveRejected } from "@/games/_engine/runner";
 import { analyse, BONUS, CENTER, LETTER_VALUES, NAIJA_BONUS, RACK, SIZE, spellAm as g, TILE_COUNTS, type Placement, type SpellState, type Tile } from "./logic";
 import { NAIJA_WORDS } from "@/content/words/naija";
 
-const DICT = new Set([...fs.readFileSync("assets/words/spell-am.txt", "utf8").split("\n"), ...NAIJA_WORDS]);
+const DICT = new Set([...fs.readFileSync("assets/words/spell-am.txt", "utf8").split(/\r?\n/), ...NAIJA_WORDS]);
 const isWord = (w: string) => DICT.has(w.toLowerCase());
 const ctx = { now: 1_000, isWord };
 const two = ["ada", "bo"] as const;
