@@ -9,6 +9,14 @@ export const GAME_MODES: Record<string, GameMode> = {
       { value: true, label: "Market finish", hint: "The market refills once. When it runs out again, the lowest hand wins." },
     ],
   },
+  "spell-am": {
+    key: "mode",
+    options: [
+      { value: "full", label: "Full game", hint: "No clock. Play until the bag runs out, live or through the day." },
+      { value: "quick", label: "Quick", hint: "10 rounds, then the highest score wins." },
+      { value: "live", label: "Live", hint: "2 minutes a turn, for when you're both here." },
+    ],
+  },
   ludo: {
     key: "twoDice",
     options: [

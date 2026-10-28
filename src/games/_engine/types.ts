@@ -21,7 +21,12 @@ export type Outcome =
  * assembled by the server. Games copy what they draw into their state, so a session never
  * depends on the decks changing later. Absent (tests, sandbox) means the built-in content.
  */
-export type MoveContext = { now: number; content?: ContentPack };
+export type MoveContext = {
+  now: number;
+  content?: ContentPack;
+  /** Word games: the server's dictionary check. Absent on the client, where words aren't judged. */
+  isWord?: (word: string) => boolean;
+};
 
 export type Rules = {
   summary: string;

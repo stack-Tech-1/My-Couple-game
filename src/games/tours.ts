@@ -54,6 +54,16 @@ export const GAME_TOURS: Record<string, TourStep[]> = {
     { target: "chess-draw", title: "Draws", body: ["Offer a draw whenever you like. Your partner can accept or play on."] },
     { title: "Winning", body: ["Checkmate wins. You swap colours in the rematch."] },
   ],
+  "spell-am": [
+    { target: "sa-rack", title: "Your letters", body: ["These 7 tiles are yours. Nobody else can see them.", "Tap a tile, then tap a square to place it. Tap it again on the board to take it back."] },
+    { target: "sa-board", title: "Build words", body: ["The first word covers the star. After that, every word joins onto what's there.", "2L and 3L multiply a letter. 2W and 3W multiply the whole word."] },
+    { target: "sa-actions", title: "Play it", body: ["The button shows your score before you play. Amah checks every word, so nothing gets wasted.", "Naija words like wahala and jollof score +5. Use all 7 tiles for +40."] },
+  ],
+  "naija-landlord": [
+    { target: "nl-board", title: "Lagos, street by street", body: ["Everyone starts with ₦1.5M and one free street. Your colour rings the streets you own.", "Roll and move round the board. Pass Alaba Payday to collect ₦200k."] },
+    { target: "nl-actions", title: "Buy, build, buy out", body: ["Land on a free street to buy it.", "Own one street of a neighbourhood and land on the other? Buy it out for 1.5 times the price.", "Own both, and you can build flats and estates before you roll."] },
+    { target: "nl-players", title: "Winning", body: ["10 rounds. The richest landlord wins, or the first to hit the target.", "You have 20 seconds to roll, or Amah rolls for you."] },
+  ],
   draughts: [
     { target: "draughts-board", title: "Tap, then tap", body: ["Tap one of your pieces, then tap a dot to move there.", "For a double jump, tap each landing square in turn."] },
     { title: "Capturing is compulsory", body: ["If you can capture, you must, and you must take the most pieces you can.", "When that happens, the pieces that have to move get an orange ring."] },

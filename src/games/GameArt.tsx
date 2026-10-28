@@ -32,6 +32,27 @@ const art: Record<string, (a: string) => ReactNode> = {
       <path d="M40 100h80" {...S} />
     </>
   ),
+  "spell-am": (a) => (
+    <>
+      <rect x="36" y="36" width="26" height="26" rx="4" {...S} fill={a} />
+      <rect x="64" y="36" width="26" height="26" rx="4" {...S} />
+      <rect x="92" y="36" width="26" height="26" rx="4" {...S} />
+      <rect x="64" y="64" width="26" height="26" rx="4" {...S} />
+      <path d="M43 56l6-14 6 14M45.5 51h7M71 42v14h11M99 42v14M99 42h7a4 4 0 010 8h-7M70 70h14l-14 14h14" {...S} />
+      <path d="M30 98h100" {...S} />
+    </>
+  ),
+  "naija-landlord": (a) => (
+    <>
+      <path d="M44 92V50l18-14 18 14v42" {...S} fill={a} />
+      <path d="M80 92V30h34v62" {...S} />
+      <path d="M88 40h6M100 40h6M88 52h6M100 52h6M88 64h6M100 64h6M88 76h6M100 76h6" {...S} />
+      <path d="M56 92V74h12v18M54 58h4M66 58h4" {...S} />
+      <path d="M34 92h92" {...S} />
+      <circle cx="40" cy="30" r="9" {...S} />
+      <path d="M36.5 27v6M43.5 27v6M35 29h10M35 31.5h10" {...S} strokeWidth={1.4} />
+    </>
+  ),
   draughts: (a) => (
     <>
       {[0, 1, 2, 3].map((r) =>

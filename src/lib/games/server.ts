@@ -11,6 +11,7 @@ import { getContentPack } from "@/lib/content/server";
 import { after } from "next/server";
 import { gameMeta, isFriendGame } from "@/games/catalog";
 import { displayName, notifyPartner } from "@/lib/push/server";
+import { wordChecker } from "./dictionary";
 
 /** Both current members confirmed 18+ and opted in. The same gate the database uses. */
 async function spicyUnlocked(roomId: string): Promise<boolean> {
@@ -221,6 +222,8 @@ export async function submitMove(sessionId: string, rawMove: unknown): Promise<S
   if (!logic) throw new ApiError(404, "We don't have that game (yet).");
   const admin = supabaseAdmin();
   const readSecret = () => admin.from("game_secrets").select("state").eq("session_id", sessionId).single();
+  // Word games judge words on the server only; the dictionary never goes to the browser.
+  const isWord = initial.game_id === "spell-am" ? await wordChecker() : undefined;
 
   // Every move is judged against the latest state. If another move commits between our
   // read and our write, the version check in commit_game_move fails and we simply retry.
@@ -244,7 +247,7 @@ export async function submitMove(sessionId: string, rawMove: unknown): Promise<S
 
     let result;
     try {
-      result = runMove(logic, secret.state, rawMove, user.id, { now: Date.now() });
+      result = runMove(logic, secret.state, rawMove, user.id, { now: Date.now(), ...(isWord ? { isWord } : {}) });
     } catch (e) {
       if (e instanceof MoveRejected) throw new ApiError(422, e.message);
       throw e;

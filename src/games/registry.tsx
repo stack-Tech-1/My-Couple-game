@@ -7,6 +7,8 @@ import { ConnectFourBoard } from "./connect-four/Board";
 import { ChessBoard } from "./chess/Board";
 import { TicTacToeBoard } from "./tic-tac-toe/Board";
 import { DraughtsBoard } from "./draughts/Board";
+import { NaijaLandlordBoard } from "./naija-landlord/Board";
+import { SpellAmBoard } from "./spell-am/Board";
 import { WhotTable } from "./whot/Table";
 import { LudoBoard } from "./ludo/Board";
 import { AyoBoard } from "./ayo/Board";
@@ -40,6 +42,8 @@ const components: Record<string, ComponentType<GameProps<any, any>>> = {
   chess: ChessBoard,
   "tic-tac-toe": TicTacToeBoard,
   draughts: DraughtsBoard,
+  "naija-landlord": NaijaLandlordBoard,
+  "spell-am": SpellAmBoard,
   whot: WhotTable,
   ludo: LudoBoard,
   ayo: AyoBoard,
