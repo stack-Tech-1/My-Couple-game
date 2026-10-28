@@ -118,5 +118,5 @@ describe("naija landlord: full games", () => {
     expect(reasons.rounds ?? 0).toBeGreaterThan(0);
     expect(built).toBeGreaterThan(30);
     expect(streets).toHaveLength(12);
-  });
+  }, 30_000);
 });

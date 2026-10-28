@@ -4,11 +4,10 @@ import { WelcomeTour } from "@/components/room/WelcomeTour";
 import { GettingStarted } from "@/components/room/GettingStarted";
 import { FriendRoomHome } from "@/components/friends/FriendRoomHome";
 import { InvitePanel } from "@/components/room/InvitePanel";
-import { HeadToHead } from "@/components/room/HeadToHead";
 import { PlayNext } from "@/components/room/PlayNext";
 import { Moments } from "@/components/room/Moments";
 import { Library } from "@/components/room/Library";
-import { Greeting } from "@/components/room/Greeting";
+import { RoomHero } from "@/components/room/RoomHero";
 import { Birthdays } from "@/components/room/Birthdays";
 import { InstallPrompt } from "@/components/room/InstallPrompt";
 import { NotifyPrompt } from "@/components/room/NotifyPrompt";
@@ -46,8 +45,8 @@ export default async function RoomHome({ params }: { params: Promise<{ roomId: s
   const paired = !!bundle.partner;
 
   return (
-    <div className="pt-8 sm:pt-12">
-      <Greeting />
+    <div className="pt-0 sm:pt-8">
+      <RoomHero mine={mine} theirs={theirs} stats={progress} />
       <Birthdays />
       <InstallPrompt />
       {paired ? <NotifyPrompt publicKey={keys?.publicKey ?? null} /> : null}
@@ -58,14 +57,14 @@ export default async function RoomHome({ params }: { params: Promise<{ roomId: s
 
       <div className="mt-10 grid gap-x-12 gap-y-10 lg:grid-cols-[1.25fr_1fr]">
         <div className="flex flex-col gap-10">
-          <HeadToHead mine={mine} theirs={theirs} />
-          {progress ? <UsPanel roomId={roomId} stats={progress} /> : null}
+          {/* Tonight first: something to play and today's question. */}
+          <PlayNext />
           {daily ? <DailyQuestion daily={daily} /> : null}
+          {progress ? <UsPanel roomId={roomId} stats={progress} /> : null}
           {together ? <ChallengeCard challenge={together.challenge} /> : null}
           {week ? <WeeklyRecap week={week} /> : null}
         </div>
         <div className="flex flex-col gap-6 lg:self-start">
-          <PlayNext />
           {together ? <MoodCard moods={together.moods} /> : null}
           {together ? <TogetherCard countdowns={together.countdowns} /> : null}
           {together ? <TogetherSync /> : null}

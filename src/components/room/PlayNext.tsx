@@ -7,6 +7,8 @@ import { useRoom } from "@/lib/realtime/RoomProvider";
 import { CATEGORIES, GAMES } from "@/games/catalog";
 import { GameArt } from "@/games/GameArt";
 import { useGameFlags } from "@/lib/games/FlagsProvider";
+import { AdireFill } from "@/design/adire";
+import { lookFor } from "@/games/look";
 
 /** A featured pick that rotates daily, so the dashboard always suggests something. */
 export function PlayNext() {
@@ -20,6 +22,7 @@ export function PlayNext() {
     return pool[day % pool.length]!;
   }, [isOff]);
   const cat = CATEGORIES[game.category];
+  const look = lookFor(game.id, game.category);
 
   return (
     <section aria-labelledby="playnext" className="relative overflow-hidden rounded-[22px] border-[1.5px] border-line-strong bg-raised">
@@ -29,8 +32,9 @@ export function PlayNext() {
           <Icon name="clock" size={14} /> ~{game.estimatedMinutes} min
         </span>
       </div>
-      <div className="px-6 text-fg">
-        <GameArt id={game.id} accent={cat.color} className="mx-auto h-36 w-auto" />
+      <div className="relative mx-4 mt-4 flex justify-center overflow-hidden rounded-[16px] py-5" style={{ color: "#1c1416", ["--bg-raised" as string]: "#fbf7f1" }}>
+        <AdireFill motif={look.motif} bg={look.bg} ink={look.ink} />
+        <GameArt id={game.id} accent={look.accent} className="relative h-32 w-auto" />
       </div>
       <div className="flex items-end justify-between gap-4 p-6 pt-2">
         <div>
