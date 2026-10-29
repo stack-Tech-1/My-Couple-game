@@ -15,6 +15,7 @@ import { gameMeta } from "@/games/catalog";
 import { PageBackdrop } from "@/components/room/HomeBackdrop";
 import { GamesPeek } from "@/components/room/GamesPeek";
 import { PAGE_LOOKS } from "@/games/look";
+import { SeatPrompt } from "@/components/plus/SeatPrompt";
 
 /** Home of a friend room: who's here, the leaderboard, your games in progress, and the friend library. */
 export async function FriendRoomHome({ roomId }: { roomId: string }) {
@@ -38,6 +39,9 @@ export async function FriendRoomHome({ roomId }: { roomId: string }) {
       <p className="eyebrow text-muted max-sm:text-[#ffd65c]">Friend room · {bundle.members.length} {bundle.members.length === 1 ? "person" : "people"}</p>
       <h1 className="display mt-2 text-[clamp(2.6rem,9vw,4.2rem)] leading-[1.02] max-sm:text-[#f6efe6]">{bundle.room.name}</h1>
       <InstallPrompt />
+      <div className="mt-4 empty:hidden">
+        <SeatPrompt />
+      </div>
       {isOwner && bundle.members.length < FRIEND_ROOM_SIZE ? <InvitePanel /> : null}
       {!isOwner && bundle.members.length < FRIEND_ROOM_SIZE ? (
         <p className="glass mt-4 rounded-[18px] p-4 text-muted">Want someone else in? {owner ? `${owner.profile.display_name} has the invite code.` : "The room's owner has the invite code."}</p>

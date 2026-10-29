@@ -11,17 +11,19 @@ import { DateNight } from "./DateNight";
 import { BucketList } from "./BucketList";
 import { dateIdeas } from "@/lib/content/server";
 import { GameBackdrop } from "@/components/game/GameBackdrop";
+import { PlusGate } from "@/components/plus/PlusGate";
 
 /** Library entries that are ongoing room features rather than turn-based sessions. */
 export const FEATURES = new Set(["daily-question", "love-notes", "memory-lane", "date-night", "bucket-list"]);
 
-export async function FeaturePage({ gameId, roomId, bundle }: { gameId: string; roomId: string; bundle: RoomBundle }) {
+export async function FeaturePage({ gameId, roomId, bundle, needsPlus }: { gameId: string; roomId: string; bundle: RoomBundle; needsPlus?: boolean }) {
   const meta = gameMeta(gameId)!;
   const cat = CATEGORIES[meta.category];
   const me = bundle.me.profile.id;
 
   let body: React.ReactNode;
-  if (!bundle.partner) body = <p className="text-muted">This one needs two. Invite your person from the room home first.</p>;
+  if (needsPlus) body = <PlusGate bundle={bundle} game={meta} />;
+  else if (!bundle.partner) body = <p className="text-muted">This one needs two. Invite your person from the room home first.</p>;
   else if (gameId === "daily-question") body = <DailyQuestion daily={await getDaily(roomId, me)} full />;
   else if (gameId === "love-notes") body = <LoveNotes notes={await getNotes(roomId, me)} />;
   else if (gameId === "memory-lane") body = <MemoryLane memories={await getMemories(roomId)} />;

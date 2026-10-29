@@ -36,6 +36,7 @@ const bundle = (me: Partial<Member>, partner: Partial<Member> | null, kind: "cou
     members: partnerP ? [meP, partnerP] : [meP],
     rooms: [],
     blocked: [],
+    plus: { live: false, until: {}, trial: [], trialUsed: false },
   };
 };
 

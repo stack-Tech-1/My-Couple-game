@@ -17,6 +17,8 @@ import { FeaturePage, FEATURES } from "@/components/romantic/FeaturePage";
 import { AfterDarkShell } from "@/components/afterdark/AfterDarkShell";
 import { FantasyMatch } from "@/components/afterdark/FantasyMatch";
 import { getAfterDark, getFantasy } from "@/lib/afterdark/server";
+import { hasPlus, isPlusGame } from "@/lib/plus/plans";
+import { PlusGate } from "@/components/plus/PlusGate";
 
 export async function generateMetadata({ params }: { params: Promise<{ gameId: string }> }): Promise<Metadata> {
   const { gameId } = await params;
@@ -45,7 +47,9 @@ export default async function GamePage({ params }: { params: Promise<{ roomId: s
     );
   }
   const cat = CATEGORIES[game.category];
-  if (FEATURES.has(game.id)) return <FeaturePage gameId={game.id} roomId={roomId} bundle={bundle} />;
+  // Amah Plus: someone without it sees the invitation instead of the game.
+  const needsPlus = bundle.plus.live && isPlusGame(game.id) && !hasPlus(bundle.plus, bundle.me.profile.id);
+  if (FEATURES.has(game.id)) return <FeaturePage gameId={game.id} roomId={roomId} bundle={bundle} needsPlus={needsPlus} />;
   if (game.category === "spicy") {
     const ad = await getAfterDark(bundle);
     const logicFor = GAME_LOGIC[game.id];
@@ -59,7 +63,9 @@ export default async function GamePage({ params }: { params: Promise<{ roomId: s
           <h1 className="display mt-6 text-[clamp(2.4rem,8vw,3.6rem)]">{game.name}</h1>
           <p className="mt-2 text-[1.05rem] text-muted">{game.tagline}</p>
           <div className="mt-8">
-            {game.id === "fantasy-match" ? (
+            {needsPlus ? (
+              <PlusGate bundle={bundle} game={game} />
+            ) : game.id === "fantasy-match" ? (
               <FantasyMatch initial={await getFantasy(roomId, bundle.me.profile.id)} />
             ) : logicFor ? (
               <>
@@ -94,7 +100,13 @@ export default async function GamePage({ params }: { params: Promise<{ roomId: s
           <p className="eyebrow" style={{ color: cat.ink }}>{cat.label}</p>
           <h1 className="display mt-3 text-[clamp(2.8rem,9vw,5rem)]">{game.name}</h1>
           <p className="mt-4 text-[1.1rem] text-muted">{game.tagline}</p>
-          {logic ? <StartGame gameId={game.id} activeSessionId={active?.id ?? null} /> : null}
+          {needsPlus ? (
+            <div className="mt-6">
+              <PlusGate bundle={bundle} game={game} />
+            </div>
+          ) : logic ? (
+            <StartGame gameId={game.id} activeSessionId={active?.id ?? null} />
+          ) : null}
         </div>
         <div className="order-1 md:order-2" style={{ color: "#1c1416", ["--bg-raised" as string]: "#fbf7f1" }}>
           <GameArt id={game.id} accent={look.accent} className="mx-auto h-auto w-full max-w-[16rem] drop-shadow-[0_18px_24px_rgba(28,20,22,.25)] md:max-w-sm" />

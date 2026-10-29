@@ -103,6 +103,18 @@ export async function recipientCount(): Promise<number> {
   return ((data ?? []) as unknown[]).length;
 }
 
+/** One transactional email (receipts and the like). Quietly does nothing if email isn't set up. */
+export async function sendTransactional(m: { to: string; subject: string; html: string; text: string }): Promise<boolean> {
+  if (!emailConfigured()) return false;
+  const t = transport();
+  try {
+    await t.sendMail({ from: from(), ...m });
+    return true;
+  } finally {
+    t.close();
+  }
+}
+
 /** Tell someone the team replied to their feedback. Transactional: sent even if they opted out of announcements. */
 export async function sendFeedbackReplyEmail(to: Recipient, reply: string): Promise<void> {
   if (!emailConfigured()) return;

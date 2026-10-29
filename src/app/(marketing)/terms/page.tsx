@@ -18,7 +18,7 @@ export default function Terms() {
           <li>Be kind to the people in your rooms and honest with us. No harassment, no illegal content, no sharing intimate images of anyone without their consent.</li>
           <li>What you create stays yours. You let us store and show it to the people in that room so Amah can work.</li>
           <li>After Dark is optional, adults-only, and opens only when both of you say yes.</li>
-          <li>Amah is free for now. If we add paid features, you&apos;ll see the price and terms before you pay.</li>
+          <li>Amah has a free plan and a paid plan, Amah Plus. Card plans renew until you cancel, and you can cancel any time in Settings. Until Amah Plus opens, everything is free.</li>
           <li>Nigerian law applies.</li>
         </ul>
       }
@@ -80,9 +80,16 @@ export default function Terms() {
         sell or redistribute them.
       </p>
 
-      <h2>7. Price and changes to Amah</h2>
+      <h2 id="payments">7. Amah Plus, payments and refunds</h2>
       <ul>
-        <li>Amah is currently free. We may add paid features or subscriptions in the future. You&apos;ll always see the price and any extra terms before you pay, and nothing you&apos;re already using for free will be charged without telling you first.</li>
+        <li>Amah has a free plan and a paid plan, <strong>Amah Plus</strong>. Until Amah Plus opens, everything in Amah is free. You&apos;ll always see the price and what&apos;s included before you pay.</li>
+        <li>Amah Plus belongs to each person (a &ldquo;seat&rdquo;) and works in every room you&apos;re in. A Plus game can only start when everyone playing it has Plus. A couple plan covers both partners; a group plan gives a set number of seats to people in one friend room; and you can buy a seat for someone you share a room with. Once a seat is given to someone, it can&apos;t be moved to anyone else.</li>
+        <li>Payments are processed by <strong>Paystack</strong>. We never see or store your full card details. Prices are in naira.</li>
+        <li><strong>Renewals and cancelling.</strong> Card plans renew automatically every month or year until you cancel. You can cancel any time in Settings, Amah Plus. Plus stays on until the end of the period you&apos;ve paid for, and you won&apos;t be charged again. One-off passes (bank transfer, USSD or card) and gifted seats never renew.</li>
+        <li><strong>Free trial.</strong> Each person can have one 7-day trial, with no payment details needed. When it ends, Plus games lock unless you choose a plan.</li>
+        <li><strong>Refunds.</strong> If you ask within 7 days of a payment and have played fewer than 3 Plus games since paying, we&apos;ll refund that payment in full. This applies to renewals too. One-off passes and gifted seats are not refundable. Email {mail} with your payment reference (it&apos;s on your receipt). Refunds go back the way you paid and can take up to 10 working days to arrive. Nothing here limits your rights under Nigerian consumer law.</li>
+        <li>If a payment is reversed or disputed with your bank, the Plus it paid for ends. Whenever Plus ends, nothing you&apos;ve made is deleted, and games already in progress can be finished.</li>
+        <li>We may change prices. A change never affects a period you&apos;ve already paid for, and for card plans we&apos;ll tell you at least 14 days before you&apos;re charged a new price.</li>
         <li>We keep improving Amah, so games and features may change, be added, paused or removed. If we plan to close Amah entirely, we&apos;ll give at least 30 days&apos; notice where we reasonably can, so you can save what matters to you.</li>
       </ul>
 

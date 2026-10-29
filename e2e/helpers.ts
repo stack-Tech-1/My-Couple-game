@@ -36,11 +36,23 @@ export const admin: SupabaseClient = createClient(SUPABASE_URL, env.SUPABASE_SER
   auth: { persistSession: false, autoRefreshToken: false },
 });
 
-export async function makeUser(tag: string) {
-  const email = `amah-e2e-${tag}-${Date.now()}@example.com`;
+/**
+ * Amah Plus is live in the test project (global-setup), so test accounts get a day of Plus by
+ * default and every game works. Pass { plus: false } for a free account.
+ */
+export async function makeUser(tag: string, opts: { plus?: boolean } = {}) {
+  const email = `amah-e2e-${tag}-${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.com`;
   const { data, error } = await admin.auth.admin.createUser({ email, email_confirm: true });
   if (error || !data.user) throw error ?? new Error("createUser failed");
+  if (opts.plus !== false) await givePlus(data.user.id);
   return { id: data.user.id, email };
+}
+
+/** A day of Plus, as if given by the Amah team. */
+export async function givePlus(userId: string) {
+  const now = Date.now();
+  const { error } = await admin.from("plus_seats").insert({ user_id: userId, source: "admin", starts_at: new Date(now - 60_000).toISOString(), ends_at: new Date(now + 864e5).toISOString() });
+  if (error) throw error;
 }
 
 /** A one-time sign-in link the app's /auth/confirm route accepts (no inbox needed). */
@@ -60,9 +72,9 @@ export async function clientAs(email: string): Promise<SupabaseClient> {
 }
 
 /** Two onboarded users already paired in a room, without clicking through onboarding. */
-export async function pairedRoom(names: [string, string]) {
-  const a = await makeUser(names[0].toLowerCase());
-  const b = await makeUser(names[1].toLowerCase());
+export async function pairedRoom(names: [string, string], opts: { plus?: boolean } = {}) {
+  const a = await makeUser(names[0].toLowerCase(), opts);
+  const b = await makeUser(names[1].toLowerCase(), opts);
   const ca = await clientAs(a.email);
   const cb = await clientAs(b.email);
   const now = new Date().toISOString();
@@ -78,8 +90,8 @@ export async function pairedRoom(names: [string, string]) {
 }
 
 /** An onboarded user (terms accepted) with a signed-in client. */
-export async function onboardedUser(name: string, avatar = "fig") {
-  const u = await makeUser(name.toLowerCase());
+export async function onboardedUser(name: string, avatar = "fig", opts: { plus?: boolean } = {}) {
+  const u = await makeUser(name.toLowerCase(), opts);
   const c = await clientAs(u.email);
   const now = new Date().toISOString();
   await c.from("profiles").update({ display_name: name, avatar_key: avatar, avatar_hue: 40, onboarded_at: now, tour: "done", toured_games: ALL_TOURED, adult_confirmed_at: now, terms_version: TERMS_VERSION, terms_accepted_at: now }).eq("id", u.id);

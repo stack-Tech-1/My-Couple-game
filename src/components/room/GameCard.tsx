@@ -7,13 +7,14 @@ import type { GameMeta } from "@/games/catalog";
 import { GameArt } from "@/games/GameArt";
 import { lookFor } from "@/games/look";
 import { cn } from "@/lib/cn";
+import { PlusTag } from "@/components/plus/PlusTag";
 
 /**
  * A game on the shelf: its own colour and adire motif fill the card, the drawing sits in the
  * middle, and the name rides on a frosted strip. The panel is always light, so night mode
  * doesn't wash the drawing out.
  */
-export function GameCard({ game, roomId, fresh, size = "normal" }: { game: GameMeta; roomId: string; fresh?: boolean; size?: "normal" | "large" | "peek" }) {
+export function GameCard({ game, roomId, fresh, plus, size = "normal" }: { game: GameMeta; roomId: string; fresh?: boolean; plus?: boolean; size?: "normal" | "large" | "peek" }) {
   const look = lookFor(game.id, game.category);
   const large = size === "large";
   return (
@@ -30,6 +31,7 @@ export function GameCard({ game, roomId, fresh, size = "normal" }: { game: GameM
       <div className={cn("relative flex flex-1 items-center justify-center", large ? "pb-24 pt-6" : size === "peek" ? "pb-14 pt-3" : "pb-16 pt-4")}>
         <GameArt id={game.id} accent={look.accent} className={cn("w-auto transition-transform duration-300 group-hover:scale-[1.05]", large ? "h-32" : size === "peek" ? "h-16" : "h-20")} />
       </div>
+      {plus ? <PlusTag className="absolute left-2.5 top-2.5" /> : null}
       {fresh ? <span className="absolute right-2.5 top-2.5 rounded-full bg-[#1c1416] px-2 py-0.5 text-[0.68rem] font-bold text-[#fbf7f1]">New</span> : null}
       {/* Fixed light glass: the strip always sits on the game's own light panel. */}
       <div

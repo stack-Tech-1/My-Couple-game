@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { AVATAR_MOTIFS } from "@/design/Avatar";
 import { MAX_DISPLAY_NAME } from "@/lib/config";
+import type { PlusInfo } from "@/lib/plus/plans";
 
 export type Profile = {
   id: string;
@@ -90,6 +91,8 @@ export type RoomBundle = {
   rooms: RoomSummary[];
   /** People I've blocked: their messages and invites are hidden from me. */
   blocked: string[];
+  /** Who in this room has Amah Plus (and whether Plus is live at all). */
+  plus: PlusInfo;
 };
 
 export const roomSettingsSchema = z

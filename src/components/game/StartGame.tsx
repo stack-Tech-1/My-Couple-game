@@ -13,6 +13,10 @@ import { Avatar } from "@/design/Avatar";
 import { gameMeta } from "@/games/catalog";
 import { TIMED_TOURS } from "@/games/tours";
 import { GameTour, useTourDue } from "./GameTour";
+import { Modal } from "@/design/Modal";
+import { PLANS, isPlusGame, naira } from "@/lib/plus/plans";
+import { PlusTag } from "@/components/plus/PlusTag";
+import { PlusPlans } from "@/components/plus/PlusPlans";
 
 export function StartGame({ gameId, activeSessionId }: { gameId: string; activeSessionId: string | null }) {
   const router = useRouter();
@@ -36,7 +40,16 @@ export function StartGame({ gameId, activeSessionId }: { gameId: string; activeS
     setPicked((cur) => (cur.includes(id) ? cur.filter((p) => p !== id) : group ? (cur.length < max - 1 ? [...cur, id] : cur) : [id]));
   const nameOf = (id: string) => friends.find((f) => f.profile.id === id)?.profile.display_name ?? "";
   const enough = picked.length + 1 >= min;
-  const inviteLabel = !friendsRoom
+  // Amah Plus: everyone playing a Plus game needs it. Show who doesn't, with a way to buy them a seat.
+  const plusGame = bundle.plus.live && isPlusGame(gameId);
+  const lacks = (id: string) => plusGame && !bundle.plus.until[id];
+  const players = friendsRoom ? picked : bundle.partner ? [bundle.partner.profile.id] : [];
+  const waiting = players.filter(lacks);
+  const [gift, setGift] = useState<{ id: string; name: string } | null>(null);
+  const anyName = (id: string) => bundle.members.find((m) => m.profile.id === id)?.profile.display_name ?? "";
+  const inviteLabel = waiting.length
+    ? `Waiting on ${waiting.length} seat${waiting.length > 1 ? "s" : ""}`
+    : !friendsRoom
     ? `Invite ${bundle.partner?.profile.display_name ?? ""}`
     : !picked.length
       ? group
@@ -119,18 +132,51 @@ export function StartGame({ gameId, activeSessionId }: { gameId: string; activeS
               >
                 <Avatar name={f.profile.display_name} motif={f.profile.avatar_key} hue={f.profile.avatar_hue} size={30} />
                 {f.profile.display_name}
+                {lacks(f.profile.id) ? <span className="text-[0.72rem] font-bold text-accent-ink">needs Plus</span> : null}
               </button>
             ))}
           </div>
         </fieldset>
       ) : null}
+      {waiting.length ? (
+        <div role="group" aria-label="Who needs Plus" className="mt-6 rounded-[18px] border border-[rgba(217,164,58,.55)] bg-[rgba(217,164,58,.14)] p-3">
+          <p className="flex items-center gap-2 text-[0.85rem] font-semibold">
+            <PlusTag /> Everyone playing this one needs Amah Plus.
+          </p>
+          <ul className="mt-2">
+            {waiting.map((id) => (
+              <li key={id} className="flex items-center justify-between gap-3 border-t border-line py-2 first:border-t-0">
+                <span className="min-w-0 truncate font-semibold">
+                  {anyName(id)} <span className="text-[0.8rem] font-bold text-accent-ink">needs Plus</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setGift({ id, name: anyName(id) })}
+                  className="shrink-0 rounded-full bg-[#2a1f4e] px-3 py-1.5 text-[0.8rem] font-extrabold text-[#f6d26a]"
+                >
+                  Buy {anyName(id)} a seat · {naira(PLANS.gift.month)}
+                </button>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-1 text-[0.8rem] text-muted">They can also start a free trial from any Plus game.</p>
+          {friendsRoom && picked.length - waiting.length >= Math.max(1, min - 1) ? (
+            <button type="button" className="mt-2 text-[0.85rem] font-bold underline" onClick={() => setPicked((cur) => cur.filter((p) => !lacks(p)))}>
+              Play without them
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+      <Modal open={!!gift} onClose={() => setGift(null)} title={gift ? `A seat for ${gift.name}` : "A seat"} description="Plus for them in every room they're in, for a month or a year.">
+        {gift ? <PlusPlans roomId={roomId} roomKind={bundle.room.kind} trialAvailable={false} giftTo={gift} /> : null}
+      </Modal>
       <div className="mt-8 flex flex-wrap gap-3">
         {activeSessionId ? (
           <Button size="lg" variant="accent" iconRight="arrowRight" onClick={() => router.push(`/room/${roomId}/play/${activeSessionId}`)}>
             Resume game
           </Button>
         ) : null}
-        <Button size="lg" variant={activeSessionId ? "outline" : "accent"} iconRight={activeSessionId ? undefined : "arrowRight"} loading={busy} disabled={friendsRoom && (!picked.length || !enough)} onClick={() => void start()}>
+        <Button size="lg" variant={activeSessionId ? "outline" : "accent"} iconRight={activeSessionId ? undefined : "arrowRight"} loading={busy} disabled={(friendsRoom && (!picked.length || !enough)) || waiting.length > 0} onClick={() => void start()}>
           {activeSessionId ? "Start over" : inviteLabel}
         </Button>
       </div>

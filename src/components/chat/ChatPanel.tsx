@@ -15,6 +15,10 @@ import { ReportDialog } from "@/components/safety/ReportDialog";
 import { useDataSaver, voiceBitrate } from "@/lib/dataSaver";
 import { AdireFill } from "@/design/adire";
 import { PAGE_LOOKS } from "@/games/look";
+import { Modal } from "@/design/Modal";
+import { useRoom } from "@/lib/realtime/RoomProvider";
+import { hasPlus } from "@/lib/plus/plans";
+import { PlusPlans } from "@/components/plus/PlusPlans";
 
 const dayKey = (iso: string) => new Date(iso).toDateString();
 function dayLabel(iso: string): string {
@@ -275,6 +279,10 @@ function Composer({ roomId, me, partner, onSendText, onSendSticker, onSendVoice,
   const name = partner.display_name;
   const mic = canRecord();
   const { active: saver } = useDataSaver();
+  // Amah Plus: sending voice notes and stickers needs it (receiving never does).
+  const { bundle } = useRoom();
+  const locked = !hasPlus(bundle.plus, me);
+  const [upsell, setUpsell] = useState(false);
 
   useEffect(() => inputRef.current?.focus(), []);
 
@@ -337,8 +345,8 @@ function Composer({ roomId, me, partner, onSendText, onSendSticker, onSendVoice,
       <form onSubmit={send} className="glass flex items-end gap-1.5 rounded-t-[22px] border-x-0 border-b-0 px-2.5 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
         <button
           type="button"
-          onClick={() => setTray((t) => !t)}
-          aria-label={tray ? "Close stickers" : "Stickers"}
+          onClick={() => (locked ? setUpsell(true) : setTray((t) => !t))}
+          aria-label={locked ? "Stickers (Amah Plus)" : tray ? "Close stickers" : "Stickers"}
           aria-expanded={tray}
           className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-muted hover:bg-sunk hover:text-fg", tray && "bg-sunk text-fg")}
         >
@@ -380,9 +388,9 @@ function Composer({ roomId, me, partner, onSendText, onSendSticker, onSendVoice,
         ) : (
           <button
             type="button"
-            onClick={() => void startRec()}
+            onClick={() => (locked ? setUpsell(true) : void startRec())}
             disabled={starting}
-            aria-label="Record a voice message"
+            aria-label={locked ? "Record a voice message (Amah Plus)" : "Record a voice message"}
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent shadow-[inset_0_-2px_0_rgba(0,0,0,.18)] disabled:opacity-60"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -402,6 +410,9 @@ function Composer({ roomId, me, partner, onSendText, onSendSticker, onSendVoice,
           }}
         />
       ) : null}
+      <Modal open={upsell} onClose={() => setUpsell(false)} title="Voice notes and stickers" description="Sending them is part of Amah Plus. You can always hear and see the ones sent to you.">
+        <PlusPlans roomId={roomId} roomKind={bundle.room.kind} partnerName={bundle.partner?.profile.display_name ?? null} trialAvailable={!bundle.plus.trialUsed} />
+      </Modal>
     </div>
   );
 }

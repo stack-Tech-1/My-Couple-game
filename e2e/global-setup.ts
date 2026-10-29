@@ -5,6 +5,9 @@ import { admin, cleanup } from "./helpers";
  * cleanup), so they never show up in the admin numbers.
  */
 export default async function globalSetup() {
+  // Amah Plus is live in the test project, as it will be in production. Test accounts get Plus
+  // by default (helpers.makeUser); the Plus specs make free ones.
+  await admin.from("app_config").upsert({ key: "plus", value: { launched_at: "2026-01-01T00:00:00Z" } });
   const stale: string[] = [];
   for (let page = 1; page < 50; page++) {
     const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 200 });

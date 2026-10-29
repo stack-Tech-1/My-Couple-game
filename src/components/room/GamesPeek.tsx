@@ -6,6 +6,7 @@ import { GAMES, isFriendGame } from "@/games/catalog";
 import { useGameFlags } from "@/lib/games/FlagsProvider";
 import { useRoom } from "@/lib/realtime/RoomProvider";
 import { GameCard } from "./GameCard";
+import { isPlusGame } from "@/lib/plus/plans";
 import { AfterDarkPanel } from "./Library";
 
 /** Phones: a swipeable row of games on the home page; the whole shelf is one tap away. */
@@ -29,7 +30,7 @@ export function GamesPeek() {
       </div>
       <div className="-mx-4 mt-3 flex gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none]">
         {games.slice(0, 10).map((g) => (
-          <GameCard key={g.id} game={g} roomId={bundle.room.id} size="peek" fresh={isNew(g.id)} />
+          <GameCard key={g.id} game={g} roomId={bundle.room.id} size="peek" fresh={isNew(g.id)} plus={bundle.plus.live && isPlusGame(g.id)} />
         ))}
       </div>
       {/* The full shelf is in the Games tab; After Dark's door stays on the home screen. */}

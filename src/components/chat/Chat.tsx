@@ -276,6 +276,7 @@ function ChatInner() {
       if (error || !data) {
         // Already saved on an earlier try (the response got lost): just pick it up.
         if (error?.code === "23505") return void refresh();
+        if (error?.message.includes("plus required")) toast.info("Voice notes and stickers are on Amah Plus.", "Start a free trial or pick a plan from any Plus game.");
         return fail(!!error?.message.includes("rate limited"));
       }
       const saved = chatMessageSchema.safeParse(data);

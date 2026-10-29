@@ -51,7 +51,9 @@ test("naija landlord: rolling, buying and the feed in two browsers", async ({ br
     }
     // Both browsers see the same feed.
     // Names differ ("You" on your own screen), so compare what happened, not who did it.
-    const feed = async (p: Page) => (await p.getByRole("list", { name: "What happened" }).locator("li").allInnerTexts()).map((t) => t.split(" ").slice(1).join(" "));
+    // "Bo paid you" on one screen is "You paid Ada" on the other, so names inside a line are blanked too.
+    const feed = async (p: Page) =>
+      (await p.getByRole("list", { name: "What happened" }).locator("li").allInnerTexts()).map((t) => t.split(" ").slice(1).join(" ").replace(/\b(you|Ada|Bo)\b/gi, "someone"));
     await expect(async () => expect(await feed(pb)).toEqual(await feed(pa))).toPass({ timeout: 15_000 });
     await shots("landlord", pa, pb);
     expect(errors).toEqual([]);

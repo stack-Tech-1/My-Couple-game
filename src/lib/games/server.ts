@@ -12,6 +12,8 @@ import { after } from "next/server";
 import { gameMeta, isFriendGame } from "@/games/catalog";
 import { displayName, notifyPartner } from "@/lib/push/server";
 import { wordChecker } from "./dictionary";
+import { isPlusGame } from "@/lib/plus/plans";
+import { lackingPlus } from "@/lib/plus/server";
 
 /** Both current members confirmed 18+ and opted in. The same gate the database uses. */
 async function spicyUnlocked(roomId: string): Promise<boolean> {
@@ -184,6 +186,16 @@ export async function createSession(gameId: string, rawConfig: unknown, rematchO
   }
 
   const players: PlayerList = [user.id, ...others];
+  // Amah Plus: everyone playing a Plus game needs it. Games already going are never stopped.
+  if (isPlusGame(gameId)) {
+    const missing = await lackingPlus([...players]);
+    if (missing.length) {
+      if (missing.includes(user.id)) throw new ApiError(402, "This one is on Amah Plus. Start a free trial or pick a plan to play.");
+      const { data: who } = await supabaseAdmin().from("profiles").select("display_name").in("id", missing);
+      const names = (who ?? []).map((p) => p.display_name as string);
+      throw new ApiError(402, names.length === 1 ? `${names[0]} needs Amah Plus to play this one.` : `${names.length} players need Amah Plus to play this one.`);
+    }
+  }
   const seed = randomBytes(16).toString("hex");
   const state = logic.initialState(seed, players, config as never, { now: Date.now(), content: await getContentPack() });
   const firstTurn = (state as { turn?: unknown }).turn;

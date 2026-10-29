@@ -30,6 +30,9 @@ import { afterDarkOpen } from "@/lib/room/afterDark";
 import { setOptIn } from "@/lib/afterdark/actions";
 import { PageBackdrop } from "@/components/room/HomeBackdrop";
 import { PAGE_LOOKS } from "@/games/look";
+import { LEAVE_REASONS, type LeaveReason } from "@/lib/plus/plans";
+import { recordLeaveReason } from "@/lib/plus/actions";
+import { PlusSummary } from "@/components/plus/PlusSummary";
 
 export function SettingsView({ announcementEmails, feedback, push }: { announcementEmails: boolean; feedback: { threads: FeedbackThread[]; unread: number }; push: { publicKey: string | null; prefs: PushPrefs; quiet: Quiet } }) {
   const { bundle } = useRoom();
@@ -46,6 +49,7 @@ export function SettingsView({ announcementEmails, feedback, push }: { announcem
   const [emails, setEmails] = useState(announcementEmails);
   const [pending, start] = useTransition();
   const [leaveOpen, setLeaveOpen] = useState(false);
+  const [why, setWhy] = useState<LeaveReason | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
   const [blockOpen, setBlockOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -113,6 +117,12 @@ export function SettingsView({ announcementEmails, feedback, push }: { announcem
         </p>
         )}
       </Section>
+
+      {bundle.plus.live ? (
+        <Section title="Amah Plus" id="plus">
+          <PlusSummary />
+        </Section>
+      ) : null}
 
       {friendsRoom ? (
         <Section title="People" id="people">
@@ -260,12 +270,53 @@ export function SettingsView({ announcementEmails, feedback, push }: { announcem
             </select>
           </label>
         ) : null}
+        <fieldset className="mb-5">
+          <legend className="text-[0.95rem] font-semibold">Before you go, can we ask why?</legend>
+          <p className="mt-1 text-[0.85rem] text-muted">
+            It helps us make Amah better. {friendsRoom ? "Nobody in the room" : (partner?.profile.display_name ?? "Nobody")} will see your answer, and you can skip it.
+          </p>
+          <div role="radiogroup" aria-label="Why are you leaving?" className="mt-3 flex flex-col gap-2">
+            {(Object.keys(LEAVE_REASONS) as LeaveReason[])
+              .filter((k) => !friendsRoom || (k !== "breakup" && k !== "break"))
+              .map((k) => (
+                <button
+                  key={k}
+                  type="button"
+                  role="radio"
+                  aria-checked={why === k}
+                  onClick={() => setWhy(why === k ? null : k)}
+                  className={cn("flex items-center gap-3 rounded-[14px] border-[1.5px] px-3.5 py-2.5 text-left text-[0.92rem] font-semibold", why === k ? "border-line-strong bg-raised" : "border-line", k === "unsafe" && "border-accent-ink/40")}
+                >
+                  <span aria-hidden className={cn("relative h-[18px] w-[18px] shrink-0 rounded-full border-2", why === k ? "border-fg" : "border-muted")}>
+                    {why === k ? <span className="absolute inset-[3px] rounded-full bg-fg" /> : null}
+                  </span>
+                  {LEAVE_REASONS[k]}
+                </button>
+              ))}
+          </div>
+          {why === "unsafe" ? (
+            <div className="mt-3 rounded-[14px] bg-sunk p-3.5 text-[0.9rem]">
+              <p className="font-semibold">You can block and report before you go. They won&apos;t know it was you.</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {partner ? (
+                  <>
+                    <Button size="sm" variant="outline" onClick={() => { setLeaveOpen(false); setReportOpen(true); }}>Report {partner.profile.display_name}</Button>
+                    <Button size="sm" variant="danger" onClick={() => { setLeaveOpen(false); setBlockOpen(true); }}>Block {partner.profile.display_name}</Button>
+                  </>
+                ) : (
+                  <Button size="sm" variant="outline" onClick={() => { setLeaveOpen(false); document.getElementById("people")?.scrollIntoView({ behavior: "smooth" }); }}>Block or report someone</Button>
+                )}
+              </div>
+            </div>
+          ) : null}
+        </fieldset>
         <div className="flex justify-end gap-3">
           <Button variant="ghost" onClick={() => setLeaveOpen(false)}>Stay</Button>
           <Button
             variant="danger"
             loading={pending}
             onClick={() => start(async () => {
+              if (why) await recordLeaveReason(room.kind, why);
               const res = friendsRoom ? await leaveFriendRoom(room.id, heir || null) : await leaveRoom();
               if (!res.ok) return void toast.error(res.error);
               // Hard navigation: the room's live listeners are about to see us leave. /room picks another room, if any.

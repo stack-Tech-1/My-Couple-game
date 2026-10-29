@@ -52,6 +52,13 @@ export default function Privacy() {
         </li>
         <li><strong>Feedback, reports and support:</strong> what you send us, and when you report a message, a copy of that message.</li>
         <li><strong>Preferences:</strong> theme, sounds, data-saver mode, announcement emails and notification settings.</li>
+        <li>
+          <strong>Amah Plus and payments:</strong> which plan you chose, who your seats went to, when Plus starts and ends, the amount, the payment reference, how
+          you paid, and for cards only the card type and last 4 digits. Paystack handles the payment itself; we never receive your full card number, PIN or bank
+          login. For free trials we keep a scrambled (hashed) version of your email address and a random code stored on your device, so each person gets one
+          trial.
+        </li>
+        <li><strong>Leaving a room:</strong> if you choose to tell us why you&apos;re leaving, we store only the reason and the kind of room, not who said it.</li>
       </ul>
       <h3>Information collected automatically</h3>
       <ul>
@@ -82,6 +89,10 @@ export default function Privacy() {
           <tr>
             <td>Push notifications</td>
             <td>Your consent, given when you turn them on</td>
+          </tr>
+          <tr>
+            <td>Amah Plus: taking payments, giving seats, receipts, renewal reminders, refunds, and stopping repeat free trials</td>
+            <td>Performing our contract with you, and legal obligations (keeping payment records)</td>
           </tr>
           <tr>
             <td>Announcement emails about new games and important news</td>
@@ -150,6 +161,11 @@ export default function Privacy() {
             <td>Global</td>
           </tr>
           <tr>
+            <td>Paystack</td>
+            <td>Processing Amah Plus payments (card, bank transfer and USSD), under its own privacy policy as a licensed payment processor</td>
+            <td>Nigeria</td>
+          </tr>
+          <tr>
             <td>Sentry</td>
             <td>Error reports, so we can fix problems</td>
             <td>Germany (EU)</td>
@@ -178,6 +194,8 @@ export default function Privacy() {
         <li><strong>Account and profile:</strong> until you delete your account.</li>
         <li><strong>Room content</strong> (messages, voice notes, notes, photos, answers, game history): while your room exists. If you leave a couple room, your partner keeps the room and its shared history. If you leave a friend room, the others keep it, including messages you sent there. When the last person leaves any room, the room and its content are deleted. If you delete your account, what you created is deleted.</li>
         <li><strong>Reports and feedback:</strong> up to 2 years, so we can handle repeat problems, then deleted.</li>
+        <li><strong>Payment records:</strong> 6 years after the payment, because tax and accounting law requires it, even if you delete your account (the link to your account is removed).</li>
+        <li><strong>Free-trial records:</strong> the scrambled email is kept after you delete your account, so the same email can&apos;t start another trial. It can&apos;t be turned back into your address.</li>
         <li><strong>Error reports:</strong> up to 90 days.</li>
         <li><strong>Server logs</strong> kept by our hosting providers: usually up to 30 days.</li>
         <li><strong>Suspended accounts:</strong> kept while the suspension is in force, so the person can&apos;t simply sign up again to continue the abuse.</li>
@@ -223,7 +241,8 @@ export default function Privacy() {
 
       <h2>12. Cookies and on-device storage</h2>
       <p>
-        We use only what the app needs: a sign-in cookie to keep you logged in, and your browser&apos;s local storage for conveniences like your theme, recent
+        We use only what the app needs: a sign-in cookie to keep you logged in, a cookie holding a random code when you start a free trial (so the same device
+        can&apos;t keep starting new ones), and your browser&apos;s local storage for conveniences like your theme, recent
         stickers and dismissed announcements. Amah also stores some files on your device so it opens quickly and works offline. We do not use advertising or
         cross-site tracking cookies.
       </p>

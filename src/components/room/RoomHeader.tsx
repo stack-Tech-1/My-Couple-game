@@ -9,6 +9,7 @@ import { gameMeta } from "@/games/catalog";
 import { Chat } from "@/components/chat/Chat";
 import { NudgeButton } from "./Nudge";
 import { RoomSwitcher } from "./RoomSwitcher";
+import { PlusTag } from "@/components/plus/PlusTag";
 
 export function RoomHeader({ feedbackUnread = 0 }: { feedbackUnread?: number }) {
   const { bundle, partnerPresence } = useRoom();
@@ -27,6 +28,12 @@ export function RoomHeader({ feedbackUnread = 0 }: { feedbackUnread?: number }) 
     <header className="sticky top-0 z-40 border-b border-[color-mix(in_srgb,var(--line)_70%,transparent)] bg-[color-mix(in_srgb,var(--bg)_72%,transparent)] backdrop-blur-xl backdrop-saturate-150">
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:px-8">
         <RoomSwitcher />
+        {/* Everyone here has Plus: a small crown, nothing louder. */}
+        {bundle.plus.live && bundle.members.length > 1 && bundle.members.every((m) => bundle.plus.until[m.profile.id]) ? (
+          <Link prefetch={false} href={`/room/${room.id}/settings/plus`} aria-label="Everyone in this room has Amah Plus" className="shrink-0">
+            <PlusTag />
+          </Link>
+        ) : null}
         <div className="ml-auto flex items-center gap-2 sm:gap-3">
           {friendsRoom ? <FriendFaces /> : null}
           <div className={friendsRoom ? "hidden" : "hidden text-right sm:block"}>

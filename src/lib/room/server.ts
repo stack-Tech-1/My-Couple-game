@@ -2,6 +2,7 @@ import "server-only";
 import { cache } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabaseServer } from "@/lib/supabase/server";
+import { roomPlus } from "@/lib/plus/server";
 import type { Member, Moment, Profile, Room, RoomBundle, RoomKind, RoomSummary } from "./types";
 
 export const getUser = cache(async (): Promise<User | null> => {
@@ -86,6 +87,7 @@ export const getRoom = cache(async (roomId: string): Promise<RoomBundle | null> 
     members: people,
     rooms,
     blocked: (blocks ?? []).map((b) => b.blocked_id as string),
+    plus: await roomPlus(people.map((p) => p.profile.id), user.id, r.kind === "friends" ? r.id : undefined),
   };
 });
 
