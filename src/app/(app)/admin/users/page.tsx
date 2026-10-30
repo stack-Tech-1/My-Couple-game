@@ -175,7 +175,7 @@ async function Couples({ rows, manage }: { rows: UserRow[]; manage: (email: stri
           {couples.map((c) => (
             <tr key={c.room_id} className="border-t border-line align-top">
               <td className="px-4 py-3">
-                <div className="flex flex-wrap items-start gap-x-3 gap-y-1">
+                <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-3">
                   <Person name={c.display_name} email={c.email} href={manage(c.email)} />
                   <span aria-hidden className="pt-0.5 text-accent">♥</span>
                   <span className="sr-only">and</span>
@@ -204,7 +204,7 @@ function Person({ name, email, href }: { name: string | null; email: string; hre
   const body = (
     <>
       <span className="block font-semibold">{name || "No name yet"}</span>
-      <span className="block text-muted">{email}</span>
+      <span className="block truncate text-muted">{email}</span>
     </>
   );
   return href ? (

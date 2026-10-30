@@ -23,7 +23,7 @@ export default async function SoloGamePage({ params, searchParams }: { params: P
   const game = soloGame(id);
   if (!game) notFound();
   const ctx = await soloContext();
-  const backdrop = <PageBackdrop motif={game.look.motif} bg={game.look.bg} ink={game.look.ink} glow="rgba(232,86,58,.3)" height={300} />;
+  const backdrop = <PageBackdrop motif={game.look.motif} bg={game.look.bg} ink={game.look.ink} glow="rgba(232,86,58,.3)" height={120} />;
 
   if ((await getGameFlags()).off.includes(game.id)) {
     return (
