@@ -1,0 +1,117 @@
+"use server";
+
+import { randomBytes } from "node:crypto";
+import { z } from "zod";
+import { supabaseAdmin } from "@/lib/supabase/server";
+import { getUser } from "@/lib/room/server";
+import type { ActionResult } from "@/lib/room/types";
+import { soloGame } from "./catalog";
+import { settleChallenge } from "./server";
+
+async function limited(uid: string, action: string, max: number, windowSeconds: number) {
+  const { data } = await supabaseAdmin().rpc("server_rate_limit", { uid, action, max_hits: max, window_seconds: windowSeconds });
+  return data !== true;
+}
+
+const startInput = z.object({
+  gameId: z.string().max(40),
+  mode: z.string().regex(/^[a-z0-9-]{1,20}$/).default("normal"),
+  /** Daily boards and challenges replay a known seed; otherwise the server picks one. */
+  seed: z.string().regex(/^[A-Za-z0-9:_-]{1,80}$/).optional(),
+  challenge: z.string().regex(/^[A-Za-z0-9_-]{10,40}$/).optional(),
+});
+
+/** A start ticket. The only server call when a game begins. */
+export async function startRun(raw: unknown): Promise<ActionResult<{ runId: string; seed: string; target: number | null }>> {
+  const p = startInput.safeParse(raw);
+  if (!p.success || !soloGame(p.data.gameId)) return { ok: false, error: "We don't have that game." };
+  const user = await getUser();
+  if (!user) return { ok: false, error: "Sign in to save your scores." };
+  if (await limited(user.id, "solo_start", 120, 600)) return { ok: false, error: "Easy, tiger. Give it a minute and try again." };
+
+  const admin = supabaseAdmin();
+  let seed = p.data.seed ?? randomBytes(9).toString("base64url");
+  let mode = p.data.mode;
+  let challengeId: string | null = null;
+  let target: number | null = null;
+  if (p.data.challenge) {
+    const { data: c } = await admin.from("solo_challenges").select("id, game_id, mode, seed, target, from_user, to_user, status, expires_at").eq("token", p.data.challenge).maybeSingle();
+    // Only the person it was sent to (or anyone, for an open link) may play it, once, before it expires.
+    if (c && c.game_id === p.data.gameId && c.status === "open" && c.from_user !== user.id && (!c.to_user || c.to_user === user.id) && Date.parse(c.expires_at as string) > Date.now()) {
+      challengeId = c.id as string;
+      seed = (c.seed as string) || seed;
+      mode = c.mode as string;
+      target = c.target as number;
+    }
+  }
+  const { data, error } = await admin.from("solo_runs").insert({ user_id: user.id, game_id: p.data.gameId, mode, seed, challenge_id: challengeId }).select("id").single();
+  if (error || !data) return { ok: false, error: "Couldn't start. Try again?" };
+  return { ok: true, data: { runId: data.id as string, seed, target } };
+}
+
+const finishInput = z.object({
+  runId: z.uuid(),
+  score: z.number().int().min(0).max(10_000_000),
+  durationMs: z.number().int().min(0).max(24 * 3600_000),
+  meta: z.record(z.string(), z.union([z.number(), z.string().max(80), z.boolean()])).optional(),
+});
+
+export type FinishResult = {
+  scoreId: string;
+  best: number;
+  newBest: boolean;
+  plays: number;
+  challenge: { result: "won" | "lost"; target: number; from: string } | null;
+};
+
+/** Save a finished game. Light checks only: ticket, timing, and a plausible score for the time played. */
+export async function finishRun(raw: unknown): Promise<ActionResult<FinishResult>> {
+  const p = finishInput.safeParse(raw);
+  if (!p.success) return { ok: false, error: "That score didn't look right." };
+  const user = await getUser();
+  if (!user) return { ok: false, error: "Sign in to save your scores." };
+  if (await limited(user.id, "solo_finish", 120, 600)) return { ok: false, error: "Easy, tiger. Give it a minute and try again." };
+  const admin = supabaseAdmin();
+  const { data: run } = await admin.from("solo_runs").select("*").eq("id", p.data.runId).maybeSingle();
+  if (!run || run.user_id !== user.id) return { ok: false, error: "That game has wandered off." };
+  if (run.finished_at) return { ok: false, error: "That game is already saved." };
+  const game = soloGame(run.game_id as string)!;
+  const elapsed = Date.now() - Date.parse(run.started_at as string);
+  // A ticket lasts a day, so a game finished after the phone died still counts.
+  if (elapsed > 24 * 3600_000) return { ok: false, error: "That game is too old to save. Start a new one?" };
+  // The time the phone says it took can't be longer than the time since the ticket (plus a little slack).
+  const duration = Math.min(p.data.durationMs, elapsed + 5000);
+  const score = p.data.score;
+  if (!game.lowerIsBetter && score > game.cap(duration / 1000)) return { ok: false, error: "That score didn't add up, so it wasn't saved." };
+  if (game.id === "reflex" && score < 80) return { ok: false, error: "Nobody is that fast. Not saved." };
+
+  const { data: claimed } = await admin.from("solo_runs").update({ finished_at: new Date().toISOString() }).eq("id", run.id).is("finished_at", null).select("id");
+  if (!claimed?.length) return { ok: false, error: "That game is already saved." };
+
+  const [{ data: bestRow }, { count }] = await Promise.all([
+    admin
+      .from("solo_scores")
+      .select("score")
+      .eq("user_id", user.id)
+      .eq("game_id", game.id)
+      .eq("mode", run.mode)
+      .order("score", { ascending: !!game.lowerIsBetter })
+      .limit(1)
+      .maybeSingle(),
+    admin.from("solo_scores").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("game_id", game.id),
+  ]);
+  const { data: saved, error } = await admin
+    .from("solo_scores")
+    .insert({ run_id: run.id, user_id: user.id, game_id: game.id, mode: run.mode, seed: run.seed, score, duration_ms: duration, meta: p.data.meta ?? {} })
+    .select("id")
+    .single();
+  if (error || !saved) return { ok: false, error: "Couldn't save that score. Try again?" };
+
+  const prev = bestRow?.score as number | undefined;
+  const newBest = game.kind !== "bot" && (prev === undefined || (game.lowerIsBetter ? score < prev : score > prev));
+  const best = prev === undefined ? score : game.lowerIsBetter ? Math.min(prev, score) : Math.max(prev, score);
+
+  let challenge: FinishResult["challenge"] = null;
+  if (run.challenge_id) challenge = await settleChallenge(run.challenge_id as string, user.id, score, saved.id as string);
+  return { ok: true, data: { scoreId: saved.id as string, best, newBest, plays: (count ?? 0) + 1, challenge } };
+}

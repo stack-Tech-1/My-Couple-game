@@ -17,7 +17,7 @@ export const getMyProfile = cache(async (): Promise<Profile | null> => {
   const user = await getUser();
   if (!user) return null;
   const supabase = await supabaseServer();
-  const { data } = await supabase.from("profiles").select("id, display_name, avatar_key, avatar_hue, onboarded_at, theme, tour").eq("id", user.id).maybeSingle();
+  const { data } = await supabase.from("profiles").select("id, display_name, avatar_key, avatar_hue, onboarded_at, theme, tour, solo_home, waiting_prompt_at").eq("id", user.id).maybeSingle();
   return (data as Profile | null) ?? null;
 });
 
@@ -61,7 +61,7 @@ export const getRoom = cache(async (roomId: string): Promise<RoomBundle | null> 
   if (!room || !member) return null;
 
   const [{ data: profiles }, { data: nicks }] = await Promise.all([
-    supabase.from("profiles").select("id, display_name, avatar_key, avatar_hue, onboarded_at, theme, tour, toured_games, birth_month, birth_day, about").in("id", members.map((m) => m.user_id)),
+    supabase.from("profiles").select("id, display_name, avatar_key, avatar_hue, onboarded_at, theme, tour, toured_games, birth_month, birth_day, about, solo_home").in("id", members.map((m) => m.user_id)),
     supabase.from("nicknames").select("target_id, nickname"), // RLS: only the ones I wrote
   ]);
   // My pet names replace real names on my screens only.

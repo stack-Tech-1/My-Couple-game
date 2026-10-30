@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { toast } from "@/design/toast";
 import { cn } from "@/lib/cn";
 import { CATEGORIES, CATEGORY_ORDER, gamesIn } from "@/games/catalog";
+import { SOLO_GAMES } from "@/lib/solo/catalog";
 import { saveGameFlags } from "@/lib/admin/actions";
 import type { GameFlags } from "@/lib/games/flags";
 
@@ -50,13 +51,13 @@ export function GameSwitches({ initial }: { initial: GameFlags }) {
 
   return (
     <div className="mt-8 space-y-8">
-      {CATEGORY_ORDER.map((c) => (
+      {[...CATEGORY_ORDER, "solo" as const].map((c) => (
         <section key={c} aria-labelledby={`cat-${c}`}>
-          <h2 id={`cat-${c}`} className="eyebrow border-t-[1.5px] border-line-strong pt-4" style={{ color: CATEGORIES[c].ink }}>
-            {c === "spicy" ? "After Dark (18+)" : CATEGORIES[c].label}
+          <h2 id={`cat-${c}`} className="eyebrow border-t-[1.5px] border-line-strong pt-4" style={{ color: c === "solo" ? "#b07510" : CATEGORIES[c].ink }}>
+            {c === "solo" ? "Solo (free for everyone)" : c === "spicy" ? "After Dark (18+)" : CATEGORIES[c].label}
           </h2>
           <ul className="mt-2 divide-y divide-line">
-            {gamesIn(c).map((g) => {
+            {(c === "solo" ? SOLO_GAMES.map((g) => ({ id: g.id, name: g.kind === "bot" ? `${g.name} vs the bot` : g.name })) : gamesIn(c)).map((g) => {
               const off = flags.off.includes(g.id);
               return (
                 <li key={g.id} className="flex flex-wrap items-center gap-x-6 gap-y-2 py-3">

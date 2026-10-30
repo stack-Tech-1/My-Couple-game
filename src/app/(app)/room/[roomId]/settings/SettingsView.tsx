@@ -32,6 +32,7 @@ import { PageBackdrop } from "@/components/room/HomeBackdrop";
 import { PAGE_LOOKS } from "@/games/look";
 import { LEAVE_REASONS, type LeaveReason } from "@/lib/plus/plans";
 import { recordLeaveReason } from "@/lib/plus/actions";
+import { setSoloHome } from "@/lib/solo/home-actions";
 import { PlusSummary } from "@/components/plus/PlusSummary";
 
 export function SettingsView({ announcementEmails, feedback, push }: { announcementEmails: boolean; feedback: { threads: FeedbackThread[]; unread: number }; push: { publicKey: string | null; prefs: PushPrefs; quiet: Quiet } }) {
@@ -139,6 +140,23 @@ export function SettingsView({ announcementEmails, feedback, push }: { announcem
         <Link prefetch={false} href="/room/new" className="inline-flex items-center gap-1.5 font-semibold underline underline-offset-4">
           Start or join a friend room <Icon name="arrowRight" size={16} />
         </Link>
+        {!partner && !friendsRoom ? (
+          <div className="mt-4 border-t border-line">
+            <Toggle
+              checked={!!me.profile.solo_home}
+              onChange={(v) =>
+                start(async () => {
+                  const r = await setSoloHome(v);
+                  if (!r.ok) return void toast.error(r.error);
+                  toast.success(v ? "Solo is your home for now." : "Your room is home again.", v ? "Everything switches back when your person joins." : undefined);
+                  router.refresh();
+                })
+              }
+              label="Solo as my home screen"
+              description="While you wait for your person, open Amah straight to Solo games."
+            />
+          </div>
+        ) : null}
       </Section>
 
       <Section title="Just for you" id="you">

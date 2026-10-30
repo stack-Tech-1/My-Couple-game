@@ -4,6 +4,7 @@ import { gameMeta } from "@/games/catalog";
 import { BarList, ColumnChart, RetentionGrid, TrendChart } from "@/components/admin/Charts";
 import { compact } from "@/lib/format";
 import { cn } from "@/lib/cn";
+import { NewFeatureNumbers } from "@/components/admin/NewFeatureNumbers";
 
 const RANGES = [7, 30, 90] as const;
 
@@ -68,6 +69,8 @@ export default async function AdminOverview({ searchParams }: { searchParams: Pr
         <Tile label="Games started" value={t.games} sub={`${t.active_couples.toLocaleString()} active couples`} />
         <Tile label="Chat messages" value={t.messages} sub={`${t.voice_notes.toLocaleString()} voice · ${t.stickers.toLocaleString()} stickers`} />
       </div>
+
+      <NewFeatureNumbers />
 
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
         <Card>

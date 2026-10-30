@@ -9,6 +9,7 @@ import { FEEDBACK_STATUSES, REPORT_STATUSES } from "@/lib/feedback/types";
 import type { ActionResult } from "@/lib/room/types";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { currentAdmin } from "./server";
+import { audit } from "./audit";
 
 // Every action re-checks admin rights itself: a server action is a public endpoint.
 async function guard() {
@@ -25,7 +26,8 @@ const note = z.string().trim().max(2000).transform((v) => v || null);
 
 export async function updateFeedback(id: unknown, patch: unknown): Promise<ActionResult> {
   try {
-    await guard();
+    const me = await guard();
+    await audit(me, "feedback.update", String(id));
     const fid = z.uuid().parse(id);
     const p = z.object({ status: z.enum(FEEDBACK_STATUSES).optional(), admin_note: note.optional() }).parse(patch);
     const { error } = await supabaseAdmin().from("feedback").update({ ...p, updated_at: new Date().toISOString() }).eq("id", fid);
@@ -39,6 +41,7 @@ export async function updateFeedback(id: unknown, patch: unknown): Promise<Actio
 export async function replyAsTeam(id: unknown, body: unknown): Promise<ActionResult> {
   try {
     const me = await guard();
+    await audit(me, "feedback.reply", String(id));
     const fid = z.uuid().parse(id);
     const text = z.string().trim().min(1, "Write a reply first.").max(2000).parse(body);
     const admin = supabaseAdmin();
@@ -61,6 +64,7 @@ export async function replyAsTeam(id: unknown, body: unknown): Promise<ActionRes
 export async function approveSuggestion(id: unknown, editedBody?: unknown): Promise<ActionResult> {
   try {
     const me = await guard();
+    await audit(me, "suggestion.approve", String(id));
     const sid = z.uuid().parse(id);
     const admin = supabaseAdmin();
     const { data: s } = await admin.from("suggestions").select("kind, body, status").eq("id", sid).maybeSingle();
@@ -80,7 +84,8 @@ export async function approveSuggestion(id: unknown, editedBody?: unknown): Prom
 
 export async function rejectSuggestion(id: unknown): Promise<ActionResult> {
   try {
-    await guard();
+    const me = await guard();
+    await audit(me, "suggestion.reject", String(id));
     const sid = z.uuid().parse(id);
     const { error } = await supabaseAdmin().from("suggestions").update({ status: "rejected", reviewed_at: new Date().toISOString() }).eq("id", sid).eq("status", "pending");
     return error ? fail(error) : done();
@@ -91,7 +96,8 @@ export async function rejectSuggestion(id: unknown): Promise<ActionResult> {
 
 export async function updateReport(id: unknown, patch: unknown): Promise<ActionResult> {
   try {
-    await guard();
+    const me = await guard();
+    await audit(me, "report.update", String(id));
     const rid = z.uuid().parse(id);
     const p = z.object({ status: z.enum(REPORT_STATUSES).optional(), admin_note: note.optional() }).parse(patch);
     const resolved = p.status === "resolved" || p.status === "dismissed";

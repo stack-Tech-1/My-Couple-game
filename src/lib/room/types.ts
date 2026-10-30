@@ -13,6 +13,10 @@ export type Profile = {
   theme?: "day" | "night" | "auto";
   /** Welcome tour: start it, offer it, or already seen. */
   tour?: "auto" | "ask" | "done";
+  /** "Just me for now": Solo is home until someone joins. Only on my own profile. */
+  solo_home?: boolean;
+  /** When I answered "Still waiting for your person?" (asked once). Only on my own profile. */
+  waiting_prompt_at?: string | null;
   /** Games whose "how to play" tour this person has finished or skipped. */
   toured_games?: string[];
   /**

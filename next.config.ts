@@ -7,6 +7,9 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/room/[roomId]/poster": ["./assets/fonts/*.ttf"],
     "/api/sessions/[id]/move": ["./assets/words/*.txt"],
+    // Ọ̀rọ̀ of the Day checks guesses against the same dictionary (server action on this page).
+    "/solo/[game]": ["./assets/words/*.txt"],
+    "/admin/words": ["./assets/words/*.txt"],
   },
   images: {
     remotePatterns: [{ protocol: "https", hostname: "*.supabase.co" }],

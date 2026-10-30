@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isSoloGame } from "@/lib/solo/catalog";
 
 /**
  * Amah Plus, in one place: what's free, what it costs, and the free limits.
@@ -18,7 +19,8 @@ export const FREE_GAMES = new Set([
   "love-notes",
   "memory-lane",
 ]);
-export const isPlusGame = (gameId: string) => !FREE_GAMES.has(gameId);
+/** Solo games are free for everyone, always, so they can never count as Plus. */
+export const isPlusGame = (gameId: string) => !FREE_GAMES.has(gameId) && !isSoloGame(gameId);
 
 /** Free limits (Plus has none). */
 export const FREE_LIMITS = { photos: 5, sealedNotes: 3, friendRooms: 1 } as const;

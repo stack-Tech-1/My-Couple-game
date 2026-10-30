@@ -16,6 +16,7 @@ import { PageBackdrop } from "@/components/room/HomeBackdrop";
 import { GamesPeek } from "@/components/room/GamesPeek";
 import { PAGE_LOOKS } from "@/games/look";
 import { SeatPrompt } from "@/components/plus/SeatPrompt";
+import { SoloHomeCard } from "@/components/solo/SoloHomeCard";
 
 /** Home of a friend room: who's here, the leaderboard, your games in progress, and the friend library. */
 export async function FriendRoomHome({ roomId }: { roomId: string }) {
@@ -48,6 +49,9 @@ export async function FriendRoomHome({ roomId }: { roomId: string }) {
       ) : null}
       <Birthdays />
       <GettingStarted roomId={roomId} items={checklist} />
+      <div className="mt-6">
+        <SoloHomeCard big={bundle.members.length === 1} />
+      </div>
       <WelcomeTour />
       <ActiveGames sessions={active} me={me} />
       {watchable.length ? (

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { getRoom } from "@/lib/room/server";
+import type { RoomBundle } from "@/lib/room/types";
 import { RoomProvider } from "@/lib/realtime/RoomProvider";
 import { RoomHeader } from "@/components/room/RoomHeader";
 import { ConnectionBanner } from "@/components/room/ConnectionBanner";
@@ -18,11 +19,22 @@ import { TabBar } from "@/components/room/TabBar";
 
 export const dynamic = "force-dynamic";
 
-async function liveAnnouncements(): Promise<Announcement[]> {
+async function liveAnnouncements(): Promise<(Announcement & { audience: string })[]> {
   const supabase = await supabaseServer();
   // RLS returns only the live ones.
-  const { data } = await supabase.from("announcements").select("id, title, body, tone, link_url, link_label").order("starts_at", { ascending: false }).limit(5);
-  return (data ?? []) as Announcement[];
+  const { data } = await supabase.from("announcements").select("id, title, body, tone, link_url, link_label, audience").order("starts_at", { ascending: false }).limit(10);
+  return (data ?? []) as (Announcement & { audience: string })[];
+}
+
+/** Announcements meant for a group only reach that group. */
+function forMe(list: (Announcement & { audience: string })[], bundle: RoomBundle): Announcement[] {
+  const me = bundle.me.profile.id;
+  const plus = bundle.plus.live && !!bundle.plus.until[me];
+  const waiting = bundle.rooms.some((r) => r.kind === "couple" && r.members < 2);
+  return list
+    .filter((a) => a.audience === "all" || (a.audience === "plus" && plus) || (a.audience === "free" && !plus) || (a.audience === "waiting" && waiting))
+    .slice(0, 5)
+    .map(({ audience: _audience, ...a }) => a);
 }
 
 /** Has this person accepted the current Terms? null = never asked (signed up before we did). */
@@ -49,7 +61,7 @@ export default async function RoomLayout({ children, params }: { children: React
       <GameFlagsProvider flags={flags}>
         <RoomHeader feedbackUnread={feedbackUnread} />
         <ConnectionBanner />
-        <AnnouncementBar items={announcements} />
+        <AnnouncementBar items={forMe(announcements, bundle)} />
         <InviteListener />
         <Heartbeat userId={bundle.me.profile.id} />
         <main className="mx-auto max-w-6xl px-4 pb-32 sm:px-8 sm:pb-24">{children}</main>

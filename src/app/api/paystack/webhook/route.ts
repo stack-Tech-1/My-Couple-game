@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { validSignature, type PaystackCharge } from "@/lib/plus/paystack";
+import { health } from "@/lib/admin/audit";
 import { confirmCharge, reverseCharge, subscriptionCreated, subscriptionStopped } from "@/lib/plus/server";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +11,10 @@ export const dynamic = "force-dynamic";
  */
 export async function POST(req: Request) {
   const raw = await req.text();
-  if (!validSignature(raw, req.headers.get("x-paystack-signature"))) return new NextResponse("Bad signature", { status: 401 });
+  if (!validSignature(raw, req.headers.get("x-paystack-signature"))) {
+    await health("paystack_webhook_rejected", false, "A request without a valid Paystack signature was ignored.");
+    return new NextResponse("Bad signature", { status: 401 });
+  }
   let event: { event?: string; data?: Record<string, unknown> };
   try {
     event = JSON.parse(raw);
@@ -41,9 +45,11 @@ export async function POST(req: Request) {
         break;
       }
     }
-  } catch {
+  } catch (e) {
     // A 500 makes Paystack retry later, which is what we want if the database hiccupped.
+    await health("paystack_webhook", false, `${event.event ?? "unknown"}: ${e instanceof Error ? e.message : "failed"}`);
     return new NextResponse("Try again", { status: 500 });
   }
+  await health("paystack_webhook", true, event.event ?? "unknown");
   return NextResponse.json({ ok: true });
 }

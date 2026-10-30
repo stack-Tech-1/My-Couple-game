@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { listUsers, USER_FILTERS, USERS_PAGE, type UserFilter } from "@/lib/admin/server";
 import { UserTools } from "@/components/admin/UserTools";
+import { PersonDetail } from "@/components/admin/PersonDetail";
 import { cn } from "@/lib/cn";
+import { supabaseAdmin } from "@/lib/supabase/server";
+import type { UserRow } from "@/lib/admin/server";
 
 const FILTER_LABEL: Record<UserFilter, string> = { all: "Everyone", paired: "Paired", waiting: "Waiting for partner", no_room: "No room yet", suspended: "Suspended", admins: "Admins" };
 const day = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "2-digit" }) : "–");
@@ -52,10 +55,13 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
       </nav>
 
       <p className="mt-5 text-[0.85rem] text-muted">
-        {total.toLocaleString()} {total === 1 ? "account" : "accounts"}
+        {filter === "paired" ? `${Math.ceil(total / 2).toLocaleString()} ${Math.ceil(total / 2) === 1 ? "couple" : "couples"}` : `${total.toLocaleString()} ${total === 1 ? "account" : "accounts"}`}
         {q ? ` matching “${q}”` : ""}
       </p>
 
+      {filter === "paired" ? (
+        <Couples rows={rows} manage={(email) => `${href({ email })}#manage`} />
+      ) : (
       <div className="mt-3 overflow-x-auto rounded-[18px] border border-line bg-raised">
         <table className="w-full min-w-[34rem] text-[0.88rem]">
           <caption className="sr-only">Accounts</caption>
@@ -102,6 +108,7 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
           </tbody>
         </table>
       </div>
+      )}
 
       {pages > 1 ? (
         <nav aria-label="Pages" className="mt-4 flex items-center justify-between text-[0.88rem]">
@@ -125,6 +132,8 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
         </nav>
       ) : null}
 
+      {sp.email ? <PersonDetail email={sp.email} /> : null}
+
       <section id="manage" aria-labelledby="manage-h" className="mt-12 max-w-2xl scroll-mt-28">
         <h2 id="manage-h" className="display text-[1.9rem]">
           Manage an account
@@ -133,5 +142,76 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
         <UserTools key={sp.email ?? ""} initialEmail={sp.email ?? ""} />
       </section>
     </div>
+  );
+}
+
+/** "Paired": one row per couple, both people side by side. */
+async function Couples({ rows, manage }: { rows: UserRow[]; manage: (email: string) => string }) {
+  // Each couple appears twice in the account list (once per person): keep it once.
+  const seen = new Set<string>();
+  const couples = rows.filter((r) => r.room_id && r.partner_id && !seen.has(r.room_id) && seen.add(r.room_id));
+  const roomIds = couples.map((c) => c.room_id!);
+  const { data: games } = roomIds.length ? await supabaseAdmin().from("game_sessions").select("room_id").in("room_id", roomIds).eq("status", "finished").limit(20000) : { data: [] };
+  const count = (rid: string) => (games ?? []).filter((g) => g.room_id === rid).length;
+  const lastOf = (r: UserRow) => {
+    const other = rows.find((x) => x.id === r.partner_id);
+    const a = r.last_active ?? "";
+    const b = other?.last_active ?? "";
+    return a > b ? a : b || null;
+  };
+  return (
+    <div className="mt-3 overflow-x-auto rounded-[18px] border border-line bg-raised">
+      <table className="w-full min-w-[40rem] text-[0.88rem]">
+        <caption className="sr-only">Couples</caption>
+        <thead className="text-left text-[0.78rem] text-muted">
+          <tr>
+            <th className="px-4 py-3 font-semibold">Couple</th>
+            <th className="px-4 py-3 font-semibold">Paired since</th>
+            <th className="px-4 py-3 font-semibold">Last active</th>
+            <th className="px-4 py-3 text-right font-semibold">Games together</th>
+          </tr>
+        </thead>
+        <tbody>
+          {couples.map((c) => (
+            <tr key={c.room_id} className="border-t border-line align-top">
+              <td className="px-4 py-3">
+                <div className="flex flex-wrap items-start gap-x-3 gap-y-1">
+                  <Person name={c.display_name} email={c.email} href={manage(c.email)} />
+                  <span aria-hidden className="pt-0.5 text-accent">♥</span>
+                  <span className="sr-only">and</span>
+                  <Person name={c.partner_name} email={c.partner_email ?? ""} href={c.partner_email ? manage(c.partner_email) : undefined} />
+                </div>
+              </td>
+              <td className="whitespace-nowrap px-4 py-3 tabular-nums">{day(c.paired_at)}</td>
+              <td className="whitespace-nowrap px-4 py-3 tabular-nums">{day(lastOf(c))}</td>
+              <td className="px-4 py-3 text-right tabular-nums">{count(c.room_id!)}</td>
+            </tr>
+          ))}
+          {!couples.length ? (
+            <tr>
+              <td colSpan={4} className="px-4 py-10 text-center text-muted">
+                No couples match.
+              </td>
+            </tr>
+          ) : null}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function Person({ name, email, href }: { name: string | null; email: string; href?: string }) {
+  const body = (
+    <>
+      <span className="block font-semibold">{name || "No name yet"}</span>
+      <span className="block text-muted">{email}</span>
+    </>
+  );
+  return href ? (
+    <Link prefetch={false} href={href} className="hover:underline" aria-label={`Manage ${email}`}>
+      {body}
+    </Link>
+  ) : (
+    <span>{body}</span>
   );
 }

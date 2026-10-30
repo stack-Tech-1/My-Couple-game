@@ -4,6 +4,7 @@ import { CATEGORIES, CATEGORY_ORDER, gamesIn, isFriendGame } from "@/games/catal
 import { useGameFlags } from "@/lib/games/FlagsProvider";
 import { useRoom } from "@/lib/realtime/RoomProvider";
 import { Library } from "./Library";
+import { SoloShelf } from "@/components/solo/SoloShelf";
 
 /** The Games tab: a chip per mood that jumps to its shelf, then every shelf. */
 export function GamesTab() {
@@ -18,6 +19,9 @@ export function GamesTab() {
     <div className="pt-6 sm:pt-10">
       <h1 className="display text-[clamp(2.4rem,9vw,3.6rem)]">Games</h1>
       <nav aria-label="Jump to a mood" className="-mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
+        <a href="#shelf-solo" className="shrink-0 rounded-full bg-[#1c1416] px-4 py-2 text-[0.88rem] font-bold text-[#f6efe6]">
+          On your own
+        </a>
         {moods.map((c) => (
           <a key={c} href={`#shelf-${c}`} className="glass shrink-0 rounded-full px-4 py-2 text-[0.88rem] font-bold">
             {CATEGORIES[c].label}
@@ -25,6 +29,9 @@ export function GamesTab() {
         ))}
       </nav>
       <div className="mt-6">
+        <SoloShelf />
+      </div>
+      <div className="mt-14">
         <Library heading={false} />
       </div>
     </div>

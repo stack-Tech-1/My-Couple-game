@@ -9,6 +9,7 @@ import { Button } from "@/design/Button";
 import { TextField } from "@/design/Field";
 import { Logo } from "@/design/Logo";
 import { saveProfile } from "@/lib/room/actions";
+import { setSoloHome } from "@/lib/solo/home-actions";
 import { NewRoomForm } from "@/components/friends/NewRoomForm";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import type { Profile } from "@/lib/room/types";
@@ -99,6 +100,27 @@ export function Onboarding({ profile, startAt, next }: { profile: Profile; start
             <h1 className="display text-[clamp(2.6rem,9vw,3.8rem)] max-sm:text-[#f6efe6]">Now, your first room.</h1>
             <p className="mt-3 mb-10 text-muted max-sm:text-[#f6efe6]/85">A couple room is just for the two of you. A friend room fits up to eight. You can have one of each, and more friend rooms later.</p>
             <NewRoomForm name={name} hasCouple={false} friendRooms={0} initialMode={next?.startsWith("/join/") ? "join" : "couple"} onBack={() => setStep("you")} />
+            <div className="glass mt-8 flex flex-wrap items-center gap-4 rounded-[20px] p-4">
+              <div className="min-w-0 flex-1">
+                <p className="font-bold">Just me for now</p>
+                <p className="text-[0.88rem] text-muted">Play Solo games. Start or join a room whenever you like.</p>
+              </div>
+              <Button
+                variant="outline"
+                loading={pending}
+                onClick={() =>
+                  start(async () => {
+                    const r = await setSoloHome(true);
+                    if (!r.ok) return setError(r.error);
+                    track("onboarding_solo");
+                    router.push("/solo");
+                  })
+                }
+              >
+                Just me for now
+              </Button>
+            </div>
+            {error ? <p role="alert" className="mt-4 font-medium text-accent-ink">{error}</p> : null}
           </motion.div>
         )}
       </AnimatePresence>

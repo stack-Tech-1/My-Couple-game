@@ -10,6 +10,7 @@ import { notify } from "@/lib/push/server";
 import { clearQueuedEarlyMonths, grantEarlyMonthIfDue, plusConfig, plusUser, savePlusConfig, type AdminPlusUser } from "./admin";
 import { disableSubscription, fetchSubscription, refund } from "./paystack";
 import { reverseCharge, subscriptionStopped } from "./server";
+import { audit } from "@/lib/admin/audit";
 
 // Every action re-checks admin rights itself: a server action is a public endpoint.
 async function guard() {
@@ -36,6 +37,7 @@ export async function setPlusLaunch(at: unknown): Promise<ActionResult<{ early: 
       // Before launch: the queued free months go too. After launch: everyone keeps what they have.
       await clearQueuedEarlyMonths();
       await savePlusConfig({ ...(await plusConfig()), launched_at: null }, me.id);
+      await audit(me, "plus.switch_off");
       done();
       return { ok: true, data: { early: null } };
     }
@@ -52,6 +54,7 @@ export async function setPlusLaunch(at: unknown): Promise<ActionResult<{ early: 
       await savePlusConfig({ ...(await plusConfig()), launched_at: next }, me.id);
     }
     const early = await grantEarlyMonthIfDue();
+    await audit(me, "plus.launch", next, { early });
     done();
     return { ok: true, data: { early } };
   } catch (e) {
@@ -80,6 +83,7 @@ export async function giveAdminPlus(userId: unknown, length: unknown): Promise<A
     const len = z.enum(Object.keys(LENGTHS) as [keyof typeof LENGTHS, ...(keyof typeof LENGTHS)[]]).parse(length);
     const { data, error } = await supabaseAdmin().rpc("plus_stack_seat", { p_user: id, p_purchase: null, p_source: "admin", p_length: LENGTHS[len], p_given_by: me.id });
     if (error) return fail(error);
+    await audit(me, "plus.give", id, { length: LENGTHS[len] });
     await notify(id, "plus", { title: "The Amah team gave you Plus", body: "Every game is open. Enjoy.", url: "/room", tag: "plus-admin" }, { evenIfHere: true });
     done();
     return { ok: true, data: { until: data as string } };
@@ -91,10 +95,11 @@ export async function giveAdminPlus(userId: unknown, length: unknown): Promise<A
 /** End one seat now (for example, a mistaken gift). Payments are refunded separately. */
 export async function endSeat(seatId: unknown): Promise<ActionResult> {
   try {
-    await guard();
+    const me = await guard();
     const id = z.uuid().parse(seatId);
     const { error } = await supabaseAdmin().from("plus_seats").update({ revoked_at: new Date().toISOString() }).eq("id", id).is("revoked_at", null);
     if (error) return fail(error);
+    await audit(me, "plus.end_seat", id);
     done();
     return { ok: true, data: null };
   } catch (e) {
@@ -105,7 +110,7 @@ export async function endSeat(seatId: unknown): Promise<ActionResult> {
 /** Full refund through Paystack. The Plus that payment bought ends now. */
 export async function refundPayment(reference: unknown): Promise<ActionResult> {
   try {
-    await guard();
+    const me = await guard();
     const ref = z.string().regex(/^[A-Za-z0-9-]{6,100}$/).parse(reference);
     const { data } = await supabaseAdmin().from("plus_purchases").select("status, paystack_subscription, cancelled_at").eq("reference", ref).maybeSingle();
     if (!data) return { ok: false, error: "No payment with that reference." };
@@ -116,6 +121,7 @@ export async function refundPayment(reference: unknown): Promise<ActionResult> {
       return { ok: false, error: `Paystack: ${e instanceof Error ? e.message : "the refund didn't go through"}` };
     }
     await reverseCharge(ref, "refunded");
+    await audit(me, "plus.refund", ref);
     // A refunded card plan shouldn't charge them again next month.
     const sub = data.paystack_subscription as string | null;
     if (sub && !data.cancelled_at) {

@@ -3,6 +3,7 @@ import nodemailer from "nodemailer";
 import { APP_NAME, siteUrl } from "@/lib/config";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { renderAnnouncement } from "./template";
+import { inAudience, type Audience } from "@/lib/admin/audience";
 import { oneClickUrl, unsubscribeUrl } from "./unsubscribe";
 
 /**
@@ -71,7 +72,11 @@ export async function emailEveryone(announcementId: string): Promise<{ sent: num
   if (!a) throw new Error("That announcement is gone.");
   const { data, error } = await admin.rpc("admin_email_recipients");
   if (error) throw error;
-  const people = (data ?? []) as Recipient[];
+  // Only the group the announcement is for.
+  const { data: row } = await admin.from("announcements").select("audience").eq("id", announcementId).maybeSingle();
+  const all = (data ?? []) as Recipient[];
+  const keep = await inAudience(all.map((p) => p.id), ((row?.audience as Audience | undefined) ?? "all"));
+  const people = all.filter((p) => keep.has(p.id));
 
   const t = transport();
   let sent = 0;

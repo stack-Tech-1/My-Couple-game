@@ -386,3 +386,13 @@ body::after {
   from { transform: translateY(-40px); }
   to { transform: none; }
 }
+
+/* A wrong guess: a quick side-to-side shake. */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-\[shake_\.35s\] { animation: none; }
+}

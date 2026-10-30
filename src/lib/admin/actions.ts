@@ -3,12 +3,14 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { GAMES } from "@/games/catalog";
+import { SOLO_GAMES } from "@/lib/solo/catalog";
 import { friendlyError } from "@/lib/errors";
 import { gameFlagsSchema } from "@/lib/games/flags";
 import { purgeRoomMedia } from "@/lib/media/purge";
 import type { ActionResult } from "@/lib/room/types";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { currentAdmin } from "./server";
+import { audit } from "./audit";
 import { emailConfigured, emailEveryone, sendTestEmail } from "@/lib/email/send";
 
 // Every action re-checks admin rights itself: a server action is a public endpoint.
@@ -54,6 +56,7 @@ export async function setSuspended(userId: unknown, suspended: unknown): Promise
     // A ban stops sign-ins and token refreshes; an open session lapses within the hour.
     const { error } = await supabaseAdmin().auth.admin.updateUserById(id, { ban_duration: suspended === true ? "876000h" : "none" });
     if (error) return fail(error);
+    await audit(me, suspended === true ? "user.suspend" : "user.unsuspend", id);
     revalidatePath("/admin");
     return { ok: true, data: null };
   } catch (e) {
@@ -81,6 +84,7 @@ export async function deleteUserAccount(userId: unknown, typedEmail: unknown): P
     const { error } = await admin.auth.admin.deleteUser(id);
     if (error) return fail(error);
     await Promise.all((memberships ?? []).map((m) => purgeRoomMedia(m.room_id as string)));
+    await audit(me, "user.delete", u.user.email ?? id);
     revalidatePath("/admin");
     return { ok: true, data: null };
   } catch (e) {
@@ -95,10 +99,11 @@ export async function saveGameFlags(input: unknown): Promise<ActionResult> {
     const me = await guard();
     const parsed = gameFlagsSchema.safeParse(input);
     if (!parsed.success) return { ok: false, error: "Those switches didn't add up." };
-    const known = new Set(GAMES.map((g) => g.id));
+    const known = new Set([...GAMES.map((g) => g.id), ...SOLO_GAMES.map((g) => g.id)]);
     const clean = { off: [...new Set(parsed.data.off.filter((id) => known.has(id)))], new: [...new Set(parsed.data.new.filter((id) => known.has(id)))] };
     const { error } = await supabaseAdmin().from("app_config").upsert({ key: "games", value: clean, updated_at: new Date().toISOString(), updated_by: me.id });
     if (error) return fail(error);
+    await audit(me, "games.switches", null, clean);
     revalidatePath("/", "layout");
     return { ok: true, data: null };
   } catch (e) {
@@ -125,6 +130,8 @@ const announcementInput = z
       .max(30, "Keep the link text short.")
       .transform((v) => v || null),
     days: z.number().int().min(1).max(60).nullable(),
+    /** Who sees it: everyone, or one group. */
+    audience: z.enum(["all", "free", "plus", "waiting"]).default("all"),
   })
   .refine((v) => !v.link_label || v.link_url, { message: "Add the link itself, or clear the link text.", path: ["link_url"] });
 
@@ -141,6 +148,7 @@ export async function createAnnouncement(input: unknown): Promise<ActionResult<{
       .select("id")
       .single();
     if (error || !data) return fail(error);
+    await audit(me, "announcement.create", rest.title, { audience: rest.audience });
     revalidatePath("/", "layout");
     return { ok: true, data: { id: data.id as string } };
   } catch (e) {
@@ -150,9 +158,10 @@ export async function createAnnouncement(input: unknown): Promise<ActionResult<{
 
 export async function endAnnouncement(id: unknown): Promise<ActionResult> {
   try {
-    await guard();
+    const me = await guard();
     const aid = z.uuid().parse(id);
     const admin = supabaseAdmin();
+    await audit(me, "announcement.end", aid);
     const { data: a } = await admin.from("announcements").select("starts_at").eq("id", aid).maybeSingle();
     if (!a) return { ok: false, error: "That announcement is gone already." };
     // Ending one that hasn't started yet just removes it.
@@ -189,7 +198,7 @@ export async function sendAnnouncementTest(id: unknown): Promise<ActionResult<{ 
 /** Email an announcement to everyone who hasn't opted out. Once per announcement. */
 export async function emailAnnouncement(id: unknown): Promise<ActionResult<{ sent: number; failed: number }>> {
   try {
-    await guard();
+    const me = await guard();
     if (!emailConfigured()) return { ok: false, error: NOT_SET_UP };
     const aid = z.uuid().parse(id);
     const admin = supabaseAdmin();
@@ -209,6 +218,7 @@ export async function emailAnnouncement(id: unknown): Promise<ActionResult<{ sen
       await release();
       return { ok: false, error: "No emails could be sent. Check SMTP_USER and SMTP_PASS (a Gmail app password, not your normal password)." };
     }
+    await audit(me, "announcement.email", aid, result);
     revalidatePath("/admin/announcements");
     return { ok: true, data: result };
   } catch (e) {

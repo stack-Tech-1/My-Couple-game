@@ -7,6 +7,7 @@ import { isKind, KINDS } from "@/lib/content/catalog";
 import type { ActionResult } from "@/lib/room/types";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { currentAdmin } from "./server";
+import { audit } from "./audit";
 
 async function guard() {
   const admin = await currentAdmin();
@@ -18,6 +19,7 @@ const fail = (e: unknown): { ok: false; error: string } => ({ ok: false, error: 
 export async function addContent(kind: unknown, body: unknown): Promise<ActionResult> {
   try {
     const me = await guard();
+    await audit(me, "content.add", String(kind));
     if (!isKind(kind)) return { ok: false, error: "Unknown deck." };
     const parsed = (KINDS[kind].schema as z.ZodType<unknown>).safeParse(body);
     if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the fields." };
@@ -34,6 +36,7 @@ export async function addContent(kind: unknown, body: unknown): Promise<ActionRe
 export async function setContentHidden(kind: unknown, key: unknown, hidden: unknown): Promise<ActionResult> {
   try {
     const me = await guard();
+    await audit(me, "content.hide", String(key));
     if (!isKind(kind)) return { ok: false, error: "Unknown deck." };
     const k = z.string().min(1).max(80).parse(key);
     const admin = supabaseAdmin();
@@ -53,7 +56,8 @@ export async function setContentHidden(kind: unknown, key: unknown, hidden: unkn
 /** Register a file the admin just uploaded to stickers/starter/ as part of the starter pack. */
 export async function addStarterSticker(path: unknown, animated: unknown): Promise<ActionResult<{ duplicate: boolean }>> {
   try {
-    await guard();
+    const me = await guard();
+    await audit(me, "sticker.add", String(path));
     const p = z.string().regex(/^starter\/[a-z0-9]{8,64}\.(webp|png|gif)$/).parse(path);
     const admin = supabaseAdmin();
     const { data: existing } = await admin.from("stickers").select("id").eq("path", p).maybeSingle();
@@ -71,7 +75,8 @@ export async function addStarterSticker(path: unknown, animated: unknown): Promi
 /** Take a sticker out of the starter pack. Messages that already used it keep showing it. */
 export async function removeStarterSticker(id: unknown): Promise<ActionResult> {
   try {
-    await guard();
+    const me = await guard();
+    await audit(me, "sticker.remove", String(id));
     const sid = z.uuid().parse(id);
     const { error } = await supabaseAdmin().from("stickers").delete().eq("id", sid).is("room_id", null);
     if (error) return fail(error);

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getRoom, getRecentMoments, startChecklist } from "@/lib/room/server";
+import { getMyProfile, getRoom, getRecentMoments, startChecklist } from "@/lib/room/server";
 import { WelcomeTour } from "@/components/room/WelcomeTour";
 import { GettingStarted } from "@/components/room/GettingStarted";
 import { FriendRoomHome } from "@/components/friends/FriendRoomHome";
@@ -23,6 +23,8 @@ import { ActiveGames } from "@/components/room/ActiveGames";
 import { activeSessions, scoreboard } from "@/lib/games/server";
 import { getDaily } from "@/lib/daily/server";
 import { DailyQuestion } from "@/components/room/DailyQuestion";
+import { SoloHomeCard } from "@/components/solo/SoloHomeCard";
+import { WaitingPrompt } from "@/components/solo/WaitingPrompt";
 
 export const metadata: Metadata = { title: "Your room" };
 
@@ -45,6 +47,7 @@ export default async function RoomHome({ params }: { params: Promise<{ roomId: s
   const mine = board.totals[bundle.me.profile.id] ?? 0;
   const theirs = bundle.partner ? (board.totals[bundle.partner.profile.id] ?? 0) : 0;
   const paired = !!bundle.partner;
+  const profile = paired ? null : await getMyProfile();
 
   return (
     <div className="relative isolate pt-0 sm:pt-8">
@@ -54,6 +57,16 @@ export default async function RoomHome({ params }: { params: Promise<{ roomId: s
       <InstallPrompt />
       {paired ? <NotifyPrompt publicKey={keys?.publicKey ?? null} /> : null}
       {!paired ? <InvitePanel /> : null}
+      {/* Asked once, a day or more after the room was made: still waiting, play Solo, or friends? */}
+      {!paired && !profile?.waiting_prompt_at && !bundle.rooms.some((r) => r.kind === "friends") && Date.now() - Date.parse(bundle.room.created_at) > 864e5 ? (
+        <WaitingPrompt inviteCode={bundle.room.invite_code} />
+      ) : null}
+      {/* While your person hasn't joined, Solo is the main thing to do. */}
+      {!paired ? (
+        <div className="mt-6">
+          <SoloHomeCard big />
+        </div>
+      ) : null}
       <GettingStarted roomId={roomId} items={checklist} />
       <WelcomeTour />
       <ActiveGames sessions={active} />
@@ -63,6 +76,7 @@ export default async function RoomHome({ params }: { params: Promise<{ roomId: s
           {/* Tonight first: something to play and today's question. */}
           <PlayNext />
           {daily ? <DailyQuestion daily={daily} /> : null}
+          {paired ? <SoloHomeCard big={false} /> : null}
           {progress ? <UsPanel roomId={roomId} stats={progress} /> : null}
           {together ? <ChallengeCard challenge={together.challenge} /> : null}
           {week ? <WeeklyRecap week={week} /> : null}

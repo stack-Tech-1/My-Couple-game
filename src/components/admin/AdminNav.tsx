@@ -10,11 +10,16 @@ const LINKS = [
   { href: "/admin", label: "Overview" },
   { href: "/admin/inbox", label: "Inbox" },
   { href: "/admin/users", label: "Users" },
+  { href: "/admin/rooms", label: "Friend rooms" },
   { href: "/admin/plus", label: "Plus" },
   { href: "/admin/games", label: "Games" },
+  { href: "/admin/words", label: "Today's word" },
+  { href: "/admin/fixam", label: "Fix Am" },
   { href: "/admin/content", label: "Content" },
   { href: "/admin/stickers", label: "Stickers" },
   { href: "/admin/announcements", label: "Announcements" },
+  { href: "/admin/activity", label: "Activity" },
+  { href: "/admin/health", label: "Health" },
 ];
 
 export function AdminNav({ inbox = 0 }: { inbox?: number }) {

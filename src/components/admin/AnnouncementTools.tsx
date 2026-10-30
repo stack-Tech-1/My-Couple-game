@@ -40,6 +40,7 @@ export function AnnouncementTools({ items, emailReady, recipients }: { items: Ad
   const [linkUrl, setLinkUrl] = useState("");
   const [linkLabel, setLinkLabel] = useState("");
   const [days, setDays] = useState<number | null>(7);
+  const [audience, setAudience] = useState<"all" | "free" | "plus" | "waiting">("all");
   const [pending, start] = useTransition();
   const [alsoEmail, setAlsoEmail] = useState(false);
   const [confirmEmail, setConfirmEmail] = useState<AdminAnnouncement | null>(null);
@@ -67,9 +68,9 @@ export function AnnouncementTools({ items, emailReady, recipients }: { items: Ad
   function publish(e: FormEvent) {
     e.preventDefault();
     start(async () => {
-      const res = await createAnnouncement({ title, body, tone, link_url: linkUrl, link_label: linkLabel, days });
+      const res = await createAnnouncement({ title, body, tone, link_url: linkUrl, link_label: linkLabel, days, audience });
       if (!res.ok) return void toast.error(res.error);
-      toast.success("Announcement is live.", "It shows on everyone's next page load.");
+      toast.success("Announcement is live.", audience === "all" ? "It shows on everyone's next page load." : "Only the group you picked sees it, and only they get the email.");
       if (alsoEmail) {
         const item = { id: res.data.id, title } as AdminAnnouncement;
         setConfirmEmail(item);
@@ -115,6 +116,25 @@ export function AnnouncementTools({ items, emailReady, recipients }: { items: Ad
             <TextField label="Link (optional)" value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} placeholder="https://… or /room" />
             <TextField label="Link text" value={linkLabel} onChange={(e) => setLinkLabel(e.target.value)} maxLength={30} placeholder="Take a look" />
           </div>
+          <fieldset>
+            <legend className="text-[0.82rem] font-semibold">Who sees it</legend>
+            <div className="mt-1.5 flex flex-wrap gap-2">
+              {(
+                [
+                  ["all", "Everyone"],
+                  ["free", "Free plan only"],
+                  ["plus", "Amah Plus only"],
+                  ["waiting", "Waiting for their person"],
+                ] as const
+              ).map(([k, label]) => (
+                <label key={k} className={cn("cursor-pointer rounded-full border-[1.5px] px-3.5 py-1.5 text-[0.85rem] font-semibold", audience === k ? "border-fg bg-fg text-bg" : "border-line text-muted hover:text-fg")}>
+                  <input type="radio" name="audience" value={k} checked={audience === k} onChange={() => setAudience(k)} className="sr-only" />
+                  {label}
+                </label>
+              ))}
+            </div>
+            <p className="mt-1 text-[0.78rem] text-muted">The banner and the email both go only to this group.</p>
+          </fieldset>
           <label className="flex flex-col gap-1.5">
             <span className="text-[0.82rem] font-semibold">Show it for</span>
             <select

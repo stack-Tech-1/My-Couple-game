@@ -12,6 +12,8 @@ export type Stats = {
   wins: Record<string, number>;
   whot_wins: number;
   dailies: number;
+  /** Days you both finished today's word (Solo). */
+  words: number;
   messages: number;
   voice: number;
   nudges: number;
@@ -20,13 +22,14 @@ export type Stats = {
   bucket_done: number;
 };
 
-export const EMPTY_STATS: Stats = { streak: 0, best_streak: 0, shared_days: 0, games: 0, kinds: 0, coop_wins: 0, wins: {}, whot_wins: 0, dailies: 0, messages: 0, voice: 0, nudges: 0, notes: 0, memories: 0, bucket_done: 0 };
+export const EMPTY_STATS: Stats = { streak: 0, best_streak: 0, shared_days: 0, games: 0, kinds: 0, coop_wins: 0, wins: {}, whot_wins: 0, dailies: 0, words: 0, messages: 0, voice: 0, nudges: 0, notes: 0, memories: 0, bucket_done: 0 };
 
 /** Shared effort counts most; chatter counts a little, so a level means time together. */
 export function xpOf(s: Stats): number {
   return (
     s.games * 10 +
     s.dailies * 6 +
+    (s.words ?? 0) * 6 +
     s.shared_days * 4 +
     s.notes * 5 +
     s.memories * 5 +
@@ -65,6 +68,7 @@ const BADGES: { id: string; name: string; description: string; target: number; v
   { id: "streak_100", name: "Unbreakable", description: "Show up together 100 days in a row.", target: 100, value: (s) => s.best_streak },
   { id: "daily_10", name: "Curious minds", description: "Both answer 10 Daily Questions.", target: 10, value: (s) => s.dailies },
   { id: "daily_50", name: "Open books", description: "Both answer 50 Daily Questions.", target: 50, value: (s) => s.dailies },
+  { id: "words_10", name: "Word nerds", description: "Both finish today's word on 10 days.", target: 10, value: (s) => s.words ?? 0 },
   { id: "letters_5", name: "Pen pals", description: "Send 5 love notes.", target: 5, value: (s) => s.notes },
   { id: "memories_10", name: "Memory keepers", description: "Add 10 photos to Memory Lane.", target: 10, value: (s) => s.memories },
   { id: "bucket_5", name: "Dream chasers", description: "Tick off 5 bucket-list items.", target: 5, value: (s) => s.bucket_done },
