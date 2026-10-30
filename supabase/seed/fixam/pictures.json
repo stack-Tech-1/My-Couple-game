@@ -1,0 +1,426 @@
+[
+  {
+    "file": "olumo-rock.webp",
+    "name": "Olumo Rock",
+    "place": "Abeokuta, Ogun State",
+    "note": "Climb to the top and all of Abeokuta is spread out below you.",
+    "credit": "Photo: Adedayo Adesilola, CC BY-SA 4.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:Olumo_Rock,_Abeokuta.jpg"
+  },
+  {
+    "file": "zuma-rock.webp",
+    "name": "Zuma Rock",
+    "place": "Niger State, near Abuja",
+    "note": "The giant on the Abuja road. It's on the ₦100 note too.",
+    "credit": "Photo: Fatima, CC BY-SA 4.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:The_incredible_rock._Zuma_Rock.jpg"
+  },
+  {
+    "file": "danfo.webp",
+    "name": "Danfo",
+    "place": "Lagos",
+    "note": "Yellow, loud, and always one more person can fit.",
+    "credit": "Photo: AbrahamHaruna, CC BY-SA 4.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:Lagos_Danfo_Bus.jpg"
+  },
+  {
+    "file": "national-theatre.webp",
+    "name": "National Theatre",
+    "place": "Iganmu, Lagos",
+    "note": "Shaped like a general's cap, home to FESTAC 77.",
+    "credit": "Photo: Imaginepascal, CC BY-SA 4.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:National_Arts_Theatre,_Iganmu_-_Lagos.jpg"
+  },
+  {
+    "file": "lekki-ikoyi-link-bridge.webp",
+    "name": "Lekki-Ikoyi Link Bridge",
+    "place": "Lagos",
+    "note": "Lagos's favourite place for a sunset walk and a photo.",
+    "credit": "Photo: AbrahamHaruna, CC BY-SA 4.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:Lagos_Lekki-Ikoyi_Link_Bridge.jpg"
+  },
+  {
+    "file": "third-mainland-bridge.webp",
+    "name": "Third Mainland Bridge",
+    "place": "Lagos",
+    "note": "Nearly 12 km over the lagoon. Traffic, but with a view.",
+    "credit": "Photo: Johnbrainyvisuals, CC BY-SA 4.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:Aerial_view_of_Adekunle_sea_front_Third_mainland_bridge,_Lagos,_Nigeria_01.jpg"
+  },
+  {
+    "file": "aso-rock.webp",
+    "name": "Aso Rock",
+    "place": "Abuja",
+    "note": "The rock that watches over the capital.",
+    "credit": "Photo: Mark Fischer, CC BY-SA 2.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:Aso_Rock_as_seen_from_the_IBB_golf_course_in_Abuja,_Nigeria.jpg"
+  },
+  {
+    "file": "national-mosque.webp",
+    "name": "National Mosque",
+    "place": "Abuja",
+    "note": "Four minarets and a golden dome in the heart of Abuja.",
+    "credit": "Photo: Mark Fischer, CC BY-SA 2.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:Abuja_National_Mosque.jpg"
+  },
+  {
+    "file": "idanre-hills.webp",
+    "name": "Idanre Hills",
+    "place": "Idanre, Ondo State",
+    "note": "Hundreds of steps up to an old town in the clouds.",
+    "credit": "Photo: Sasu photography, CC0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:IDANRE_HILLS_LANDSCAPE_tayiwiwvscsvs.jpg"
+  },
+  {
+    "file": "erin-ijesha-waterfall.webp",
+    "name": "Erin Ijesha Waterfall",
+    "place": "Osun State",
+    "note": "Seven levels of waterfall, if your legs can take it.",
+    "credit": "Photo: Baaadmus, CC BY-SA 4.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:Erin_Ijesha_Waterfall.jpg"
+  },
+  {
+    "file": "osun-osogbo-sacred-grove.webp",
+    "name": "Osun-Osogbo Sacred Grove",
+    "place": "Osogbo, Osun State",
+    "note": "A sacred forest on the Osun river, and a UNESCO World Heritage Site.",
+    "credit": "Photo: 4toscenethesis, CC BY-SA 4.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:Suspension_Bridge_at_Osun_Sacred_Grove_in_Osogbo,_Nigeria.jpg"
+  },
+  {
+    "file": "kofar-mata-dye-pits.webp",
+    "name": "Kofar Mata Dye Pits",
+    "place": "Kano",
+    "note": "Indigo dye pits used for over 500 years.",
+    "credit": "Photo: Solasly, CC BY-SA 4.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:Kofar_Mata_Dye_Pit_Entrance.jpg"
+  },
+  {
+    "file": "gurara-falls.webp",
+    "name": "Gurara Falls",
+    "place": "Niger State",
+    "note": "Wide, wild water, best seen in the rainy season.",
+    "credit": "Photo: Tytypicasso, CC BY-SA 4.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:The_Gurara_Falls,_Niger_State,_Nigeria.jpg"
+  },
+  {
+    "file": "obudu-mountain-resort.webp",
+    "name": "Obudu Mountain Resort",
+    "place": "Cross River State",
+    "note": "Cable cars over the hills, and cool air all year.",
+    "credit": "Photo: Ei'eke, CC BY-SA 4.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:Cable_Car,_Obudu_Cattle_Ranch,_Obudu,_Cross_river_state_01.jpg"
+  },
+  {
+    "file": "wikki-warm-spring.webp",
+    "name": "Wikki Warm Spring",
+    "place": "Yankari, Bauchi State",
+    "note": "Clear, warm water in the middle of a game reserve.",
+    "credit": "Photo: Kambai Akau, CC BY-SA 4.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:Wikki_Warm_Spring_Spring_in_Yankari_Game_Reserve_01.jpg"
+  },
+  {
+    "file": "lekki-conservation-centre.webp",
+    "name": "Lekki Conservation Centre",
+    "place": "Lekki, Lagos",
+    "note": "Walk the canopy walkway above the trees, if you dare.",
+    "credit": "Photo: Ashinze, CC BY-SA 4.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:LEKKI_CONSERVATION_CENTRE_(LCC)_10.jpg"
+  },
+  {
+    "file": "tafawa-balewa-square.webp",
+    "name": "Tafawa Balewa Square",
+    "place": "Lagos Island",
+    "note": "Where Nigeria marked its independence in 1960.",
+    "credit": "Photo: Isaacayodele32, CC BY-SA 4.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:Tafawa_Balewa_Square_Onikan_Lagos_-_2024.jpg"
+  },
+  {
+    "file": "cathedral-church-of-christ.webp",
+    "name": "Cathedral Church of Christ",
+    "place": "Marina, Lagos",
+    "note": "One of the oldest churches in Lagos, right on Marina.",
+    "credit": "Photo: Olasunkanmiariyo, CC BY-SA 3.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:The_Cathedral_Church_of_Christ_Marina..jpg"
+  },
+  {
+    "file": "ogbunike-caves.webp",
+    "name": "Ogbunike Caves",
+    "place": "Anambra State",
+    "note": "Down hundreds of steps into cool, dark caves.",
+    "credit": "Photo: Edimehsam, CC BY-SA 4.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:Pics_from_Ogbunike_Cave_in_Anambra_state_Nigeria_03.jpg"
+  },
+  {
+    "file": "nike-art-gallery.webp",
+    "name": "Nike Art Gallery",
+    "place": "Lekki, Lagos",
+    "note": "Floor after floor of Nigerian art.",
+    "credit": "Photo: FrankvEck, CC BY-SA 4.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:Lagos_Lekki_Nike_Art_Gallery_Aug_2026_IMG_6990b.jpg"
+  },
+  {
+    "file": "oba-s-palace.webp",
+    "name": "Oba's Palace",
+    "place": "Benin City, Edo State",
+    "note": "Home of the Oba of Benin.",
+    "credit": "Photo: Kelechukwu Ajoku, CC BY-SA 4.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:Royal_Palace_of_the_Oba_of_Benin.jpg"
+  },
+  {
+    "file": "calabar-carnival.webp",
+    "name": "Calabar Carnival",
+    "place": "Calabar, Cross River State",
+    "note": "Africa's biggest street party, every December.",
+    "credit": "Photo: Koutchika Lihouenou Gaspard, CC BY-SA 4.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:Carnival_Calabar_2025_(332).jpg"
+  },
+  {
+    "file": "durbar.webp",
+    "name": "Durbar",
+    "place": "Kano",
+    "note": "Horsemen in full colour ride out for the Sallah durbar.",
+    "credit": "Photo: DonCamillo, CC BY-SA 4.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:Horsemen_during_the_September_2016_Durbar_in_Kano_-_2.jpg"
+  },
+  {
+    "file": "eyo-festival.webp",
+    "name": "Eyo Festival",
+    "place": "Lagos Island",
+    "note": "All in white, with their hats and staffs.",
+    "credit": "Photo: Benny Hosea, CC BY 4.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:LAGOS_EYO_FESTIVAL_2025._05.jpg"
+  },
+  {
+    "file": "argungu-fishing-festival.webp",
+    "name": "Argungu Fishing Festival",
+    "place": "Kebbi State",
+    "note": "Thousands jump into the river at once to catch the biggest fish.",
+    "credit": "Photo: Sani Maikatanga, CC BY-SA 4.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:Argungu_Fishing_Festival.jpg"
+  },
+  {
+    "file": "jollof-rice.webp",
+    "name": "Jollof Rice",
+    "place": "Every party, everywhere",
+    "note": "Party jollof. Nothing more to say.",
+    "credit": "Photo: Segun Famisa, CC BY-SA 4.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:Jollof_rice_with_vegetable.jpg"
+  },
+  {
+    "file": "suya.webp",
+    "name": "Suya",
+    "place": "Your nearest suya spot",
+    "note": "Spicy, smoky, and wrapped in newspaper.",
+    "credit": "Photo: WhisperToMe, CC0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:SuyavarietiesTX.JPG"
+  },
+  {
+    "file": "puff-puff.webp",
+    "name": "Puff-puff",
+    "place": "Street corners nationwide",
+    "note": "Fresh from the oil. Try eating just one.",
+    "credit": "Photo: Dappasolomon001, CC BY-SA 4.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:Puff_Puff_Making_series_6.jpg"
+  },
+  {
+    "file": "keke.webp",
+    "name": "Keke",
+    "place": "Everywhere",
+    "note": "Three wheels, room for three, sometimes four.",
+    "credit": "Photo: Jamie Tubers, CC BY-SA 4.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:A_keke_napep_(commercial_tricycle_in_motion).jpg"
+  },
+  {
+    "file": "balogun-market.webp",
+    "name": "Balogun Market",
+    "place": "Lagos Island",
+    "note": "If you can't find it at Balogun, it doesn't exist.",
+    "credit": "Photo: Yellowcrunchy, CC BY-SA 4.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:Balogun_Market,_Lagos_Island.jpg"
+  },
+  {
+    "file": "makoko.webp",
+    "name": "Makoko",
+    "place": "Lagos Lagoon",
+    "note": "A whole community living on the water.",
+    "credit": "Photo: Omoeko Media, CC BY-SA 4.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:Canoe_peddlers_in_makoko,_Lagos_state-Nigeria.jpg"
+  },
+  {
+    "file": "lagos-skyline.webp",
+    "name": "Lagos Skyline",
+    "place": "Lagos",
+    "note": "Marina from across the water.",
+    "credit": "Photo: kopee15, public domain, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:Lagos_skyline_with_marina.jpg"
+  },
+  {
+    "file": "civic-centre.webp",
+    "name": "Civic Centre",
+    "place": "Victoria Island, Lagos",
+    "note": "The blue glass tower on the Victoria Island shore.",
+    "credit": "Photo: Omoeko Media, CC BY-SA 4.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:Civic_Centre_Towers,_Victoria_Island,_Lagos.jpg"
+  },
+  {
+    "file": "cocoa-house.webp",
+    "name": "Cocoa House",
+    "place": "Ibadan, Oyo State",
+    "note": "Built on cocoa money, once the tallest building in Africa.",
+    "credit": "Photo: Ibadan234, CC BY-SA 4.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:Cocoa_House,_Ibadan.JPG"
+  },
+  {
+    "file": "mapo-hall.webp",
+    "name": "Mapo Hall",
+    "place": "Ibadan, Oyo State",
+    "note": "Up on the hill, looking over old Ibadan.",
+    "credit": "Photo: Lightshot1, CC BY-SA 4.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:MAPO_HALL,_Ibadan_3.jpg"
+  },
+  {
+    "file": "oguta-lake.webp",
+    "name": "Oguta Lake",
+    "place": "Imo State",
+    "note": "A calm lake, deep in Igbo legend.",
+    "credit": "Photo: Ochiwar, CC BY-SA 3.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:Oguta_Lake_cropped.jpg"
+  },
+  {
+    "file": "assop-falls.webp",
+    "name": "Assop Falls",
+    "place": "Plateau State",
+    "note": "On the Jos road, a waterfall worth stopping for.",
+    "credit": "Photo: Hammed Rildwan, CC BY-SA 4.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:ASSOP_waterfall_01.jpg"
+  },
+  {
+    "file": "riyom-rock.webp",
+    "name": "Riyom Rock",
+    "place": "Plateau State",
+    "note": "Rocks stacked so high you'd swear someone placed them.",
+    "credit": "Photo: Teemages, CC BY-SA 4.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:Riyom_rocks.jpg"
+  },
+  {
+    "file": "farin-ruwa-falls.webp",
+    "name": "Farin Ruwa Falls",
+    "place": "Nasarawa State",
+    "note": "One of the tallest waterfalls in Nigeria.",
+    "credit": "Photo: Jeremy Weate, CC BY 2.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:Farin_Ruwa_(5174524384).jpg"
+  },
+  {
+    "file": "sukur.webp",
+    "name": "Sukur",
+    "place": "Adamawa State",
+    "note": "A hilltop kingdom of stone, and a UNESCO World Heritage Site.",
+    "credit": "Photo: DipoTayo, CC BY-SA 4.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:Sukur_Cultural_Landscape_(3).jpg"
+  },
+  {
+    "file": "gidan-makama.webp",
+    "name": "Gidan Makama",
+    "place": "Kano",
+    "note": "A 15th-century palace, now a museum.",
+    "credit": "Photo: Zmu'az4Z, CC BY 4.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:Mosque_at_Gidan_Makama,_Kano.jpg"
+  },
+  {
+    "file": "tarkwa-bay.webp",
+    "name": "Tarkwa Bay",
+    "place": "Lagos",
+    "note": "A boat ride from the city and you're on the beach.",
+    "credit": "Photo: Liesel81, CC BY-SA 4.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:Tarkwa_Bay_Beach_Front.jpg"
+  },
+  {
+    "file": "freedom-park.webp",
+    "name": "Freedom Park",
+    "place": "Lagos Island",
+    "note": "Once a colonial prison, now a park full of art and music.",
+    "credit": "Photo: ReoMartins, CC BY-SA 4.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:Images_of_Freedom_Park_29.jpg"
+  },
+  {
+    "file": "eko-atlantic.webp",
+    "name": "Eko Atlantic",
+    "place": "Victoria Island, Lagos",
+    "note": "A new city built on land taken back from the sea.",
+    "credit": "Photo: SmartAfricanBoy, CC BY-SA 4.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:Eko_Atlantic_(Lagos)_Skyline.jpg"
+  },
+  {
+    "file": "adire.webp",
+    "name": "Adire",
+    "place": "Abeokuta, Ogun State",
+    "note": "Hand-dyed indigo cloth from Abeokuta.",
+    "credit": "Photo: Fachab, CC BY-SA 4.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:Adire_cloth_made_in_Abeokuta_Ogun_State_-Nigeria.jpg"
+  },
+  {
+    "file": "aso-oke.webp",
+    "name": "Aso Oke",
+    "place": "Iseyin, Oyo State",
+    "note": "Woven by hand, worn for the big days.",
+    "credit": "Photo: Toyinvisuals, CC BY-SA 4.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:Aso-Oke.jpg"
+  },
+  {
+    "file": "talking-drum.webp",
+    "name": "Talking Drum",
+    "place": "Yorubaland",
+    "note": "Squeeze it and it talks.",
+    "credit": "Photo: Mplanetech, CC BY-SA 4.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:Iya_Ilu_Dundun.png"
+  },
+  {
+    "file": "kola-nut.webp",
+    "name": "Kola Nut",
+    "place": "Every welcome",
+    "note": "He who brings kola brings life.",
+    "credit": "Photo: Benoît Prieur, CC0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:Grand_Frais_(Beynost)_noix_de_cola_de_C%C3%B4te_d%27Ivoire_(ao%C3%BBt_2023).jpg"
+  },
+  {
+    "file": "kainji-dam.webp",
+    "name": "Kainji Dam",
+    "place": "Niger State",
+    "note": "Holding back the Niger to light up the country.",
+    "credit": "Photo: Aart Rietveld, CC BY-SA 4.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:ASC_Leiden_-_Rietveld_Collection_-_Nigeria_1970_-_1973_-_01_-_083_Kainji_Dam._The_water_flows_from_four_openings.jpg"
+  },
+  {
+    "file": "unity-fountain.webp",
+    "name": "Unity Fountain",
+    "place": "Abuja",
+    "note": "Every state in one fountain.",
+    "credit": "Photo: Ovinuchi Prince Ejiohuo, CC BY-SA 4.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:Unity_Fountain.jpg"
+  },
+  {
+    "file": "bower-s-tower.webp",
+    "name": "Bower's Tower",
+    "place": "Ibadan, Oyo State",
+    "note": "Climb it and you can see the whole of Ibadan.",
+    "credit": "Photo: Oluwapamilerin Adedeji, CC BY-SA 4.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:Bower%27s_Tower_02.jpg"
+  },
+  {
+    "file": "owu-falls.webp",
+    "name": "Owu Falls",
+    "place": "Kwara State",
+    "note": "One of the highest waterfalls in West Africa.",
+    "credit": "Photo: Godwin Oluyomi, CC BY-SA 4.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:Owu_Falls,_Kwara_State,_Nigeria_-_6.jpg"
+  },
+  {
+    "file": "lagos-lagoon.webp",
+    "name": "Lagos Lagoon",
+    "place": "Lagos",
+    "note": "Fishermen out at dusk.",
+    "credit": "Photo: Obii Okongwu, CC BY-SA 4.0, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:Lagos_Lagoon_-_Brothers_at_Dusk.jpg"
+  }
+]

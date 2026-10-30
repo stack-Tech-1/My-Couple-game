@@ -27,6 +27,13 @@ const details = z
       .refine((v) => !v || v.startsWith("https://"), "Links must start with https://")
       .transform((v) => v || null),
     own_photo: z.boolean(),
+    credit_url: z
+      .string()
+      .trim()
+      .max(300)
+      .refine((v) => !v || v.startsWith("https://"), "Links must start with https://")
+      .optional()
+      .transform((v) => v || null),
     credit: z
       .string()
       .trim()

@@ -12,6 +12,7 @@ export default async function AdminFixam() {
     link: p.link,
     own_photo: p.own_photo,
     credit: p.credit,
+    credit_url: p.credit_url,
     live: p.live,
     feature_on: p.feature_on,
     url: pictureUrl(p.path),

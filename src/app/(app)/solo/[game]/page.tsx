@@ -37,15 +37,16 @@ export default async function SoloGamePage({ params, searchParams }: { params: P
     );
   }
 
-  const common = { myName: ctx.profile.display_name, soundOn: ctx.soundOn, challenge: challenge && /^[A-Za-z0-9_-]{10,40}$/.test(challenge) ? challenge : null };
+  const toured = (ctx.profile.toured_games ?? []).includes(game.id);
+  const common = { myName: ctx.profile.display_name, soundOn: ctx.soundOn, toured, challenge: challenge && /^[A-Za-z0-9_-]{10,40}$/.test(challenge) ? challenge : null };
   let body: React.ReactNode;
   if (game.id === "oro") {
     const r = await getOro();
-    body = r.ok ? <Oro initial={r.data} myName={ctx.profile.display_name} soundOn={ctx.soundOn} /> : <p className="text-muted">{r.error}</p>;
+    body = r.ok ? <Oro initial={r.data} myName={ctx.profile.display_name} soundOn={ctx.soundOn} toured={toured} /> : <p className="text-muted">{r.error}</p>;
   } else if (game.id === "fix-am") {
     body = <FixAmScreen {...common} {...await fixamToday(ctx.user.id, lagosDay())} />;
   } else if (game.kind === "bot") {
-    body = <BotScreen gameId={game.id} base={game.base!} myName={ctx.profile.display_name} soundOn={ctx.soundOn} />;
+    body = <BotScreen gameId={game.id} base={game.base!} myName={ctx.profile.display_name} soundOn={ctx.soundOn} toured={toured} />;
   } else {
     body = (
       <>

@@ -10,6 +10,7 @@ import { SoloShell } from "./SoloShell";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- boundary between the shared frame and each game
 type AnySaved = any;
 import type { FixPicture } from "./games/FixAm";
+import { Credit } from "./Credit";
 
 // Each game is its own download, fetched only when you open it.
 const loading = () => <p className="py-16 text-center text-muted">Setting up…</p>;
@@ -21,13 +22,13 @@ const FixAm = dynamic(() => import("./games/FixAm").then((m) => m.FixAm), { ssr:
 /** Bots bring the full game boards, so they load only when a bot game is opened. */
 export const BotScreen = dynamic(() => import("./BotScreen").then((m) => m.BotScreen), { ssr: false, loading });
 
-type Common = { myName: string; soundOn: boolean; challenge: string | null };
+type Common = { myName: string; soundOn: boolean; challenge: string | null; toured: boolean };
 
 /** Blend Am, Ajo, Okada Rush and Reflex Training: one frame, one game. */
 export function ArcadeScreen({ gameId, ...c }: Common & { gameId: string }) {
   const game = soloGame(gameId)!;
   return (
-    <SoloShell<AnySaved> gameId={gameId} myName={c.myName} soundOn={c.soundOn} challenge={c.challenge} header={<Title name={game.name} tagline={game.tagline} />}>
+    <SoloShell<AnySaved> gameId={gameId} myName={c.myName} soundOn={c.soundOn} challenge={c.challenge} toured={c.toured} header={<Title name={game.name} tagline={game.tagline} />}>
       {(api) =>
         gameId === "blend-am" ? (
           <BlendAm api={api} />
@@ -74,6 +75,7 @@ export function FixAmScreen({ pictures, todayId, finished, total, ...c }: Common
         myName={c.myName}
         soundOn={c.soundOn}
         challenge={c.challenge}
+        toured={c.toured}
         poster={{ photoUrl: picture.url, credit: picture.credit }}
         header={<Title name={picture.name} tagline={`${picture.place}${picture.note ? `. ${picture.note}` : ""}`} />}
       >
@@ -82,6 +84,11 @@ export function FixAmScreen({ pictures, todayId, finished, total, ...c }: Common
     );
 
   const mine = new Set(finished);
+  // Unlocked ones first, then just a few locked spaces, so 50 pictures isn't a wall of question marks.
+  const open = pictures.filter((p) => mine.has(p.id) || p.id === todayId);
+  const locked = pictures.filter((p) => !mine.has(p.id) && p.id !== todayId);
+  const LOCKED_SHOWN = 6;
+  const shown = [...open, ...locked.slice(0, LOCKED_SHOWN)];
   return (
     <div>
       <Title name="Fix Am" tagline="Slide the tiles back into place. Every picture is somewhere in Naija." />
@@ -92,7 +99,12 @@ export function FixAmScreen({ pictures, todayId, finished, total, ...c }: Common
           <p className="text-[0.8rem] font-bold text-[#82601f]">{picture.id === todayId ? "Today's picture" : "From your collection"}</p>
           <p className="display text-[1.5rem] leading-tight">{picture.name}</p>
           <p className="text-[0.85rem] text-muted">{picture.place}</p>
-          {picture.credit ? <p className="mt-1 text-[0.72rem] text-muted">{picture.credit}</p> : null}
+          {picture.credit ? <Credit picture={picture} className="mt-1" /> : null}
+          {picture.link ? (
+            <a href={picture.link} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block text-[0.8rem] font-semibold underline underline-offset-2">
+              See the real place
+            </a>
+          ) : null}
           <div role="radiogroup" aria-label="Size" className="mt-4 grid grid-cols-3 gap-2">
             {SIZES.map((s) => (
               <button key={s} type="button" role="radio" aria-checked={n === s} onClick={() => setN(s)} className={cn("rounded-[14px] border-[1.5px] py-2.5 font-bold", n === s ? "border-[#1c1416] bg-raised" : "border-line")}>
@@ -115,7 +127,7 @@ export function FixAmScreen({ pictures, todayId, finished, total, ...c }: Common
           </span>
         </div>
         <ul className="mt-3 grid grid-cols-3 gap-2">
-          {pictures.map((p) => {
+          {shown.map((p) => {
             const have = mine.has(p.id);
             return (
               <li key={p.id}>
@@ -140,6 +152,7 @@ export function FixAmScreen({ pictures, todayId, finished, total, ...c }: Common
             );
           })}
         </ul>
+        {locked.length > LOCKED_SHOWN ? <p className="mt-2 text-center text-[0.85rem] font-semibold">{locked.length - LOCKED_SHOWN} more to find</p> : null}
         <p className="mt-2 text-[0.8rem] text-muted">A new picture every day. Finish one and it joins your collection to play again any time.</p>
       </section>
     </div>

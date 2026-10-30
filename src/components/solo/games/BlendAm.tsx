@@ -119,6 +119,7 @@ export function BlendAm({ api }: { api: SoloApi<BlendState> }) {
 
       <div
         ref={boardRef}
+        data-tour="blend-board"
         role="grid"
         aria-label="Blend Am board, 8 by 8"
         className="mt-3 grid touch-none grid-cols-8 gap-[2px] rounded-[18px] bg-[#2a1a05] p-[6px] shadow-[0_20px_40px_-26px_rgba(28,20,22,.8)]"
@@ -148,7 +149,7 @@ export function BlendAm({ api }: { api: SoloApi<BlendState> }) {
         ))}
       </div>
 
-      <div role="group" aria-label="Pieces to place" className="mt-5 grid grid-cols-3 gap-2">
+      <div data-tour="blend-tray" role="group" aria-label="Pieces to place" className="mt-5 grid grid-cols-3 gap-2">
         {s.tray.map((p, slot) => (
           <button
             key={p?.id ?? `empty-${slot}`}

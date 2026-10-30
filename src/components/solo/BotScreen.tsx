@@ -18,7 +18,7 @@ type AnySaved = any;
 const ME = "me";
 
 /** Pick a level, then play the real board against the bot. Bot games never count with people. */
-export function BotScreen({ gameId, base, myName, soundOn }: { gameId: string; base: string; myName: string; soundOn: boolean }) {
+export function BotScreen({ gameId, base, myName, soundOn, toured }: { gameId: string; base: string; myName: string; soundOn: boolean; toured: boolean }) {
   const game = soloGame(gameId)!;
   const [level, setLevel] = useState<BotLevel | null>(null);
   if (!level)
@@ -41,7 +41,7 @@ export function BotScreen({ gameId, base, myName, soundOn }: { gameId: string; b
       </div>
     );
   return (
-    <SoloShell<AnySaved> key={level} gameId={gameId} mode={level} myName={myName} soundOn={soundOn} header={<p className="mt-4 font-semibold">{game.name} vs the bot ({BOT_LEVELS.find((l) => l.id === level)!.label})</p>}>
+    <SoloShell<AnySaved> key={level} gameId={gameId} mode={level} myName={myName} soundOn={soundOn} toured={toured} header={<p className="mt-4 font-semibold">{game.name} vs the bot ({BOT_LEVELS.find((l) => l.id === level)!.label})</p>}>
       {(api) => <BotGame api={api} base={base as BotBase} level={level} myName={myName} />}
     </SoloShell>
   );

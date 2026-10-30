@@ -10,6 +10,7 @@ export type PictureRow = {
   link: string | null;
   own_photo: boolean;
   credit: string | null;
+  credit_url: string | null;
   path: string;
   live: boolean;
   sort: number;
@@ -26,6 +27,7 @@ export const toPicture = (p: PictureRow): FixPicture => ({
   note: p.note,
   link: p.link,
   credit: p.own_photo ? null : p.credit,
+  creditUrl: p.own_photo ? null : p.credit_url,
   url: pictureUrl(p.path),
 });
 

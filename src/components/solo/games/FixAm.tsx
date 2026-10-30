@@ -4,8 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
 import { canSlide, fixScore, gapOf, newFix, slide, solved, type FixState } from "@/lib/solo/games/fixam";
 import type { SoloApi } from "../SoloShell";
+import { Credit } from "../Credit";
 
-export type FixPicture = { id: string; name: string; place: string; note: string; link: string | null; credit: string | null; url: string };
+export type FixPicture = { id: string; name: string; place: string; note: string; link: string | null; credit: string | null; creditUrl?: string | null; url: string };
 type Saved = FixState & { picture: string };
 
 /** The puzzle itself, for one picture at one size. */
@@ -57,7 +58,7 @@ export function FixAm({ api, picture, n }: { api: SoloApi<Saved>; picture: FixPi
         <p className="text-[0.85rem] font-semibold text-muted">moves</p>
       </div>
       <p className="sr-only" aria-live="polite">{said}</p>
-      <div className="relative mt-3 rounded-[22px] bg-[#2a1a05] p-2 shadow-[0_20px_40px_-26px_rgba(28,20,22,.8)]">
+      <div data-tour="fixam-board" className="relative mt-3 rounded-[22px] bg-[#2a1a05] p-2 shadow-[0_20px_40px_-26px_rgba(28,20,22,.8)]">
         <div role="grid" aria-label={`${picture.name}, cut into ${n} by ${n} tiles`} className="grid gap-[2px]" style={{ gridTemplateColumns: `repeat(${n}, 1fr)` }}>
           {Array.from({ length: n }, (_, r) => (
             <div key={r} role="row" className="contents">
@@ -91,6 +92,7 @@ export function FixAm({ api, picture, n }: { api: SoloApi<Saved>; picture: FixPi
       <div className="mt-3 flex items-center justify-between gap-3">
         <button
           type="button"
+          data-tour="fixam-peek"
           onPointerDown={() => setPeek(true)}
           onPointerUp={() => setPeek(false)}
           onPointerLeave={() => setPeek(false)}
@@ -100,8 +102,9 @@ export function FixAm({ api, picture, n }: { api: SoloApi<Saved>; picture: FixPi
         >
           Hold to peek
         </button>
-        {picture.credit ? <p className="text-right text-[0.72rem] text-muted">{picture.credit}</p> : null}
+        {picture.credit ? <Credit picture={picture} className="text-right" /> : null}
       </div>
     </div>
   );
 }
+

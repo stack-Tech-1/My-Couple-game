@@ -11,6 +11,8 @@ import { finishRun, startRun, type FinishResult } from "@/lib/solo/actions";
 import { formatScore, soloGame } from "@/lib/solo/catalog";
 import { makePoster, sharePoster } from "./poster";
 import { ChallengeSheet } from "./ChallengeSheet";
+import { SoloTour, soloTourDue } from "./SoloTour";
+import { soloTourFor } from "@/lib/solo/tours";
 
 /** What every Solo game gets from the frame. */
 export type SoloApi<S> = {
@@ -54,6 +56,7 @@ export function SoloShell<S>({
   poster,
   backHref = "/solo",
   header,
+  toured = false,
   children,
 }: {
   gameId: string;
@@ -66,6 +69,8 @@ export function SoloShell<S>({
   poster?: PosterExtra;
   backHref?: string;
   header?: ReactNode;
+  /** This person has already been through the game's how-to-play tour. */
+  toured?: boolean;
   children: (api: SoloApi<S>) => ReactNode;
 }) {
   const game = soloGame(gameId)!;
@@ -82,7 +87,19 @@ export function SoloShell<S>({
   const since = useRef<number | null>(null);
   const lastState = useRef<S | null>(null);
   const lastWrite = useRef(0);
-  const paused = hidden || userPaused || phase !== "playing";
+  const [touring, setTouring] = useState(false);
+  const tourOffered = useRef(false);
+  const hasTour = !!soloTourFor(gameId);
+  const paused = hidden || userPaused || touring || phase !== "playing";
+
+  // First time in this game: the tour, once the board is up. The game waits while it's open.
+  useEffect(() => {
+    if (phase !== "playing" || tourOffered.current || !soloTourDue(gameId, toured)) return;
+    tourOffered.current = true;
+    const t = setTimeout(() => setTouring(true), 500);
+    return () => clearTimeout(t);
+  }, [phase, gameId, toured]);
+  const endTour = useCallback(() => setTouring(false), []);
 
   // Time only counts while the game is on screen and running.
   useEffect(() => {
@@ -208,9 +225,16 @@ export function SoloShell<S>({
           <Icon name="arrowLeft" size={16} /> Solo
         </Link>
         {phase === "playing" ? (
-          <button type="button" onClick={() => setUserPaused((p) => !p)} className="glass rounded-full px-4 py-2 text-[0.9rem] font-semibold" aria-pressed={userPaused}>
-            {userPaused ? "Resume" : "Pause"}
-          </button>
+          <div className="flex gap-2">
+            {hasTour ? (
+              <button type="button" onClick={() => setTouring(true)} className="glass rounded-full px-4 py-2 text-[0.9rem] font-semibold">
+                How to play
+              </button>
+            ) : null}
+            <button type="button" onClick={() => setUserPaused((p) => !p)} className="glass rounded-full px-4 py-2 text-[0.9rem] font-semibold" aria-pressed={userPaused}>
+              {userPaused ? "Resume" : "Pause"}
+            </button>
+          </div>
         ) : null}
       </div>
       {header}
@@ -273,6 +297,8 @@ export function SoloShell<S>({
           )}
         </section>
       ) : null}
+
+      {touring ? <SoloTour gameId={gameId} onDone={endTour} /> : null}
 
       {result?.scoreId ? (
         <ChallengeSheet

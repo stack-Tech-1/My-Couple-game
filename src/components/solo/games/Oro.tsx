@@ -10,6 +10,7 @@ import { playSound } from "@/lib/sound";
 import { guessOro, type OroState } from "@/lib/solo/oro";
 import type { Mark } from "@/lib/solo/oro-words";
 import { makePoster, sharePoster } from "../poster";
+import { SoloTour, soloTourDue } from "../SoloTour";
 
 const ROWS = 6;
 const KEYS = ["qwertyuiop", "asdfghjkl", "zxcvbnm"];
@@ -33,8 +34,16 @@ function Tile({ letter, mark, small }: { letter: string; mark?: Mark; small?: bo
   );
 }
 
-export function Oro({ initial, myName, soundOn }: { initial: OroState; myName: string; soundOn: boolean }) {
+export function Oro({ initial, myName, soundOn, toured = false }: { initial: OroState; myName: string; soundOn: boolean; toured?: boolean }) {
   const [s, setS] = useState(initial);
+  const [touring, setTouring] = useState(false);
+  // First visit: the how-to-play tour, unless today's word is already done.
+  useEffect(() => {
+    if (initial.finished || !soloTourDue("oro", toured)) return;
+    const t = setTimeout(() => setTouring(true), 400);
+    return () => clearTimeout(t);
+  }, [initial.finished, toured]);
+  const endTour = useCallback(() => setTouring(false), []);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [shake, setShake] = useState(false);
@@ -86,7 +95,7 @@ export function Oro({ initial, myName, soundOn }: { initial: OroState; myName: s
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (touring || e.metaKey || e.ctrlKey || e.altKey) return;
       const k = e.key === "Enter" ? "enter" : e.key === "Backspace" ? "back" : e.key.toLowerCase();
       if (k === "enter" || k === "back" || /^[a-z]$/.test(k)) {
         e.preventDefault();
@@ -95,7 +104,7 @@ export function Oro({ initial, myName, soundOn }: { initial: OroState; myName: s
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [press]);
+  }, [press, touring]);
 
   async function share() {
     const tries = s.solved ? `${s.guesses.length}/6` : "X/6";
@@ -116,12 +125,19 @@ export function Oro({ initial, myName, soundOn }: { initial: OroState; myName: s
         <Link prefetch={false} href="/solo" className="glass inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[0.9rem] font-semibold">
           <Icon name="arrowLeft" size={16} /> Solo
         </Link>
-        <span className="glass rounded-full px-3.5 py-2 text-[0.85rem] font-bold">{s.streak ? `${s.streak}-day streak` : "Day one"}</span>
+        <div className="flex gap-2">
+          {!s.finished ? (
+            <button type="button" onClick={() => setTouring(true)} className="glass rounded-full px-3.5 py-2 text-[0.85rem] font-semibold">
+              How to play
+            </button>
+          ) : null}
+          <span className="glass rounded-full px-3.5 py-2 text-[0.85rem] font-bold">{s.streak ? `${s.streak}-day streak` : "Day one"}</span>
+        </div>
       </div>
       <h1 className="display mt-5 text-[2.2rem] leading-none">Ọ̀rọ̀ of the Day</h1>
       <p className="mt-1.5 text-muted">{s.naija ? `Friday: it's a Naija word. Hint: ${s.hint}` : "One five-letter word. Six guesses. Same word for everyone today."}</p>
 
-      <div role="grid" aria-label="Your guesses" className={cn("mt-5 flex flex-col gap-1.5", shake && "animate-[shake_.35s]")}>
+      <div data-tour="oro-board" role="grid" aria-label="Your guesses" className={cn("mt-5 flex flex-col gap-1.5", shake && "animate-[shake_.35s]")}>
         {rows.map((row, r) => (
           <div key={r} role="row" className="grid grid-cols-5 gap-1.5">
             {row.letters.map((l, i) => (
@@ -173,7 +189,7 @@ export function Oro({ initial, myName, soundOn }: { initial: OroState; myName: s
           </Button>
         </section>
       ) : (
-        <div className="mt-5 flex flex-col gap-1.5" aria-label="Keyboard">
+        <div data-tour="oro-keys" className="mt-5 flex flex-col gap-1.5" aria-label="Keyboard">
           {KEYS.map((row, i) => (
             <div key={row} className="flex justify-center gap-1">
               {i === 2 ? (
@@ -207,6 +223,7 @@ export function Oro({ initial, myName, soundOn }: { initial: OroState; myName: s
           ))}
         </div>
       )}
+      {touring ? <SoloTour gameId="oro" onDone={endTour} /> : null}
     </div>
   );
 }

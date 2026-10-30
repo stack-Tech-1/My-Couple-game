@@ -16,6 +16,7 @@ export type AdminPicture = {
   link: string | null;
   own_photo: boolean;
   credit: string | null;
+  credit_url: string | null;
   live: boolean;
   feature_on: string | null;
   url: string;
@@ -25,7 +26,7 @@ const EDGE = 1080; // saved size, square
 const VIEW = 300; // crop box on screen
 
 type Details = Omit<AdminPicture, "id" | "url">;
-const BLANK: Details = { name: "", place: "", note: "", link: "", own_photo: false, credit: "", live: true, feature_on: "" };
+const BLANK: Details = { name: "", place: "", note: "", link: "", own_photo: false, credit: "", credit_url: "", live: true, feature_on: "" };
 
 function DetailsForm({ value, onChange }: { value: Details; onChange: (d: Details) => void }) {
   const set = (k: keyof Details, v: unknown) => onChange({ ...value, [k]: v });
@@ -46,6 +47,11 @@ function DetailsForm({ value, onChange }: { value: Details; onChange: (d: Detail
       {!value.own_photo ? (
         <div className="sm:col-span-2">
           <TextField label="Credit (shown under the picture)" value={value.credit ?? ""} onChange={(e) => set("credit", e.target.value)} maxLength={200} placeholder="Photo: Jane Doe, CC BY 4.0, Wikimedia Commons" />
+        </div>
+      ) : null}
+      {!value.own_photo ? (
+        <div className="sm:col-span-2">
+          <TextField label="Credit link (the photo's source page)" value={value.credit_url ?? ""} onChange={(e) => set("credit_url", e.target.value)} maxLength={300} placeholder="https://commons.wikimedia.org/wiki/File:…" />
         </div>
       ) : null}
       <label className="flex items-center gap-2.5 font-semibold">
@@ -226,7 +232,7 @@ function AddPicture() {
 function Row({ p, first, last }: { p: AdminPicture; first: boolean; last: boolean }) {
   const router = useRouter();
   const [edit, setEdit] = useState(false);
-  const [d, setD] = useState<Details>({ ...p, link: p.link ?? "", credit: p.credit ?? "", feature_on: p.feature_on ?? "" });
+  const [d, setD] = useState<Details>({ ...p, link: p.link ?? "", credit: p.credit ?? "", credit_url: p.credit_url ?? "", feature_on: p.feature_on ?? "" });
   const [pending, start] = useTransition();
   const run = (f: () => Promise<{ ok: boolean; error?: string }>, msg?: string) =>
     start(async () => {

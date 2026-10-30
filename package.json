@@ -19,7 +19,9 @@
     "db:migrate:test": "node scripts/migrate.mjs --env .env.test.local",
     "stickers:import": "node scripts/import-stickers.mjs",
     "admin:grant": "node scripts/admin-grant.mjs",
-    "push:keys": "node scripts/push-keys.mjs"
+    "push:keys": "node scripts/push-keys.mjs",
+    "db:seed:fixam": "node scripts/seed-fixam.mjs",
+    "db:seed:fixam:test": "node scripts/seed-fixam.mjs --env .env.test.local"
   },
   "dependencies": {
     "@sentry/nextjs": "10.76.1",

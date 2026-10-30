@@ -58,7 +58,7 @@ export function ReflexTraining({ api }: { api: SoloApi<Saved> }) {
 
   return (
     <div className="mx-auto max-w-[420px] select-none text-center">
-      <div className="flex justify-center gap-2" aria-label="Your times">
+      <div data-tour="reflex-times" className="flex justify-center gap-2" aria-label="Your times">
         {Array.from({ length: ROUNDS }, (_, i) => (
           <span key={i} className={cn("min-w-14 rounded-full px-2 py-1 text-[0.82rem] font-bold tabular", times[i] ? "bg-[#1c1416] text-[#f6efe6]" : "glass text-muted")}>
             {times[i] ? `${times[i]} ms` : "–"}
@@ -67,6 +67,7 @@ export function ReflexTraining({ api }: { api: SoloApi<Saved> }) {
       </div>
       <button
         type="button"
+        data-tour="reflex-pad"
         onPointerDown={tap}
         onKeyDown={(e) => (e.key === " " || e.key === "Enter") && (e.preventDefault(), tap())}
         aria-live="assertive"

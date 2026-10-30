@@ -115,3 +115,17 @@ export async function finishRun(raw: unknown): Promise<ActionResult<FinishResult
   if (run.challenge_id) challenge = await settleChallenge(run.challenge_id as string, user.id, score, saved.id as string);
   return { ok: true, data: { scoreId: saved.id as string, best, newBest, plays: (count ?? 0) + 1, challenge } };
 }
+
+/** A Solo game's how-to-play tour was finished or skipped: don't show it again. */
+export async function markSoloToured(gameId: unknown): Promise<ActionResult> {
+  const id = z.string().max(40).safeParse(gameId);
+  if (!id.success || !soloGame(id.data)) return { ok: false, error: "Unknown game." };
+  const user = await getUser();
+  if (!user) return { ok: false, error: "Sign in first." };
+  const admin = supabaseAdmin();
+  const { data } = await admin.from("profiles").select("toured_games").eq("id", user.id).single();
+  const seen = (data?.toured_games as string[] | null) ?? [];
+  if (seen.includes(id.data)) return { ok: true, data: null };
+  const { error } = await admin.from("profiles").update({ toured_games: [...seen, id.data] }).eq("id", user.id);
+  return error ? { ok: false, error: "Couldn't save that." } : { ok: true, data: null };
+}

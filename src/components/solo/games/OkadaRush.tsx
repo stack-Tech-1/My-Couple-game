@@ -154,7 +154,7 @@ export function OkadaRush({ api }: { api: SoloApi<OkadaState> }) {
         <p className="text-[0.85rem] font-semibold text-muted">passengers</p>
       </div>
       <p className="sr-only" aria-live="polite">{said}</p>
-      <div ref={wrap} className="mt-3 flex justify-center">
+      <div ref={wrap} data-tour="okada-road" className="mt-3 flex justify-center">
         <canvas
           ref={canvas}
           width={COLS * cell}
@@ -175,7 +175,7 @@ export function OkadaRush({ api }: { api: SoloApi<OkadaState> }) {
           onPointerUp={() => (touch.current = null)}
         />
       </div>
-      <div className="mx-auto mt-4 grid w-48 grid-cols-3 gap-2">
+      <div data-tour="okada-keys" className="mx-auto mt-4 grid w-48 grid-cols-3 gap-2">
         <span />
         <button type="button" aria-label="Up" onClick={() => go("up")} className="glass h-12 rounded-[14px] text-[1.2rem] font-bold">↑</button>
         <span />

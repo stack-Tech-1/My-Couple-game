@@ -150,3 +150,32 @@ test("solo: today's word, a bot game, and Fix Am with a picture from the admin",
     await ctx.close();
   }
 });
+
+test("solo: the how-to-play tour shows once, waits for you, and comes back on request", async ({ browser }) => {
+  const u = await onboardedUser("Tolu", "fig");
+  await admin.from("profiles").update({ toured_games: [] }).eq("id", u.id);
+  const ctx = await browser.newContext();
+  try {
+    const page = await ctx.newPage();
+    await page.goto(await signInPath(u.email, "/solo/ajo"));
+    await expect(page.getByText(/How to play Ajo/)).toBeVisible();
+    await expect(page.getByText("Slide the notes")).toBeVisible();
+    await page.getByRole("button", { name: "Skip tour" }).click();
+    await expect(page.getByText(/How to play Ajo/)).toHaveCount(0);
+    // Seen: it doesn't open by itself again, but the button brings it back.
+    await expect.poll(async () => (await admin.from("profiles").select("toured_games").eq("id", u.id).single()).data?.toured_games).toContain("ajo");
+    await page.reload();
+    // The game in progress was saved on the phone: carry on with it.
+    const carry = page.getByRole("button", { name: "Carry on" });
+    await expect(carry.or(page.getByRole("button", { name: "How to play" }))).toBeVisible();
+    if (await carry.isVisible()) await carry.click();
+    await expect(page.getByRole("button", { name: "How to play" })).toBeVisible();
+    await page.waitForTimeout(1200);
+    await expect(page.getByText(/How to play Ajo/)).toHaveCount(0);
+    await page.getByRole("button", { name: "How to play" }).click();
+    await expect(page.getByText("Slide the notes")).toBeVisible();
+  } finally {
+    await cleanup([u.id]);
+    await ctx.close();
+  }
+});

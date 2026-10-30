@@ -2,9 +2,10 @@ import fs from "node:fs";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { TERMS_VERSION } from "../src/lib/legal";
 import { GAMES } from "../src/games/catalog";
+import { SOLO_GAMES } from "../src/lib/solo/catalog";
 
 /** Test accounts have already seen every game's how-to-play tour; its own spec turns them back on. */
-const ALL_TOURED = GAMES.map((g) => g.id);
+const ALL_TOURED = [...GAMES.map((g) => g.id), ...SOLO_GAMES.map((g) => g.id)];
 
 function readEnv(file: string): Record<string, string> {
   const env: Record<string, string> = {};

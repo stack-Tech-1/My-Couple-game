@@ -55,6 +55,7 @@ export function Ajo({ api }: { api: SoloApi<AjoState> }) {
       </div>
       <p className="sr-only" aria-live="polite">{said}</p>
       <div
+        data-tour="ajo-board"
         role="grid"
         aria-label="Ajo board. Swipe or use the arrow keys to slide the notes."
         tabIndex={0}
