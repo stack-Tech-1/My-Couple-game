@@ -90,6 +90,72 @@ export const SOLO_GAMES: SoloGame[] = [
     look: { bg: "#7a2e1f", ink: "#8c3a29", motif: "dundun", accent: "#f6d26a" },
     cap: () => 5000,
   },
+  {
+    id: "pump-am",
+    name: "Pump Am",
+    tagline: "Pump the water. Hang every ring on the pegs.",
+    kind: "arcade",
+    free: true,
+    unit: "points",
+    look: { bg: "#1f7a8c", ink: "#2a8a9c", motif: "iye", accent: "#e8563a" },
+    // 100 a ring, plus 20 a second left over if all ten go on.
+    cap: (s) => 1000 + Math.max(0, Math.round((180 - s) * 20)) + 200,
+  },
+  {
+    id: "bash-am",
+    name: "Bash Am",
+    tagline: "Break every brick. Don't drop the ball.",
+    kind: "arcade",
+    free: true,
+    unit: "points",
+    look: { bg: "#b8401f", ink: "#c54d2b", motif: "oko", accent: "#f6c453" },
+    // Bricks pay more on later streets and in long combos; street bonuses on top.
+    cap: (s) => 3000 + s * 900,
+  },
+  {
+    id: "zobo-sort",
+    name: "Zobo Sort",
+    tagline: "Pour until every bottle holds one drink.",
+    kind: "puzzle",
+    free: true,
+    unit: "points",
+    look: { bg: "#8f1d40", ink: "#a02a4e", motif: "digi", accent: "#e9b13c" },
+    // A level is worth its number × 100, plus a little for a tidy solve.
+    cap: () => 50000,
+  },
+  {
+    id: "catch-am",
+    name: "Catch Am",
+    tagline: "Catch the puff-puff and akara. Dodge the pepper.",
+    kind: "arcade",
+    free: true,
+    unit: "points",
+    look: { bg: "#e09a2e", ink: "#cf8a20", motif: "owo", accent: "#e02a1a" },
+    // Golden puff-puff and long combos pay well, so the ceiling is generous.
+    cap: (s) => 600 + s * 500,
+  },
+  {
+    id: "mosquito-wahala",
+    name: "Mosquito Wahala",
+    tagline: "Spray them before they bite you to sleep.",
+    kind: "arcade",
+    free: true,
+    unit: "points",
+    look: { bg: "#3d1f52", ink: "#4c2a63", motif: "oniko", accent: "#7cd36b" },
+    // Later waves pay more per mosquito, plus a bonus per wave.
+    cap: (s) => 3000 + s * 900,
+  },
+  {
+    id: "mama-put",
+    name: "Mama Put",
+    tagline: "Serve every plate before they get vexed.",
+    kind: "arcade",
+    free: true,
+    unit: "naira",
+    look: { bg: "#d9521f", ink: "#e0632f", motif: "ade", accent: "#f6c453" },
+    // Naira taken in a 90-second rush: plates plus tips.
+    cap: (s) => 2000 + s * 800,
+  },
   ...(
     [
       ["whot", "Whot", "Pick two. Pick three. The bot has no mercy either."],
@@ -98,6 +164,7 @@ export const SOLO_GAMES: SoloGame[] = [
       ["draughts", "Draughts", "Ten by ten, flying kings, against the bot."],
       ["tic-tac-toe", "X and O", "First to three against the bot."],
       ["connect-four", "Connect Four", "Four in a row before the bot."],
+      ["box-am", "Box Am", "Dots and boxes. The bot counts boxes too."],
     ] as const
   ).map(
     ([base, name, tagline]): SoloGame => ({
@@ -128,6 +195,7 @@ export type BotLevel = (typeof BOT_LEVELS)[number]["id"];
 /** How a score reads to people. */
 export function formatScore(g: SoloGame, score: number): string {
   if (g.id === "reflex") return `${score} ms`;
+  if (g.id === "mama-put") return `₦${score.toLocaleString("en-NG")}`;
   if (g.id === "oro") return score === 7 ? "Not solved" : `${score}/6`;
   if (g.kind === "bot") return score ? "Won" : "Lost";
   return `${score.toLocaleString("en-NG")} ${g.unit}`;

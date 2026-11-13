@@ -150,7 +150,7 @@ describe("Ọ̀rọ̀ of the Day", () => {
 });
 
 describe("bots", () => {
-  const bases: BotBase[] = ["tic-tac-toe", "connect-four", "ayo", "draughts", "ludo", "whot"];
+  const bases: BotBase[] = ["tic-tac-toe", "connect-four", "box-am", "ayo", "draughts", "ludo", "whot"];
   for (const base of bases) {
     for (const level of ["easy", "medium", "hard"] as const) {
       it(`${base} (${level}) only makes legal moves and finishes a game`, () => {

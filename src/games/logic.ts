@@ -2,6 +2,7 @@ import type { AnyGameLogic } from "./_engine/types";
 import { connectFour } from "./connect-four/logic";
 import { chess } from "./chess/logic";
 import { ticTacToe } from "./tic-tac-toe/logic";
+import { boxAm } from "./box-am/logic";
 import { draughts } from "./draughts/logic";
 import { naijaLandlord } from "./naija-landlord/logic";
 import { spellAm } from "./spell-am/logic";
@@ -32,7 +33,7 @@ import { mostLikely } from "./most-likely/logic";
  * Server-safe registry of game logic (no React). The move API and tests use this.
  * Adding a game = one line here + one line in registry.tsx.
  */
-const all: AnyGameLogic[] = [connectFour, chess, draughts, naijaLandlord, spellAm, ticTacToe, whot, ludo, ayo, wordDuel, reflexDuel, drawGuess, knowMeTrivia, splitClues, inSync, memoryMatch, beatTheClock, howWell, thisOrThat, storyChain, deepQuestions, complimentBattle, truthOrDare, spicyDice, hotSeat, neverHaveI, riddles, naijaTrivia, pidginPalava, emojiGuess, loveStyles, samePage, dontLaugh, mostLikely];
+const all: AnyGameLogic[] = [connectFour, chess, draughts, naijaLandlord, spellAm, ticTacToe, boxAm, whot, ludo, ayo, wordDuel, reflexDuel, drawGuess, knowMeTrivia, splitClues, inSync, memoryMatch, beatTheClock, howWell, thisOrThat, storyChain, deepQuestions, complimentBattle, truthOrDare, spicyDice, hotSeat, neverHaveI, riddles, naijaTrivia, pidginPalava, emojiGuess, loveStyles, samePage, dontLaugh, mostLikely];
 
 export const GAME_LOGIC: Record<string, AnyGameLogic> = Object.fromEntries(all.map((g) => [g.id, g]));
 

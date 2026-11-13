@@ -6,6 +6,7 @@ import { GAME_LOGIC } from "./logic";
 import { ConnectFourBoard } from "./connect-four/Board";
 import { ChessBoard } from "./chess/Board";
 import { TicTacToeBoard } from "./tic-tac-toe/Board";
+import { BoxAmBoard } from "./box-am/Board";
 import { DraughtsBoard } from "./draughts/Board";
 import { NaijaLandlordBoard } from "./naija-landlord/Board";
 import { SpellAmBoard } from "./spell-am/Board";
@@ -41,6 +42,7 @@ const components: Record<string, ComponentType<GameProps<any, any>>> = {
   "connect-four": ConnectFourBoard,
   chess: ChessBoard,
   "tic-tac-toe": TicTacToeBoard,
+  "box-am": BoxAmBoard,
   draughts: DraughtsBoard,
   "naija-landlord": NaijaLandlordBoard,
   "spell-am": SpellAmBoard,

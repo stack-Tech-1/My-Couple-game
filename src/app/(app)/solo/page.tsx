@@ -18,7 +18,8 @@ export default async function SoloHome() {
     const b = g.kind === "bot" ? undefined : bestOf(id);
     return b ? `Best ${formatScore(g, b.best)}` : undefined;
   };
-  const arcade = live.filter((g) => g.kind === "arcade");
+  // Arcade games, plus puzzles that aren't daily (Zobo Sort).
+  const arcade = live.filter((g) => g.kind === "arcade" || (g.kind === "puzzle" && g.id !== "fix-am"));
   const bots = live.filter((g) => g.kind === "bot");
   const oro = live.find((g) => g.id === "oro");
   const fix = live.find((g) => g.id === "fix-am");

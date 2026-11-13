@@ -5,7 +5,7 @@ import { emailKey } from "./emailKey";
 
 describe("Amah Plus plans", () => {
   it("keeps exactly the agreed games free, and every free id is a real game", () => {
-    expect([...FREE_GAMES].sort()).toEqual(["ayo", "connect-four", "daily-question", "draughts", "how-well", "love-notes", "ludo", "memory-lane", "tic-tac-toe", "whot"]);
+    expect([...FREE_GAMES].sort()).toEqual(["ayo", "box-am", "connect-four", "daily-question", "draughts", "how-well", "love-notes", "ludo", "memory-lane", "tic-tac-toe", "whot"]);
     for (const id of FREE_GAMES) expect(GAMES.some((g) => g.id === id)).toBe(true);
     expect(isPlusGame("chess")).toBe(true);
     expect(isPlusGame("naija-landlord")).toBe(true);

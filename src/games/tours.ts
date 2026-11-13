@@ -74,6 +74,11 @@ export const GAME_TOURS: Record<string, TourStep[]> = {
     { target: "ttt-board", title: "Three in a row", body: ["Tap a square to mark it. Three in a line wins the round."] },
     { target: "ttt-score", title: "First to three", body: ["Win three rounds to take the match.", "You take turns starting each round."] },
   ],
+  "box-am": [
+    { target: "box-board", title: "Draw a line", body: ["Tap between two dots that sit next to each other to draw a line."] },
+    { title: "Close a box", body: ["Draw the fourth side of a box and it's yours. Then you go again.", "Drawing the third side gives the next person an easy box."] },
+    { target: "box-score", title: "Most boxes wins", body: ["When every line is drawn, the most boxes wins."] },
+  ],
   "connect-four": [
     { target: "c4-board", title: "Drop a disc", body: ["Tap a column. Your disc falls to the lowest empty space."] },
     { target: "c4-players", title: "Take turns", body: ["You each have a colour. It's lit up when it's your go."] },

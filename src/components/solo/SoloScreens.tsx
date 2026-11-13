@@ -18,6 +18,12 @@ const BlendAm = dynamic(() => import("./games/BlendAm").then((m) => m.BlendAm), 
 const Ajo = dynamic(() => import("./games/Ajo").then((m) => m.Ajo), { ssr: false, loading });
 const OkadaRush = dynamic(() => import("./games/OkadaRush").then((m) => m.OkadaRush), { ssr: false, loading });
 const ReflexTraining = dynamic(() => import("./games/ReflexTraining").then((m) => m.ReflexTraining), { ssr: false, loading });
+const PumpAm = dynamic(() => import("./games/PumpAm").then((m) => m.PumpAm), { ssr: false, loading });
+const BashAm = dynamic(() => import("./games/BashAm").then((m) => m.BashAm), { ssr: false, loading });
+const ZoboSort = dynamic(() => import("./games/ZoboSort").then((m) => m.ZoboSort), { ssr: false, loading });
+const CatchAm = dynamic(() => import("./games/CatchAm").then((m) => m.CatchAm), { ssr: false, loading });
+const MosquitoWahala = dynamic(() => import("./games/MosquitoWahala").then((m) => m.MosquitoWahala), { ssr: false, loading });
+const MamaPut = dynamic(() => import("./games/MamaPut").then((m) => m.MamaPut), { ssr: false, loading });
 const FixAm = dynamic(() => import("./games/FixAm").then((m) => m.FixAm), { ssr: false, loading });
 /** Bots bring the full game boards, so they load only when a bot game is opened. */
 export const BotScreen = dynamic(() => import("./BotScreen").then((m) => m.BotScreen), { ssr: false, loading });
@@ -36,6 +42,18 @@ export function ArcadeScreen({ gameId, ...c }: Common & { gameId: string }) {
           <Ajo api={api} />
         ) : gameId === "okada-rush" ? (
           <OkadaRush api={api} />
+        ) : gameId === "pump-am" ? (
+          <PumpAm api={api} />
+        ) : gameId === "bash-am" ? (
+          <BashAm api={api} />
+        ) : gameId === "zobo-sort" ? (
+          <ZoboSort api={api} />
+        ) : gameId === "catch-am" ? (
+          <CatchAm api={api} />
+        ) : gameId === "mosquito-wahala" ? (
+          <MosquitoWahala api={api} />
+        ) : gameId === "mama-put" ? (
+          <MamaPut api={api} />
         ) : (
           <ReflexTraining api={api} />
         )

@@ -72,9 +72,9 @@ describe("errors and catalog", () => {
     expect(friendlyError(new Error("only the owner can do that"))).toMatch(/owner/);
     expect(friendlyError(new Error("???"))).toMatch(/sideways/);
   });
-  it("ships all 40 games with unique ids in known categories", () => {
-    expect(GAMES).toHaveLength(40);
-    expect(new Set(GAMES.map((g) => g.id)).size).toBe(40);
+  it("ships all 41 games with unique ids in known categories", () => {
+    expect(GAMES).toHaveLength(41);
+    expect(new Set(GAMES.map((g) => g.id)).size).toBe(41);
     for (const g of GAMES) expect(CATEGORIES[g.category]).toBeDefined();
   });
 });

@@ -48,7 +48,7 @@ test("birthdays: set in Settings, celebrated on the day, a heads-up before, and 
     expect((await request.get("/api/cron/birthdays")).status()).toBe(401);
     const run = await request.get("/api/cron/birthdays", { headers: { authorization: `Bearer ${loadEnv().CRON_SECRET}` } });
     expect(run.status()).toBe(200);
-    expect((await run.json()).people).toBeGreaterThanOrEqual(1);
+    expect((await run.json()).birthdays.people).toBeGreaterThanOrEqual(1);
   } finally {
     await cleanup([a.id, b.id]);
     await Promise.all([ca.close(), cb.close()]);

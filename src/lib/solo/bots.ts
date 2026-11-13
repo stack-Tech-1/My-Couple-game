@@ -5,6 +5,7 @@ import type { C4State } from "@/games/connect-four/logic";
 import type { AyoState } from "@/games/ayo/logic";
 import { HOME, YARD, type LudoState } from "@/games/ludo/logic";
 import type { WhotState } from "@/games/whot/logic";
+import { boxAm, boxesBy, type BoxMove, type BoxState } from "@/games/box-am/logic";
 import type { BotLevel } from "./catalog";
 
 /**
@@ -13,7 +14,7 @@ import type { BotLevel } from "./catalog";
  * Agba searches deeper on the games where everything is on the table (no peeking at hidden cards).
  */
 type Any = unknown;
-type Base = "whot" | "ludo" | "ayo" | "draughts" | "tic-tac-toe" | "connect-four";
+type Base = "whot" | "ludo" | "ayo" | "draughts" | "tic-tac-toe" | "connect-four" | "box-am";
 
 const SHAPE_NAMES = ["circle", "triangle", "cross", "square", "star"] as const;
 
@@ -42,6 +43,10 @@ function candidates(base: Base, s: Any, bot: PlayerId): unknown[] {
       return (s as TttState).roundResult ? [{ kind: "next" }] : Array.from({ length: 9 }, (_, cell) => ({ kind: "mark", cell }));
     case "connect-four":
       return Array.from({ length: 7 }, (_, col) => ({ col }));
+    case "box-am": {
+      const b = s as BoxState;
+      return [...b.h.flatMap((o, i) => (o < 0 ? [{ kind: "line", dir: "h", i }] : [])), ...b.v.flatMap((o, i) => (o < 0 ? [{ kind: "line", dir: "v", i }] : []))];
+    }
     case "ayo":
       return Array.from({ length: 6 }, (_, pit) => ({ pit }));
     case "draughts": {
@@ -95,6 +100,10 @@ function evaluate(base: Base, logic: AnyGameLogic, s: Any, bot: PlayerId): numbe
       const t = s as TttState;
       if (t.roundResult) return t.roundResult.winner === null ? 0 : t.players[t.roundResult.winner] === bot ? 1000 : -1000;
       return 0;
+    }
+    case "box-am": {
+      const b = s as BoxState;
+      return (b.score[b.players.indexOf(bot)] ?? 0) - (b.score[b.players.indexOf(opp)] ?? 0);
     }
     case "connect-four":
       return c4Score(s as C4State, (s as C4State).players.indexOf(bot) + 1);
@@ -184,6 +193,8 @@ const DEPTH: Record<Base, Record<Exclude<BotLevel, "easy">, number>> = {
   draughts: { medium: 1, hard: 3 },
   // Luck and hidden cards: one move ahead is all a fair bot can do.
   ludo: { medium: 1, hard: 1 },
+  // Box Am has its own rules of thumb (boxBot); these aren't used.
+  "box-am": { medium: 1, hard: 1 },
   whot: { medium: 1, hard: 1 },
 };
 
@@ -200,6 +211,7 @@ export function botMove(base: Base, logic: AnyGameLogic, s: Any, bot: PlayerId, 
   const moves = legal(logic, base, s, bot, ctx);
   if (!moves.length) return null;
   if (moves.length === 1) return moves[0]!;
+  if (base === "box-am") return boxBot(s as BoxState, moves as BoxMove[], level, rand);
   if (level === "easy") {
     // Even the easy bot finishes a round and doesn't just draw cards forever.
     const sensible = base === "whot" && moves.length > 1 ? moves.filter((m) => (m as { type: string }).type !== "draw") : moves;
@@ -221,3 +233,48 @@ export function botMove(base: Base, logic: AnyGameLogic, s: Any, bot: PlayerId, 
 
 export const BOT_ID = "amah-bot";
 export type BotBase = Base;
+
+/** Lines drawn around box (r, c). */
+function sidesDrawn(b: Pick<BoxState, "n" | "h" | "v">, r: number, c: number): number {
+  const n = b.n;
+  return [b.h[r * n + c]!, b.h[(r + 1) * n + c]!, b.v[r * (n + 1) + c]!, b.v[r * (n + 1) + c + 1]!].filter((o) => o >= 0).length;
+}
+
+/** Boxes the next player could take in a row after this line (they close each one they can). */
+function giveaway(b: BoxState, m: BoxMove): number {
+  let cur = boxAm.applyMove(b, m, b.players[b.turn]!, { now: 0 });
+  let taken = 0;
+  for (let guard = 0; guard < 80 && !cur.winner; guard++) {
+    const who = cur.players[cur.turn]!;
+    const lines = candidates("box-am", cur, who) as BoxMove[];
+    const closer = lines.find((l) => boxesBy(cur.n, l.dir, l.i).some(([r, c]) => sidesDrawn(cur, r, c) === 3));
+    if (!closer) break;
+    const before = cur.score.reduce((a, x) => a + x, 0);
+    cur = boxAm.applyMove(cur, closer, who, { now: 0 });
+    taken += cur.score.reduce((a, x) => a + x, 0) - before;
+  }
+  return taken;
+}
+
+/**
+ * Box Am bot. Easy: often grabs a free box, otherwise anything. Steady: takes every free box and
+ * never draws a third side if it can help it. Agba: the same, and when it must give boxes away it
+ * gives the fewest.
+ */
+function boxBot(b: BoxState, moves: BoxMove[], level: BotLevel, rand: () => number): BoxMove {
+  const pick = <T>(xs: T[]) => xs[Math.floor(rand() * xs.length)]!;
+  const closes = moves.filter((m) => boxesBy(b.n, m.dir, m.i).some(([r, c]) => sidesDrawn(b, r, c) === 3));
+  if (level === "easy") return closes.length && rand() < 0.6 ? pick(closes) : pick(moves);
+  if (closes.length) return pick(closes);
+  const safe = moves.filter((m) => boxesBy(b.n, m.dir, m.i).every(([r, c]) => sidesDrawn(b, r, c) < 2));
+  if (safe.length) return pick(safe);
+  if (level === "medium") return pick(moves);
+  let best: BoxMove[] = [];
+  let least = Infinity;
+  for (const m of moves) {
+    const g = giveaway(b, m);
+    if (g < least) [least, best] = [g, [m]];
+    else if (g === least) best.push(m);
+  }
+  return pick(best);
+}

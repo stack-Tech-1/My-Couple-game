@@ -40,6 +40,7 @@ export const GAME_LOOKS: Record<string, Look> = {
   draughts: look("brass", "ogbo", WINE),
   "tic-tac-toe": look("sky", "dundun", EMBER),
   "connect-four": look("indigo", "oniko", EMBER),
+  "box-am": look("lilac", "agbole", EMBER),
   "know-me-trivia": look("peach", "olokoto", WINE),
   "word-duel": look("sage", "digi", EMBER),
   "reflex-duel": look("brass", "iye", EMBER),

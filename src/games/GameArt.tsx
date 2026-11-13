@@ -75,6 +75,16 @@ const art: Record<string, (a: string) => ReactNode> = {
       <path d="M40 100h80" {...S} />
     </>
   ),
+  "box-am": (a) => (
+    <>
+      {[0, 1, 2, 3].map((r) => [0, 1, 2, 3].map((c) => <circle key={`${r}${c}`} cx={44 + c * 24} cy={22 + r * 24} r={3.2} fill="currentColor" />))}
+      <rect x="44" y="22" width="24" height="24" fill={a} opacity=".25" />
+      <path d="M44 22h24v24h-24z M68 22h24 M68 46v24 M92 46h24" {...S} stroke={a} strokeWidth={3} />
+      <path d="M44 70h24 M92 22v24" {...S} strokeWidth={3} />
+      <text x="56" y="40" textAnchor="middle" fontFamily="Fraunces, serif" fontStyle="italic" fontWeight="700" fontSize="14" fill={a}>A</text>
+      <path d="M40 100h80" {...S} />
+    </>
+  ),
   "connect-four": (a) => (
     <>
       <rect x="34" y="18" width="92" height="76" rx="8" {...S} />

@@ -83,6 +83,7 @@ export const GAMES: GameMeta[] = [
   { id: "naija-landlord", name: "Naija Landlord", category: "competitive", estimatedMinutes: 15, scored: true, maxPlayers: 4, tagline: "Buy Lagos street by street. Collect rent. Survive the owambe." },
   { id: "draughts", name: "Draughts", category: "competitive", estimatedMinutes: 20, scored: true, tagline: "Draft, the ten by ten way. Flying kings, compulsory captures." },
   { id: "tic-tac-toe", name: "X and O", category: "competitive", estimatedMinutes: 4, scored: true, tagline: "Tic-tac-toe, first to three. Quick, petty, perfect." },
+  { id: "box-am", name: "Box Am", category: "competitive", estimatedMinutes: 8, scored: true, maxPlayers: 4, tagline: "Dots and boxes in an exercise book. Close a box, go again." },
   { id: "connect-four", name: "Connect Four", category: "competitive", estimatedMinutes: 6, scored: true, tagline: "Four in a row, and a lifetime of grudges." },
   { id: "draw-guess", name: "Draw & Guess", category: "competitive", estimatedMinutes: 10, scored: true, maxPlayers: 8, tagline: "It's a horse. Obviously it's a horse." },
   { id: "riddles", name: "Riddle Me This", category: "competitive", estimatedMinutes: 6, scored: true, maxPlayers: 8, tagline: "Simple words, twisted answers. Get your mind out of the gutter." },
@@ -119,7 +120,7 @@ export const GAMES: GameMeta[] = [
 ];
 
 /** The games friend rooms get (for now, played one friend against another). */
-export const FRIEND_GAMES = ["whot", "ludo", "ayo", "word-duel", "reflex-duel", "connect-four", "naija-landlord", "spell-am", "chess", "draughts", "tic-tac-toe", "draw-guess", "riddles", "dont-laugh", "most-likely"] as const;
+export const FRIEND_GAMES = ["whot", "ludo", "ayo", "word-duel", "reflex-duel", "connect-four", "naija-landlord", "spell-am", "chess", "draughts", "tic-tac-toe", "box-am", "draw-guess", "riddles", "dont-laugh", "most-likely"] as const;
 export const isFriendGame = (id: string) => (FRIEND_GAMES as readonly string[]).includes(id);
 
 export const gameMeta = (id: string): GameMeta | undefined => GAMES.find((g) => g.id === id);

@@ -14,6 +14,7 @@ export const FREE_GAMES = new Set([
   "draughts",
   "tic-tac-toe",
   "connect-four",
+  "box-am",
   "daily-question",
   "how-well",
   "love-notes",
