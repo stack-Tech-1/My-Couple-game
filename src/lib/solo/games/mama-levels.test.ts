@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DAYS, FRY_SECONDS, QUICK, UPGRADES, areaIndex, dayOpen, upgradePrice, add, bin, careerDay, configFor, fry, newMama, newOnDay, select, serve, stars, tick, waiting, type MamaConfig, type MamaState } from "./mama";
+import { DAYS, FRY_SECONDS, QUICK, TUTORIAL_ORDER, UPGRADES, buyGas, gasLeft, rushTime, tutorialStep, areaIndex, dayOpen, upgradePrice, add, bin, careerDay, configFor, fry, newMama, newOnDay, select, serve, stars, tick, waiting, type MamaConfig, type MamaState } from "./mama";
 
 /**
  * A test player that plays like a person who knows the game: it looks after whoever is closest
@@ -23,7 +23,15 @@ export function autoplay(seed: string, cfg: MamaConfig, react: number): MamaStat
       .filter((x) => waiting(x.c))
       .sort((a, b) => a.c!.patience - b.c!.patience);
     const wantsDodo = queue.some((x) => x.c!.order.includes("dodo") && !s.plates[x.i]!.includes("dodo"));
-    if (wantsDodo && (s.fry.stage === "idle" || s.fry.stage === "burnt")) {
+    // Out of gas with dodo wanted: buy a cylinder if the takings allow.
+    if (wantsDodo && gasLeft(s) <= 0 && s.fry.stage !== "ready") {
+      const r = buyGas(s);
+      if (r.ok) {
+        act(r.state);
+        continue;
+      }
+    }
+    if (wantsDodo && (s.fry.stage === "idle" || s.fry.stage === "burnt") && gasLeft(s) > 0) {
       act(fry(s));
       continue;
     }
@@ -68,7 +76,7 @@ describe("Mama Put career and difficulty", () => {
     expect(slow("easy")).toBeGreaterThan(slow("normal"));
     expect(slow("normal")).toBeGreaterThan(slow("hard"));
     for (const k of ["easy", "normal", "hard"] as const) expect(stars(takings(QUICK[k], 0.7), QUICK[k]), k).toBe(3);
-    expect(stars(takings(QUICK.easy, 1.6), QUICK.easy)).toBeGreaterThanOrEqual(2);
+    expect(stars(takings(QUICK.easy, 1.6), QUICK.easy)).toBeGreaterThanOrEqual(1);
   });
 
   it("orders only use what's on the day's menu", () => {
@@ -123,6 +131,58 @@ describe("Mama Put career and difficulty", () => {
     expect(dayOpen(1, () => undefined)).toBe(true);
     expect(dayOpen(2, (d) => best[d])).toBe(true);
     expect(dayOpen(3, (d) => best[d])).toBe(false);
+  });
+
+  it("gas: the flame uses it, frying stops when it's out, and a refill comes out of the takings", () => {
+    const cfg = { ...careerDay(8), gas: 4 };
+    let s = fry(newMama("gas", cfg));
+    s = tick("gas", s, 3.5);
+    expect(s.fry.stage).toBe("ready");
+    s = tick("gas", s, 1);
+    expect(gasLeft(s)).toBe(0);
+    // No gas: the ready dodo stays ready (no flame, no burning), and nothing new can fry.
+    s = tick("gas", s, 20);
+    expect(s.fry.stage).toBe("ready");
+    s = { ...s, fry: { stage: "idle", t: 0 } };
+    expect(fry(s).fry.stage).toBe("idle");
+    // A refill needs the money.
+    expect(buyGas({ ...s, money: 100 }).ok).toBe(false);
+    const r = buyGas({ ...s, money: 5000 });
+    expect(r.ok).toBe(true);
+    expect(r.state.money).toBe(5000 - cfg.gasPrice!);
+    expect(gasLeft(r.state)).toBe(4);
+    expect(fry(r.state).fry.stage).toBe("frying");
+    // Gas costs more in the fancier areas.
+    expect(careerDay(3).gasPrice).toBe(800);
+    expect(careerDay(28).gasPrice).toBe(3200);
+  });
+
+  it("tutorial: one customer, no clock, step by step, then the day begins", () => {
+    const seed = "tut";
+    let s = newMama(seed, configFor("day-1", [], { tutorial: true }));
+    expect(configFor("day-2", [], { tutorial: true }).tutorial).toBeUndefined();
+    for (let i = 0; i < 300; i++) s = tick(seed, s, 0.5);
+    // Two and a half minutes in: still one customer, patience untouched, the day not started.
+    expect(s.over).toBe(false);
+    expect(rushTime(s)).toBe(0);
+    expect(s.spots.filter(Boolean)).toHaveLength(1);
+    const c = s.spots[0]!;
+    expect(c.order).toEqual([...TUTORIAL_ORDER]);
+    expect(c.patience).toBe(c.max);
+    expect(tutorialStep(s)).toEqual({ kind: "add", item: "jollof" });
+    s = select(s, 2);
+    expect(tutorialStep(s)).toEqual({ kind: "plate" });
+    s = select(s, 0);
+    for (const it of TUTORIAL_ORDER) s = add(s, it).state;
+    expect(tutorialStep(s)).toEqual({ kind: "serve" });
+    s = serve(s, 0).state;
+    expect(s.tut).toBe(false);
+    expect(tutorialStep(s)).toBeNull();
+    // Now the real day: more customers come, and it ends a minute later.
+    for (let i = 0; i < 40; i++) s = tick(seed, s, 0.5);
+    expect(s.spots.filter((x) => x && !x.leaving).length).toBeGreaterThan(1);
+    for (let i = 0; i < 100 && !s.over; i++) s = tick(seed, s, 0.5);
+    expect(s.over).toBe(true);
   });
 
   it("reads modes", () => {

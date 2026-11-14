@@ -256,6 +256,6 @@ describe("Mama Put", () => {
 
   it("the rush ends after ninety seconds and stars follow the takings", () => {
     expect(run(newMama("mp"), RUSH_SECONDS + 0.5).over).toBe(true);
-    expect([stars(0), stars(5000), stars(9000), stars(20000)]).toEqual([0, 1, 2, 3]);
+    expect([stars(0), stars(7000), stars(13000), stars(20000)]).toEqual([0, 1, 2, 3]);
   });
 });

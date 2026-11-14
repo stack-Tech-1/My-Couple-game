@@ -4,15 +4,22 @@ import { makeRng } from "@/games/_engine/rng";
  * Mama Put: a 90-second lunch rush at the buka. Customers come to the counter with an order; dish
  * it onto their plate and serve it before they lose patience. Right plate: you're paid, plus a tip
  * for being quick. Wrong plate: they leave without paying. Dodo has to be fried first, and it burns
- * if you leave it. Orders get bigger and patience shorter as the rush goes on.
+ * if you leave it, and the gas runs out: a new cylinder comes out of the day's takings. Orders get
+ * bigger and patience shorter as the rush goes on. A first-ever day starts with a tutorial: one
+ * customer, no clock, until they're served.
  *
  * Pure and seeded. Time moves in `tick`.
  */
-export const SPOTS = 3;
+export const SPOTS = 4;
 export const RUSH_SECONDS = 90;
 export const FRY_SECONDS = 3;
 export const BURN_AFTER = 7;
 export const LEAVE_SECONDS = 0.8;
+/** Seconds of flame in a full cylinder, and what a refill costs (Yaba prices). */
+export const GAS_SECONDS = 30;
+export const GAS_PRICE = 800;
+/** The tutorial customer's order: one of everything on day 1's menu. */
+export const TUTORIAL_ORDER = ["jollof", "chicken", "drink"] as const;
 
 export const ITEMS = ["jollof", "rice", "eba", "stew", "egusi", "beef", "chicken", "fish", "dodo", "moin", "drink"] as const;
 export type Item = (typeof ITEMS)[number];
@@ -43,6 +50,11 @@ export type MamaConfig = {
   tips?: number;
   /** Shop upgrades in play, so the buka can show them. */
   owned?: readonly UpgradeId[];
+  /** Seconds of flame in a cylinder, and a refill's price. */
+  gas?: number;
+  gasPrice?: number;
+  /** Start with the one-customer tutorial. */
+  tutorial?: boolean;
 };
 
 /**
@@ -100,10 +112,10 @@ export const DIFFICULTY_NAME: Record<Difficulty, string> = { easy: "Easy", norma
 
 const FULL_MENU = ITEMS;
 export const QUICK: Record<Difficulty, MamaConfig> = {
-  // Normal keeps the stars it has always had, so old scores still read the same.
-  easy: { seconds: 90, menu: FULL_MENU, patience: 1.45, pace: 1.3, extras: 0.6, stars: [4000, 8000, 12000] },
-  normal: { seconds: 90, menu: FULL_MENU, patience: 1, pace: 1, extras: 1, stars: [4000, 9000, 15000] },
-  hard: { seconds: 90, menu: FULL_MENU, patience: 0.72, pace: 0.8, extras: 1.3, stars: [6000, 11000, 17000] },
+  // Measured with the test player like the career days (see DAY_STARS).
+  easy: { seconds: 90, menu: FULL_MENU, patience: 1.7, pace: 1.45, extras: 0.6, stars: [8600, 11600, 14500] },
+  normal: { seconds: 90, menu: FULL_MENU, patience: 1.25, pace: 1.2, extras: 1, stars: [6600, 12100, 17300] },
+  hard: { seconds: 90, menu: FULL_MENU, patience: 0.95, pace: 1, extras: 1.3, stars: [5600, 9700, 16100] },
 };
 
 /** Career: 30 days across Lagos. New dishes join the menu as you go; patience gets shorter. */
@@ -119,32 +131,35 @@ export function careerDay(day: number): MamaConfig {
   const t = (d - 1) / (DAYS - 1); // 0 on day 1, 1 on day 30
   const seconds = d <= 3 ? 60 : d <= 12 ? 75 : 90;
   const menu = ITEMS.filter((x) => UNLOCK[x] <= d);
-  return { seconds, menu, patience: 1.5 - t * 0.85, pace: 1.4 - t * 0.65, extras: 0.5 + t * 0.9, stars: DAY_STARS[d - 1]! };
+  return { seconds, menu, patience: 1.6 - t * 0.55, pace: 1.5 - t * 0.45, extras: 0.5 + t * 0.9, stars: DAY_STARS[d - 1]!, gasPrice: Math.round((GAS_PRICE * (AREA_PRICE[areaIndex(d)] ?? 1)) / 100) * 100 };
 }
 
 /**
- * Star targets per day, measured by playing every day with the test player in mama-levels.test:
- * one star for a slow player (1.3s a tap), two for a good one (1s), three for a sharp one (0.7s),
- * kept so two stars sit at 60 to 80% of three and one star at 35 to 60%. Days 1 to 3 are
- * learning days and ask 20% less; days 10 to 12 ask ₦6,000 for one star, so even a slow player
- * can get through Yaba and Ikeja. Re-measure if the rules above change.
+ * Star targets per day, measured by playing every day with the test player in mama-levels.test
+ * (four customers at the counter, gas included): one star for a slow player (1.3s a tap), two for
+ * a good one (1s), three for a sharp one (0.7s), kept so two stars sit at 60 to 80% of three and
+ * one star at 35 to 60%. Through Ikeja, one star is also in reach of a very slow player (1.6s).
+ * Days 1 to 3 are learning days and ask 20% less. Re-measure if the rules above change.
  */
 const DAY_STARS: readonly (readonly [number, number, number])[] = [
-  [4700, 6300, 7900], [4500, 5900, 7400], [4900, 6500, 8100],
-  [7700, 10300, 12900], [8000, 10700, 13400], [8000, 10700, 13400], [8200, 10900, 13600], [8200, 11000, 13700], [8200, 11300, 14100],
-  [6000, 11600, 14500], [6000, 11400, 15000], [6000, 12000, 15000], [9400, 14100, 17700], [8600, 14100, 18400], [8900, 14300, 19000],
-  [8000, 13900, 18400], [9200, 13900, 18900], [8000, 13300, 19000], [7700, 13200, 19000], [7000, 13100, 18700], [7000, 12200, 18100],
-  [6900, 11900, 18600], [6600, 12600, 18800], [6100, 10800, 17400], [6300, 10900, 18100], [6400, 11000, 18400], [6100, 10400, 17300],
-  [6100, 10400, 17300], [6100, 10400, 17300], [6100, 10400, 17300],
+  [4400, 5800, 7300], [4000, 5400, 6700], [4200, 5500, 6900], [6800, 9100, 11400], [7300, 9800, 12200], [7300, 9800, 12200],
+  [7500, 10000, 12500], [7500, 10000, 12500], [7000, 10500, 13100], [6900, 10500, 13100], [6900, 10500, 13100], [6300, 10700, 14200],
+  [7900, 12700, 15900], [7000, 11600, 14800], [7000, 12500, 15600], [7600, 12100, 15900], [7600, 12700, 17000], [8000, 12600, 17000],
+  [7600, 12600, 17300], [6600, 12600, 17000], [6900, 11500, 17100], [6900, 11300, 17100], [6800, 11400, 15600], [5900, 12100, 16700],
+  [6000, 10300, 17200], [6000, 10600, 17200], [5600, 10600, 16100], [6200, 10800, 17600], [5700, 9700, 16200], [6100, 10400, 17400],
 ];
 
 /**
  * The rules for a mode: "easy" | "normal" | "hard" | "day-N". Anything else plays Normal. Shop
  * upgrades only apply to career days.
  */
-export function configFor(mode: string, owned: readonly string[] = []): MamaConfig {
+export function configFor(mode: string, owned: readonly string[] = [], opts: { tutorial?: boolean } = {}): MamaConfig {
   const day = /^day-(\d{1,2})$/.exec(mode);
-  if (day) return withUpgrades(careerDay(Number(day[1])), Number(day[1]), owned);
+  if (day) {
+    const cfg = withUpgrades(careerDay(Number(day[1])), Number(day[1]), owned);
+    // The tutorial only ever runs on a first go at day 1.
+    return opts.tutorial && Number(day[1]) === 1 ? { ...cfg, tutorial: true } : cfg;
+  }
   return QUICK[(DIFFICULTIES as readonly string[]).includes(mode) ? (mode as Difficulty) : "normal"];
 }
 
@@ -166,17 +181,52 @@ export type MamaState = {
   over: boolean;
   /** Missing on games saved before difficulties existed: those play Normal. */
   cfg?: MamaConfig;
+  /** Seconds of flame left in the cylinder (missing: full). */
+  gas?: number;
+  /** Cylinders bought today. */
+  refills?: number;
+  /** In the tutorial; and how long it took, which doesn't count against the rush. */
+  tut?: boolean;
+  tutTime?: number;
 };
 
 export const rulesOf = (s: Pick<MamaState, "cfg">): MamaConfig => s.cfg ?? QUICK.normal;
 export const rushSeconds = (s: Pick<MamaState, "cfg">) => rulesOf(s).seconds;
 
 export function newMama(seed: string, cfg: MamaConfig = QUICK.normal): MamaState {
-  return { time: 0, spots: [null, null, null], plates: [[], [], []], selected: 0, fry: { stage: "idle", t: 0 }, money: 0, served: 0, lost: 0, nextArrival: 0.8, nextId: 1, cursor: makeRng(seed).cursor(), over: false, cfg };
+  const spots: (Customer | null)[] = Array.from({ length: SPOTS }, () => null);
+  return { time: 0, spots, plates: spots.map(() => []), selected: 0, fry: { stage: "idle", t: 0 }, money: 0, served: 0, lost: 0, nextArrival: 0.8, nextId: 1, cursor: makeRng(seed).cursor(), over: false, cfg, gas: cfg.gas ?? GAS_SECONDS, refills: 0, tut: !!cfg.tutorial, tutTime: 0 };
 }
 
+/** Rush seconds gone (the tutorial's time doesn't count). */
+export const rushTime = (s: Pick<MamaState, "time" | "tutTime">) => s.time - (s.tutTime ?? 0);
 /** How far into the rush, 0 to 1. */
-const progress = (s: Pick<MamaState, "time" | "cfg">) => Math.min(1, s.time / rushSeconds(s));
+const progress = (s: Pick<MamaState, "time" | "cfg" | "tutTime">) => Math.min(1, rushTime(s) / rushSeconds(s));
+
+export const gasMax = (s: Pick<MamaState, "cfg">) => rulesOf(s).gas ?? GAS_SECONDS;
+export const gasLeft = (s: Pick<MamaState, "cfg" | "gas">) => s.gas ?? gasMax(s);
+export const gasPrice = (s: Pick<MamaState, "cfg">) => rulesOf(s).gasPrice ?? GAS_PRICE;
+/** The flame burns while dodo is frying or waiting in the pan. */
+const flameOn = (f: Fry) => f.stage === "frying" || f.stage === "ready";
+
+/** Buy a new cylinder out of today's takings. */
+export function buyGas(s: MamaState): { state: MamaState; ok: boolean } {
+  const price = gasPrice(s);
+  if (s.over || s.money < price || gasLeft(s) >= gasMax(s)) return { state: s, ok: false };
+  return { state: { ...s, money: s.money - price, gas: gasMax(s), refills: (s.refills ?? 0) + 1 }, ok: true };
+}
+
+/** The tutorial's next step, for the hints: null once it's over. */
+export function tutorialStep(s: MamaState): { kind: "wait" } | { kind: "plate" } | { kind: "add"; item: Item } | { kind: "bin" } | { kind: "serve" } | null {
+  if (!s.tut) return null;
+  const c = s.spots[0];
+  if (!waiting(c)) return { kind: "wait" };
+  if (s.selected !== 0) return { kind: "plate" };
+  const plate = s.plates[0]!;
+  if (plate.some((it) => !c.order.includes(it))) return { kind: "bin" };
+  const missing = c.order.find((it) => !plate.includes(it));
+  return missing ? { kind: "add", item: missing } : { kind: "serve" };
+}
 
 function makeOrder(rng: { next: () => number; int: (n: number) => number }, p: number, cfg: MamaConfig): Item[] {
   const on = (x: Item) => cfg.menu.includes(x);
@@ -203,6 +253,8 @@ export const orderPrice = (o: Item[]) => o.reduce((t, x) => t + PRICE[x], 0);
 export function tick(seed: string, s0: MamaState, dt: number): MamaState {
   if (s0.over) return s0;
   const s: MamaState = { ...s0, time: s0.time + dt, spots: [...s0.spots] };
+  // The tutorial: time doesn't count, and nobody loses patience.
+  if (s.tut) s.tutTime = (s.tutTime ?? 0) + dt;
   // Customers.
   for (let i = 0; i < SPOTS; i++) {
     const c = s.spots[i];
@@ -211,25 +263,29 @@ export function tick(seed: string, s0: MamaState, dt: number): MamaState {
       if (s.time - c.leaving.at >= LEAVE_SECONDS) s.spots[i] = null;
       continue;
     }
-    const patience = c.patience - dt;
+    const patience = s.tut ? c.patience : c.patience - dt;
     if (patience <= 0) {
       s.spots[i] = { ...c, patience: 0, leaving: { at: s.time, paid: 0 } };
       s.lost++;
       s.plates = s.plates.map((pl, j) => (j === i ? [] : pl));
     } else s.spots[i] = { ...c, patience };
   }
-  // The frying pan.
+  // The frying pan: only moves while there's gas for the flame.
   const f = s.fry;
   const rules = rulesOf(s);
-  if (f.stage === "frying") s.fry = f.t + dt >= (rules.fry ?? FRY_SECONDS) ? { stage: "ready", t: 0 } : { stage: "frying", t: f.t + dt };
-  else if (f.stage === "ready") s.fry = f.t + dt >= (rules.burn ?? BURN_AFTER) ? { stage: "burnt", t: 0 } : { stage: "ready", t: f.t + dt };
-  // Someone new walks in.
-  const free = s.spots.findIndex((c) => !c);
+  const gas = gasLeft(s);
+  if (flameOn(f) && gas > 0) {
+    s.gas = Math.max(0, gas - dt);
+    if (f.stage === "frying") s.fry = f.t + dt >= (rules.fry ?? FRY_SECONDS) ? { stage: "ready", t: 0 } : { stage: "frying", t: f.t + dt };
+    else s.fry = f.t + dt >= (rules.burn ?? BURN_AFTER) ? { stage: "burnt", t: 0 } : { stage: "ready", t: f.t + dt };
+  }
+  // Someone new walks in. In the tutorial, just the one customer at the first place.
   const cfg = rulesOf(s);
-  if (free >= 0 && s.time >= s.nextArrival && s.time < cfg.seconds - 6) {
+  const free = s.tut ? (s.spots[0] ? -1 : 0) : s.spots.findIndex((c) => !c);
+  if (free >= 0 && (s.tut || (s.time >= s.nextArrival && rushTime(s) < cfg.seconds - 6))) {
     const rng = makeRng(seed, s.cursor);
     const p = progress(s);
-    const order = makeOrder(rng, p, cfg);
+    const order: Item[] = s.tut ? [...TUTORIAL_ORDER] : makeOrder(rng, p, cfg);
     const max = (30 - p * 12 + order.length * 2) * cfg.patience;
     s.spots[free] = { id: s.nextId, order, patience: max, max, look: { skin: rng.int(4), style: rng.int(4), cloth: rng.int(6) }, arrived: s.time, leaving: null };
     s.nextId++;
@@ -237,7 +293,7 @@ export function tick(seed: string, s0: MamaState, dt: number): MamaState {
     s.cursor = rng.cursor();
     if (!s.spots[s.selected] || s.spots[s.selected]!.leaving) s.selected = free;
   }
-  if (s.time >= cfg.seconds) s.over = true;
+  if (!s.tut && rushTime(s) >= cfg.seconds) s.over = true;
   return s;
 }
 
@@ -262,9 +318,9 @@ export function add(s: MamaState, item: Item): { state: MamaState; ok: boolean; 
   return { state: { ...s, plates, fry }, ok: true };
 }
 
-/** Start frying (a burnt batch goes in the bin first). */
+/** Start frying (a burnt batch goes in the bin first). Needs gas. */
 export function fry(s: MamaState): MamaState {
-  if (s.fry.stage === "idle" || s.fry.stage === "burnt") return { ...s, fry: { stage: "frying", t: 0 } };
+  if ((s.fry.stage === "idle" || s.fry.stage === "burnt") && gasLeft(s) > 0) return { ...s, fry: { stage: "frying", t: 0 } };
   return s;
 }
 
@@ -285,7 +341,17 @@ export function serve(s: MamaState, i: number): { state: MamaState; paid: number
   // Move the selection to someone still waiting.
   const next = spots.findIndex((x, j) => j !== i && waiting(x));
   return {
-    state: { ...s, spots, plates, money: s.money + price + tip, served: s.served + (right ? 1 : 0), lost: s.lost + (right ? 0 : 1), selected: next >= 0 ? next : s.selected },
+    state: {
+      ...s,
+      spots,
+      plates,
+      money: s.money + price + tip,
+      served: s.served + (right ? 1 : 0),
+      lost: s.lost + (right ? 0 : 1),
+      selected: next >= 0 ? next : s.selected,
+      // The tutorial ends with the first right plate; the rush starts a moment later.
+      ...(s.tut && right ? { tut: false, nextArrival: s.time + 1.5 } : {}),
+    },
     paid: price,
     tip,
     right,
