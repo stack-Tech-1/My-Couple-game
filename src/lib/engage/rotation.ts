@@ -10,8 +10,11 @@
 export const lagosDate = (at = Date.now()) => new Date(at + 3600_000).toISOString().slice(0, 10);
 const dayNumber = (day: string) => Math.floor(Date.parse(`${day}T00:00:00Z`) / 864e5);
 
-/** Solo games that play the same for everyone given the same seed. */
-export const DAILY_GAMES = ["mama-put", "pump-am", "catch-am", "bash-am", "okada-rush", "mosquito-wahala", "blend-am", "zobo-sort", "ajo"] as const;
+/**
+ * Solo games that play the same for everyone given the same seed. (Zobo Sort keeps your level on
+ * your phone, so it can't be a shared daily.)
+ */
+export const DAILY_GAMES = ["mama-put", "pump-am", "catch-am", "bash-am", "okada-rush", "mosquito-wahala", "blend-am", "ajo"] as const;
 
 export type TodaysGame = { gameId: string; day: string; mode: string; seed: string };
 export function todaysGame(at = Date.now()): TodaysGame {

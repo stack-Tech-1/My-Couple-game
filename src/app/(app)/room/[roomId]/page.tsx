@@ -25,6 +25,8 @@ import { getDaily } from "@/lib/daily/server";
 import { DailyQuestion } from "@/components/room/DailyQuestion";
 import { SoloHomeCard } from "@/components/solo/SoloHomeCard";
 import { WaitingPrompt } from "@/components/solo/WaitingPrompt";
+import { TodayCard } from "@/components/room/TodayCard";
+import { getToday } from "@/lib/engage/today";
 
 export const metadata: Metadata = { title: "Your room" };
 
@@ -33,7 +35,7 @@ export default async function RoomHome({ params }: { params: Promise<{ roomId: s
   const bundle = await getRoom(roomId);
   if (!bundle) return null;
   if (bundle.room.kind === "friends") return <FriendRoomHome roomId={roomId} />;
-  const [moments, board, active, daily, keys, progress, week, together, checklist] = await Promise.all([
+  const [moments, board, active, daily, keys, progress, week, together, checklist, today] = await Promise.all([
     getRecentMoments(roomId),
     scoreboard(roomId),
     activeSessions(roomId),
@@ -43,6 +45,7 @@ export default async function RoomHome({ params }: { params: Promise<{ roomId: s
     bundle.partner ? getLastWeek(roomId) : Promise.resolve(null),
     bundle.partner ? getTogether(roomId) : Promise.resolve(null),
     startChecklist(bundle),
+    bundle.partner ? getToday(bundle) : Promise.resolve(null),
   ]);
   const mine = board.totals[bundle.me.profile.id] ?? 0;
   const theirs = bundle.partner ? (board.totals[bundle.partner.profile.id] ?? 0) : 0;
@@ -70,6 +73,11 @@ export default async function RoomHome({ params }: { params: Promise<{ roomId: s
       <GettingStarted roomId={roomId} items={checklist} />
       <WelcomeTour />
       <ActiveGames sessions={active} />
+      {paired && today ? (
+        <div className="mt-8">
+          <TodayCard roomId={roomId} today={today} streak={progress?.streak ?? 0} restUsed={!!progress?.rest_used} week={progress?.week} />
+        </div>
+      ) : null}
 
       <div className="mt-10 grid gap-x-12 gap-y-10 lg:grid-cols-[1.25fr_1fr]">
         <div className="flex flex-col gap-10">

@@ -31,10 +31,18 @@ export const BotScreen = dynamic(() => import("./BotScreen").then((m) => m.BotSc
 type Common = { myName: string; soundOn: boolean; challenge: string | null; toured: boolean };
 
 /** Blend Am, Ajo, Okada Rush and Reflex Training: one frame, one game. */
-export function ArcadeScreen({ gameId, ...c }: Common & { gameId: string }) {
+export function ArcadeScreen({ gameId, daily = null, ...c }: Common & { gameId: string; daily?: { mode: string; seed: string } | null }) {
   const game = soloGame(gameId)!;
   return (
-    <SoloShell<AnySaved> gameId={gameId} myName={c.myName} soundOn={c.soundOn} challenge={c.challenge} toured={c.toured} header={<Title name={game.name} tagline={game.tagline} />}>
+    <SoloShell<AnySaved>
+      gameId={gameId}
+      myName={c.myName}
+      soundOn={c.soundOn}
+      challenge={c.challenge}
+      toured={c.toured}
+      {...(daily ? { mode: daily.mode, seed: daily.seed, backHref: "/room" } : {})}
+      header={<Title name={daily ? `Today's game: ${game.name}` : game.name} tagline={daily ? "The same level for everyone today. You get one go." : game.tagline} />}
+    >
       {(api) =>
         gameId === "blend-am" ? (
           <BlendAm api={api} />

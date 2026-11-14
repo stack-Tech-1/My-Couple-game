@@ -11,15 +11,19 @@ import { soloContext } from "@/lib/solo/context";
 import { getOro } from "@/lib/solo/oro";
 import { fixamToday } from "@/lib/solo/fixam-server";
 import { SoloBoards } from "@/components/solo/SoloBoards";
+import { todaysGame } from "@/lib/engage/rotation";
 
 export async function generateMetadata({ params }: { params: Promise<{ game: string }> }): Promise<Metadata> {
   const { game } = await params;
   return { title: soloGame(game)?.name ?? "Solo" };
 }
 
-export default async function SoloGamePage({ params, searchParams }: { params: Promise<{ game: string }>; searchParams: Promise<{ challenge?: string }> }) {
+export default async function SoloGamePage({ params, searchParams }: { params: Promise<{ game: string }>; searchParams: Promise<{ challenge?: string; daily?: string }> }) {
   const { game: id } = await params;
-  const { challenge } = await searchParams;
+  const { challenge, daily: dailyParam } = await searchParams;
+  // Today's game: the same level for everyone, from the Today card.
+  const t = todaysGame();
+  const daily = dailyParam === "1" && t.gameId === id ? { mode: t.mode, seed: t.seed } : null;
   const game = soloGame(id);
   if (!game) notFound();
   const ctx = await soloContext();
@@ -50,7 +54,7 @@ export default async function SoloGamePage({ params, searchParams }: { params: P
   } else {
     body = (
       <>
-        <ArcadeScreen gameId={game.id} {...common} />
+        <ArcadeScreen gameId={game.id} {...common} daily={daily} />
         <SoloBoards gameId={game.id} rooms={ctx.rooms} me={ctx.user.id} />
       </>
     );

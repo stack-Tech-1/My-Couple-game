@@ -42,8 +42,11 @@ export function PosterStudio({ data, shareText, link = "https://playamah.app", f
   }, [data, photo]);
 
   // Bring the chosen style into view (chips, or a newly added photo).
+  // While a tap scrolls the rail, the scroll itself mustn't pick a style on the way past.
+  const steering = useRef(0);
   const show = (s: PosterStyle) => {
     setStyle(s);
+    steering.current = Date.now();
     rail.current?.querySelector<HTMLElement>(`[data-style="${s}"]`)?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
   };
   useEffect(() => {
@@ -53,7 +56,7 @@ export function PosterStudio({ data, shareText, link = "https://playamah.app", f
   // Swiping: the card nearest the middle is the one chosen.
   const onScroll = () => {
     const el = rail.current;
-    if (!el) return;
+    if (!el || Date.now() - steering.current < 800) return;
     const mid = el.scrollLeft + el.clientWidth / 2;
     let best: PosterStyle = style;
     let gap = Infinity;
