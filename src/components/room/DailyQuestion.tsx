@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { refreshWhenFree } from "@/lib/realtime/actionsInFlight";
 import { Button } from "@/design/Button";
 import { Icon } from "@/design/icons";
 import { toast } from "@/design/toast";
@@ -20,7 +21,7 @@ export function DailyQuestion({ daily, full = false }: { daily: DailyState; full
   const partnerName = bundle.partner?.profile.display_name ?? "your partner";
 
   // The partner's answer is invisible to us until we've both answered, so they ping us instead.
-  useEffect(() => on("daily:answered", () => router.refresh()), [on, router]);
+  useEffect(() => on("daily:answered", () => refreshWhenFree(() => router.refresh())), [on, router]);
 
   const submit = (e: FormEvent) => {
     e.preventDefault();

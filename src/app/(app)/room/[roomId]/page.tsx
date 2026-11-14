@@ -27,6 +27,7 @@ import { SoloHomeCard } from "@/components/solo/SoloHomeCard";
 import { WaitingPrompt } from "@/components/solo/WaitingPrompt";
 import { TodayCard } from "@/components/room/TodayCard";
 import { getToday } from "@/lib/engage/today";
+import { PlaceCard } from "@/components/place/PlaceCard";
 
 export const metadata: Metadata = { title: "Your room" };
 
@@ -90,6 +91,7 @@ export default async function RoomHome({ params }: { params: Promise<{ roomId: s
           {week ? <WeeklyRecap week={week} /> : null}
         </div>
         <div className="flex flex-col gap-6 lg:self-start">
+          {progress ? <PlaceCard roomId={roomId} stats={progress} /> : null}
           {together ? <MoodCard moods={together.moods} /> : null}
           {together ? <TogetherCard countdowns={together.countdowns} /> : null}
           {together ? <TogetherSync /> : null}

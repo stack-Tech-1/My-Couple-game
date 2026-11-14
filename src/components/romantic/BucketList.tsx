@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { refreshWhenFree } from "@/lib/realtime/actionsInFlight";
 import { Button } from "@/design/Button";
 import { Confetti } from "@/design/Confetti";
 import { Icon } from "@/design/icons";
@@ -33,7 +34,7 @@ export function BucketList({ items }: { items: BucketItem[] }) {
   const done = items.filter((i) => i.done_at);
   const nameOf = (id: string | null) => (id === bundle.me.profile.id ? "you" : id === bundle.partner?.profile.id ? bundle.partner.profile.display_name : "someone");
 
-  useEffect(() => on("bucket:changed", () => router.refresh()), [on, router]);
+  useEffect(() => on("bucket:changed", () => refreshWhenFree(() => router.refresh())), [on, router]);
   const changed = () => {
     send("bucket:changed", {});
     router.refresh();

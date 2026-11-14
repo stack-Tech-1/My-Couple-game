@@ -80,7 +80,8 @@ export const getRoom = cache(async (roomId: string): Promise<RoomBundle | null> 
   const me = people.find((p) => p.profile.id === user.id);
   if (!me) return null;
   const r = room as Room;
-  const plus = await roomPlus(people.map((p) => p.profile.id), user.id, r.kind === "friends" ? r.id : undefined);
+  // Today's plays are read alongside Plus (one round trip, not two) and kept only for a free room.
+  const [plus, plays] = await Promise.all([roomPlus(people.map((p) => p.profile.id), user.id, r.kind === "friends" ? r.id : undefined), roomPlaysToday(r.id)]);
   // Nobody here has Plus: each game is free twice a day, so the library needs today's count.
   const free = plus.live && people.every((p) => !plus.until[p.profile.id]);
 
@@ -92,7 +93,7 @@ export const getRoom = cache(async (roomId: string): Promise<RoomBundle | null> 
     rooms,
     blocked: (blocks ?? []).map((b) => b.blocked_id as string),
     plus,
-    freePlays: free ? await roomPlaysToday(r.id) : null,
+    freePlays: free ? plays : null,
   };
 });
 

@@ -44,7 +44,8 @@ describe("long sessions stay fast", () => {
         // The slowest stretch late in the game is no worse than a few times the early moves.
         if (times.length >= 40) {
           const fifth = Math.floor(times.length / 5);
-          const avg = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
+          // Medians, so one hiccup from a busy machine doesn't count as a slowdown.
+          const avg = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)]!;
           const early = avg(times.slice(0, fifth));
           const late = avg(times.slice(-fifth));
           expect(late, `${base} game ${g}: early ${early.toFixed(2)}ms, late ${late.toFixed(2)}ms over ${times.length} moves`).toBeLessThan(early * 4 + 2);

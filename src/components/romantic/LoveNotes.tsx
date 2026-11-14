@@ -3,6 +3,7 @@
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { refreshWhenFree } from "@/lib/realtime/actionsInFlight";
 import { Button } from "@/design/Button";
 import { Tabs } from "@/design/Tabs";
 import { Toggle } from "@/design/Field";
@@ -39,7 +40,7 @@ export function LoveNotes({ notes }: { notes: NotesState }) {
   const [reading, setReading] = useState<Note | null>(null);
   const partnerName = bundle.partner?.profile.display_name ?? "your partner";
 
-  useEffect(() => on("notes:changed", () => router.refresh()), [on, router]);
+  useEffect(() => on("notes:changed", () => refreshWhenFree(() => router.refresh())), [on, router]);
 
   // A letter that lands while you're on another tab deserves more than a badge.
   const arrived = notes.inbox.length + notes.sealed.length;
@@ -82,7 +83,7 @@ function Inbox({ notes, partnerName, onRead }: { notes: NotesState; partnerName:
         <li key={n.id}>
           <Envelope stationery={n.stationery} sealed label={`Sealed until ${fmtDate(n.unlock_at)}`}>
             <p className="font-semibold">Sealed</p>
-            <p className="text-[0.85rem] opacity-80">Opens {until(n.unlock_at)} · {fmtDate(n.unlock_at)}</p>
+            <p className="text-[0.85rem] opacity-80" suppressHydrationWarning>Opens {until(n.unlock_at)} · {fmtDate(n.unlock_at)}</p>
           </Envelope>
         </li>
       ))}

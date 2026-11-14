@@ -7,6 +7,7 @@ import { z } from "zod";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import type { RoomBundle } from "@/lib/room/types";
 import { applyTheme, loadThemePref, resolveTheme, type ThemeName } from "@/lib/theme/theme";
+import { MAX_WAIT, savingNow, trackActions } from "./actionsInFlight";
 
 /** What each person broadcasts about themselves via presence. */
 export const presenceSchema = z.object({
@@ -73,6 +74,7 @@ export function RoomProvider({ bundle, children }: { bundle: RoomBundle; childre
   }, [myId]);
 
   useEffect(() => {
+    trackActions();
     const supabase = supabaseBrowser();
     let cancelled = false;
     let retry: ReturnType<typeof setTimeout> | undefined;
@@ -87,6 +89,20 @@ export function RoomProvider({ bundle, children }: { bundle: RoomBundle; childre
       setPartnerPresence(parsed?.success ? parsed.data : null);
     };
 
+    // Database changes refresh the page, but a moment later and only once for a burst: a refresh
+    // that lands while one of my own saves is still on its way back cancels that save's reply,
+    // and the page would never show what I just saved.
+    let pending: ReturnType<typeof setTimeout> | undefined;
+    const refreshSoon = (wait = 800, since = Date.now()) => {
+      clearTimeout(pending);
+      pending = setTimeout(() => {
+        if (cancelled) return;
+        // One of my saves is still coming back: wait for it (within reason), then refresh.
+        if (savingNow() && Date.now() - since < MAX_WAIT) return refreshSoon(500, since);
+        router.refresh();
+      }, wait);
+    };
+
     const connect = async () => {
       await supabase.realtime.setAuth();
       if (cancelled) return;
@@ -99,10 +115,10 @@ export function RoomProvider({ bundle, children }: { bundle: RoomBundle; childre
         .on("postgres_changes", { event: "*", schema: "public", table: "room_members", filter: `room_id=eq.${roomId}` }, (p) => {
           // My own removal comes from leave/delete flows, which navigate on their own.
           if (p.eventType === "DELETE" && (p.old as { user_id?: string }).user_id === myId) return;
-          router.refresh();
+          refreshSoon();
         })
-        .on("postgres_changes", { event: "UPDATE", schema: "public", table: "rooms", filter: `id=eq.${roomId}` }, () => router.refresh())
-        .on("postgres_changes", { event: "INSERT", schema: "public", table: "moments", filter: `room_id=eq.${roomId}` }, () => router.refresh())
+        .on("postgres_changes", { event: "UPDATE", schema: "public", table: "rooms", filter: `id=eq.${roomId}` }, () => refreshSoon())
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "moments", filter: `room_id=eq.${roomId}` }, () => refreshSoon())
         .subscribe(async (status) => {
           if (cancelled) return;
           if (status === "SUBSCRIBED") {
@@ -131,6 +147,7 @@ export function RoomProvider({ bundle, children }: { bundle: RoomBundle; childre
     return () => {
       cancelled = true;
       clearTimeout(retry);
+      clearTimeout(pending);
       window.removeEventListener("offline", offline);
       window.removeEventListener("online", online);
       const ch = channelRef.current;

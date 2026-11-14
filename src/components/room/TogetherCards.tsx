@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { refreshWhenFree } from "@/lib/realtime/actionsInFlight";
 import { useEffect, useState, useTransition, type FormEvent } from "react";
 import { Button } from "@/design/Button";
 import { Icon } from "@/design/icons";
@@ -34,7 +35,7 @@ function useTogetherAction() {
 export function TogetherSync() {
   const router = useRouter();
   const { on } = useRoom();
-  useEffect(() => on(EVENT, () => router.refresh()), [on, router]);
+  useEffect(() => on(EVENT, () => refreshWhenFree(() => router.refresh())), [on, router]);
   return null;
 }
 

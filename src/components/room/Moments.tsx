@@ -68,7 +68,8 @@ export function Moments({ moments }: { moments: Moment[] }) {
             <li key={m.id} className="relative pl-7">
               <span aria-hidden className="absolute left-0 top-1.5 h-[11px] w-[11px] rounded-full border-[1.5px] border-line-strong bg-bg" />
               <p className="leading-snug">{describe(m)}</p>
-              <p className="mt-0.5 text-[0.8rem] text-muted"><time dateTime={m.created_at}>{relTime(m.created_at)}</time></p>
+              {/* "just now" can turn into "1m ago" between the server drawing it and the phone picking it up. */}
+              <p className="mt-0.5 text-[0.8rem] text-muted"><time dateTime={m.created_at} suppressHydrationWarning>{relTime(m.created_at)}</time></p>
             </li>
           ))}
         </ol>
