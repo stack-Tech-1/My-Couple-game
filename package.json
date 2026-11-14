@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "next dev",
+    "dev:test": "node scripts/with-env.mjs .env.test.local -- npx next dev -p 3100",
+    "dev:login": "node scripts/with-env.mjs .env.test.local -- node scripts/dev-login.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",

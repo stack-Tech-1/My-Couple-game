@@ -12,8 +12,9 @@ import { after } from "next/server";
 import { gameMeta, isFriendGame } from "@/games/catalog";
 import { displayName, notifyPartner } from "@/lib/push/server";
 import { wordChecker } from "./dictionary";
-import { isPlusGame } from "@/lib/plus/plans";
+import { FREE_MAX_PLAYERS, FREE_PLAYS_PER_DAY, countsAsPlay, isPlusGame, untilText } from "@/lib/plus/plans";
 import { lackingPlus } from "@/lib/plus/server";
+import { roomFreePlays } from "@/lib/plus/limits";
 
 /** Both current members confirmed 18+ and opted in. The same gate the database uses. */
 async function spicyUnlocked(roomId: string): Promise<boolean> {
@@ -195,6 +196,12 @@ export async function createSession(gameId: string, rawConfig: unknown, rematchO
       const names = (who ?? []).map((p) => p.display_name as string);
       throw new ApiError(402, names.length === 1 ? `${names[0]} needs Amah Plus to play this one.` : `${names.length} players need Amah Plus to play this one.`);
     }
+  }
+  // Free rooms (nobody has Plus): two at a time, and each game twice a day. Rematches count.
+  if (countsAsPlay(gameId)) {
+    const plays = await roomFreePlays(mine.room_id, ids, gameId);
+    if (plays.limited && players.length > FREE_MAX_PLAYERS) throw new ApiError(402, "Free games are for two at a time. With Amah Plus, everyone can join in.");
+    if (plays.limited && plays.left <= 0) throw new ApiError(402, `That's today's ${FREE_PLAYS_PER_DAY} free games of ${gameMeta(gameId)?.name ?? "this one"}. It opens again ${untilText(plays.resetsAt)}, or play as much as you like with Amah Plus.`);
   }
   const seed = randomBytes(16).toString("hex");
   const state = logic.initialState(seed, players, config as never, { now: Date.now(), content: await getContentPack() });

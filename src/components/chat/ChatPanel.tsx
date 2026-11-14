@@ -80,6 +80,40 @@ export function ChatPanel(props: Props) {
     stick.current = true;
   };
 
+  // The keyboard opening (or the window resizing) shrinks the list: keep the newest message in
+  // view when you were already at the bottom.
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el) return;
+    const keep = () => {
+      if (stick.current) el.scrollTop = el.scrollHeight;
+    };
+    const ro = new ResizeObserver(keep);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // Phones: size the panel to what's visible above the keyboard. iPhones don't shrink the page
+  // for the keyboard, so without this the input and the newest messages sit underneath it.
+  const panelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const vv = window.visualViewport;
+    const el = panelRef.current;
+    if (!vv || !el) return;
+    const fit = () => {
+      const hidden = window.innerHeight - vv.height - vv.offsetTop;
+      el.style.bottom = hidden > 40 ? `${hidden}px` : "";
+      if (stick.current && listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
+    };
+    vv.addEventListener("resize", fit);
+    vv.addEventListener("scroll", fit);
+    fit();
+    return () => {
+      vv.removeEventListener("resize", fit);
+      vv.removeEventListener("scroll", fit);
+    };
+  }, []);
+
   // Who has seen everything up to my latest confirmed message?
   const myLast = messages.findLast((m) => m.sender_id === me && !m.status);
   const seenBy = myLast ? Object.entries(readers).filter(([id, t]) => id !== me && Date.parse(t) >= Date.parse(myLast.created_at)).length : 0;
@@ -108,6 +142,7 @@ export function ChatPanel(props: Props) {
 
   return (
     <motion.div
+      ref={panelRef}
       role="dialog"
       aria-label={group ? `${name} group chat` : `Chat with ${name}`}
       onKeyDown={(e) => {
@@ -284,7 +319,11 @@ function Composer({ roomId, me, partner, onSendText, onSendSticker, onSendVoice,
   const locked = !hasPlus(bundle.plus, me);
   const [upsell, setUpsell] = useState(false);
 
-  useEffect(() => inputRef.current?.focus(), []);
+  // Ready to type on a computer. On a phone, opening the chat shows the messages first: the
+  // keyboard waits until you tap the box, so it never opens over what you came to read.
+  useEffect(() => {
+    if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) inputRef.current?.focus();
+  }, []);
 
   function send(e?: FormEvent) {
     e?.preventDefault();

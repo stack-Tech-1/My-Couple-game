@@ -3,6 +3,7 @@ import { cache } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabaseServer } from "@/lib/supabase/server";
 import { roomPlus } from "@/lib/plus/server";
+import { roomPlaysToday } from "@/lib/plus/limits";
 import type { Member, Moment, Profile, Room, RoomBundle, RoomKind, RoomSummary } from "./types";
 
 export const getUser = cache(async (): Promise<User | null> => {
@@ -79,6 +80,9 @@ export const getRoom = cache(async (roomId: string): Promise<RoomBundle | null> 
   const me = people.find((p) => p.profile.id === user.id);
   if (!me) return null;
   const r = room as Room;
+  const plus = await roomPlus(people.map((p) => p.profile.id), user.id, r.kind === "friends" ? r.id : undefined);
+  // Nobody here has Plus: each game is free twice a day, so the library needs today's count.
+  const free = plus.live && people.every((p) => !plus.until[p.profile.id]);
 
   return {
     room: r,
@@ -87,7 +91,8 @@ export const getRoom = cache(async (roomId: string): Promise<RoomBundle | null> 
     members: people,
     rooms,
     blocked: (blocks ?? []).map((b) => b.blocked_id as string),
-    plus: await roomPlus(people.map((p) => p.profile.id), user.id, r.kind === "friends" ? r.id : undefined),
+    plus,
+    freePlays: free ? await roomPlaysToday(r.id) : null,
   };
 });
 

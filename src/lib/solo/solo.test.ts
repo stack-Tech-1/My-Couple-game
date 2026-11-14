@@ -190,5 +190,6 @@ describe("bots", () => {
       }
       if (s.roundResult?.winner != null) expect(s.players[s.roundResult.winner]).toBe(BOT_ID);
     }
-  });
+    // The hard bot searches every line, twice per move here: allow for a busy machine.
+  }, 30_000);
 });

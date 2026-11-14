@@ -6,7 +6,7 @@ import { getRoom } from "@/lib/room/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { PageBackdrop } from "@/components/room/HomeBackdrop";
 import { PAGE_LOOKS } from "@/games/look";
-import { PLANS, isGroupPlan, naira } from "@/lib/plus/plans";
+import { PLANS, isGroupPlan, isStaffPlus, naira } from "@/lib/plus/plans";
 import type { Purchase } from "@/lib/plus/server";
 import { PlusPanel, PlusTag } from "@/components/plus/PlusTag";
 import { PlusPlans } from "@/components/plus/PlusPlans";
@@ -107,7 +107,9 @@ export default async function PlusPage({ params, searchParams }: { params: Promi
               {until ? (others.length ? `You and ${others.join(" and ")} have Plus` : trial ? "Your free trial is on" : "You have Plus") : "You're on the free plan"}
             </h2>
             <p className="mt-1 text-[0.88rem] opacity-85">
-              {until
+              {isStaffPlus(until)
+                ? "Always on, on the house: you're on the Amah team, or with someone who is."
+                : until
                 ? renewing && renewing.period_end
                   ? `Renews ${longDay(renewing.period_end)}${renewing.card_last4 ? ` on card ending ${renewing.card_last4}` : ""}, ${naira(renewing.amount_kobo / 100)}.`
                   : `Plus until ${longDay(until)}. Nothing renews; we'll remind you before it ends.`

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { isSoloGame } from "@/lib/solo/catalog";
+import { freeGameOfWeek } from "@/lib/engage/rotation";
 
 /**
  * Amah Plus, in one place: what's free, what it costs, and the free limits.
@@ -20,13 +21,50 @@ export const FREE_GAMES = new Set([
   "love-notes",
   "memory-lane",
 ]);
-/** Solo games are free for everyone, always, so they can never count as Plus. */
-export const isPlusGame = (gameId: string) => !FREE_GAMES.has(gameId) && !isSoloGame(gameId);
+/**
+ * Solo games are free for everyone, always, so they can never count as Plus. One Plus game a
+ * week is free for everyone too (the free game of the week).
+ */
+export const isPlusGame = (gameId: string, at = Date.now()) => !FREE_GAMES.has(gameId) && !isSoloGame(gameId) && freeGameOfWeek(at).gameId !== gameId;
 
 /** Free limits (Plus has none). */
 export const FREE_LIMITS = { photos: 5, sealedNotes: 3, friendRooms: 1 } as const;
 
+/**
+ * Free plays: without Plus, each game can be played twice a day (Lagos midnight to midnight).
+ * Room games count per room, Solo and bot games per person. A rematch is a new play. A room
+ * where anyone has Plus has no limits; a free friend room plays two at a time.
+ */
+export const FREE_PLAYS_PER_DAY = 2;
+export const FREE_MAX_PLAYERS = 2;
+/** Free and unlimited: these are daily rituals and keepsakes, not games to ration. */
+export const UNLIMITED_FREE = new Set(["daily-question", "love-notes", "memory-lane"]);
+/** Does playing this game use up a free play? (Plus games are closed without Plus anyway.) */
+export const countsAsPlay = (gameId: string) => !UNLIMITED_FREE.has(gameId) && !isPlusGame(gameId) && gameId !== "oro";
+
+/** Start of today and of tomorrow, Lagos time (UTC+1, no daylight saving). */
+export function lagosDayBounds(at = Date.now()): { start: string; end: string } {
+  const day = new Date(at + 3600_000).toISOString().slice(0, 10);
+  const start = Date.parse(`${day}T00:00:00+01:00`);
+  return { start: new Date(start).toISOString(), end: new Date(start + 864e5).toISOString() };
+}
+
+/** "in 4h 20m" or "in 12m": time until free plays come back. */
+export function untilText(iso: string, now = Date.now()): string {
+  const mins = Math.max(1, Math.ceil((Date.parse(iso) - now) / 60_000));
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return h ? (m ? `in ${h}h ${m}m` : `in ${h}h`) : `in ${m}m`;
+}
+
+/** What's left today for one game. `limited` is false when Plus lifts the limit. */
+export type FreePlays = { limited: boolean; used: number; left: number; resetsAt: string };
+
 export const TRIAL_DAYS = 7;
+
+/** "Plus until" for the Amah team and their partners: always on, never billed. */
+export const STAFF_UNTIL = "2999-12-31T00:00:00.000Z";
+export const isStaffPlus = (until: string | null | undefined) => until === STAFF_UNTIL;
 
 export const PLAN_IDS = ["single", "couple", "group3", "group5", "group8", "gift"] as const;
 export type PlanId = (typeof PLAN_IDS)[number];

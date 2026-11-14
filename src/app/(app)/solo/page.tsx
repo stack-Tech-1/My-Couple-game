@@ -7,10 +7,15 @@ import { SOLO_GAMES, SOLO_LOOK, formatScore, soloGame } from "@/lib/solo/catalog
 import { soloContext } from "@/lib/solo/context";
 import { incomingChallenges, myBests } from "@/lib/solo/server";
 import { getGameFlags } from "@/lib/games/flags.server";
+import { soloFreePlaysAll } from "@/lib/plus/limits";
+import { FREE_PLAYS_PER_DAY } from "@/lib/plus/plans";
 
 export default async function SoloHome() {
   const ctx = await soloContext();
-  const [bests, challenges, flags] = await Promise.all([myBests(ctx.user.id), incomingChallenges(ctx.user.id), getGameFlags()]);
+  const [bests, challenges, flags, plays] = await Promise.all([myBests(ctx.user.id), incomingChallenges(ctx.user.id), getGameFlags(), soloFreePlaysAll(ctx.user.id)]);
+  // Without Plus: each game twice a day. A used-up game says so on its card.
+  const usedUp = (id: string) => plays.limited && id !== "oro" && (plays.used[id] ?? 0) >= FREE_PLAYS_PER_DAY;
+  const tagFor = (id: string, otherwise?: string) => (usedUp(id) ? "Back at midnight" : otherwise);
   const live = SOLO_GAMES.filter((g) => !flags.off.includes(g.id));
   const bestOf = (id: string, mode = "normal") => bests.find((b) => b.gameId === id && b.mode === mode);
   const note = (id: string) => {
@@ -35,6 +40,7 @@ export default async function SoloHome() {
             <span className="text-[0.85rem] font-extrabold">Free</span>
           </div>
           <p className="mt-1.5 font-semibold">Quick games, no partner needed. Beat your best, then beat your friends.</p>
+          {plays.limited ? <p className="mt-1 text-[0.85rem] font-semibold opacity-80">Every game is free twice a day. Challenges and today&apos;s word are always open.</p> : null}
         </div>
       </div>
 
@@ -65,7 +71,7 @@ export default async function SoloHome() {
           <h2 id="today-h" className="display text-[1.5rem]">Today</h2>
           <div className="mt-3 grid grid-cols-2 gap-3">
             {oro ? <SoloCard game={oro} note={new Date(Date.now() + 3600_000).getUTCDay() === 5 ? "Friday: a Naija word" : "One word, six guesses"} tag="Daily" /> : null}
-            {fix ? <SoloCard game={fix} note="Today's picture" tag="Daily" /> : null}
+            {fix ? <SoloCard game={fix} note="Today's picture" tag={tagFor(fix.id, "Daily")} /> : null}
           </div>
         </section>
       ) : null}
@@ -75,7 +81,7 @@ export default async function SoloHome() {
         <ul className="mt-3 grid grid-cols-2 gap-3">
           {arcade.map((g) => (
             <li key={g.id}>
-              <SoloCard game={g} note={note(g.id)} />
+              <SoloCard game={g} note={note(g.id)} tag={tagFor(g.id)} />
             </li>
           ))}
         </ul>
@@ -90,7 +96,7 @@ export default async function SoloHome() {
           <ul className="mt-3 grid grid-cols-3 gap-3">
             {bots.map((g) => (
               <li key={g.id}>
-                <SoloCard game={g} size="small" note="vs the bot" />
+                <SoloCard game={g} size="small" note={usedUp(g.id) ? "Back at midnight" : "vs the bot"} />
               </li>
             ))}
           </ul>

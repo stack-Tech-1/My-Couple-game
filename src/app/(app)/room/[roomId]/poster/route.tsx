@@ -57,6 +57,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ roomId:
     personal: personalStats(me.id, (rows ?? []) as GameRow[]),
   });
 
+  // The poster studio draws on the phone: it only needs the numbers.
+  if (new URL(_req.url).searchParams.get("format") === "json") return Response.json(poster, { headers: { "Cache-Control": "private, no-store" } });
+
   return new ImageResponse(<PosterArt p={poster} />, {
     width: 1080,
     height: 1920,

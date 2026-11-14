@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Icon } from "@/design/icons";
 import { useRoom } from "@/lib/realtime/RoomProvider";
-import { TRIAL_DAYS } from "@/lib/plus/plans";
+import { TRIAL_DAYS, isStaffPlus } from "@/lib/plus/plans";
 import { PlusTag } from "./PlusTag";
 
 export const plusDate = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "long" });
@@ -21,7 +21,7 @@ export function PlusSummary() {
           <>
             <PlusTag label={trial ? "Trial" : "Plus"} />
             <span>
-              {trial ? "Your free trial" : "Your Plus"} runs until <b className="text-fg">{plusDate(until)}</b>.
+              {isStaffPlus(until) ? "Plus is always on for the Amah team and their partners." : <>{trial ? "Your free trial" : "Your Plus"} runs until <b className="text-fg">{plusDate(until)}</b>.</>}
             </span>
           </>
         ) : (

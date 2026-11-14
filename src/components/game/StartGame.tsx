@@ -14,11 +14,13 @@ import { gameMeta } from "@/games/catalog";
 import { TIMED_TOURS } from "@/games/tours";
 import { GameTour, useTourDue } from "./GameTour";
 import { Modal } from "@/design/Modal";
-import { PLANS, isPlusGame, naira } from "@/lib/plus/plans";
+import { FREE_MAX_PLAYERS, PLANS, isPlusGame, naira } from "@/lib/plus/plans";
+import { OutOfPlays, PlaysLeft } from "@/components/plus/OutOfPlays";
 import { PlusTag } from "@/components/plus/PlusTag";
 import { PlusPlans } from "@/components/plus/PlusPlans";
 
-export function StartGame({ gameId, activeSessionId }: { gameId: string; activeSessionId: string | null }) {
+/** `plays`: today's free plays in this room (null when nothing is limited). */
+export function StartGame({ gameId, activeSessionId, plays = null }: { gameId: string; activeSessionId: string | null; plays?: { left: number; resetsAt: string } | null }) {
   const router = useRouter();
   const { bundle, send } = useRoom();
   const [busy, setBusy] = useState(false);
@@ -32,7 +34,9 @@ export function StartGame({ gameId, activeSessionId }: { gameId: string; activeS
   const friends = bundle.members.filter((m) => m.profile.id !== bundle.me.profile.id && !bundle.blocked.includes(m.profile.id));
   // Group games let you pick several friends (up to the game's limit, you included).
   const meta = gameMeta(gameId);
-  const max = friendsRoom ? (meta?.maxPlayers ?? 2) : 2;
+  // A free friend room plays two at a time.
+  const fullMax = friendsRoom ? (meta?.maxPlayers ?? 2) : 2;
+  const max = plays ? Math.min(fullMax, FREE_MAX_PLAYERS) : fullMax;
   const min = meta?.minPlayers ?? 2;
   const group = max > 2;
   const [picked, setPicked] = useState<string[]>(friends.length === 1 ? [friends[0]!.profile.id] : []);
@@ -70,6 +74,24 @@ export function StartGame({ gameId, activeSessionId }: { gameId: string; activeS
             : "This one needs two. Invite a friend to the room first."
           : "This one needs two. Invite your person from the room home first."}
       </p>
+    );
+  }
+
+  // Today's free plays are used up (a game already going can still be finished).
+  if (plays && plays.left <= 0 && !activeSessionId) {
+    return (
+      <OutOfPlays
+        gameName={meta?.name ?? "this game"}
+        resetsAt={plays.resetsAt}
+        plusHref={`/room/${roomId}/settings/plus`}
+        onReopen={() => router.refresh()}
+        openNow={[
+          { label: "Other games", hint: "Each game has its own free plays", href: `/room/${roomId}/games` },
+          ...(friendsRoom ? [] : [{ label: "Today's question", hint: "Always free, never limited", href: `/room/${roomId}/games/daily-question` }]),
+          { label: "Solo games", hint: "Quick games on your own", href: "/solo" },
+          { label: "Back to the room", hint: friendsRoom ? "Chat with everyone" : `Chat with ${bundle.partner?.profile.display_name ?? "your person"}`, href: `/room/${roomId}` },
+        ]}
+      />
     );
   }
 
@@ -120,6 +142,7 @@ export function StartGame({ gameId, activeSessionId }: { gameId: string; activeS
       {friendsRoom ? (
         <fieldset className="mt-8">
           <legend className="eyebrow mb-3 text-muted">{group ? `Play with (up to ${max - 1})` : "Play with"}</legend>
+          {plays && fullMax > max ? <p className="-mt-1 mb-3 text-[0.85rem] text-muted">Free games are two at a time. With Amah Plus, up to {fullMax} can play together.</p> : null}
           <div role={group ? "group" : "radiogroup"} aria-label="Play with" className="flex flex-wrap gap-2.5">
             {friends.map((f) => (
               <button
@@ -180,6 +203,7 @@ export function StartGame({ gameId, activeSessionId }: { gameId: string; activeS
           {activeSessionId ? "Start over" : inviteLabel}
         </Button>
       </div>
+      {plays && plays.left > 0 ? <PlaysLeft left={plays.left} /> : null}
       {preTour ? (
         <GameTour
           gameId={gameId}

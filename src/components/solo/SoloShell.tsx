@@ -13,6 +13,10 @@ import { makePoster, sharePoster } from "./poster";
 import { ChallengeSheet } from "./ChallengeSheet";
 import { SoloTour, soloTourDue } from "./SoloTour";
 import { soloTourFor } from "@/lib/solo/tours";
+import { OutOfPlays, PlaysLeft } from "@/components/plus/OutOfPlays";
+import { useSoloLimits } from "./SoloLimits";
+import { Modal } from "@/design/Modal";
+import { PosterStudio } from "@/components/poster/PosterStudio";
 
 /** What every Solo game gets from the frame. */
 export type SoloApi<S> = {
@@ -75,8 +79,12 @@ export function SoloShell<S>({
 }) {
   const game = soloGame(gameId)!;
   const key = KEY(gameId, mode);
-  const [phase, setPhase] = useState<"loading" | "ask" | "playing" | "done">("loading");
-  const [run, setRun] = useState<{ runId: string; seed: string; target: number | null } | null>(null);
+  const [phase, setPhase] = useState<"loading" | "ask" | "playing" | "done" | "out">("loading");
+  const [run, setRun] = useState<{ runId: string; seed: string; target: number | null; left?: number | null } | null>(null);
+  const [resetsAt, setResetsAt] = useState<string | null>(null);
+  const [studio, setStudio] = useState(false);
+  const [blocked, setBlocked] = useState<string | null>(null);
+  const limits = useSoloLimits();
   const [saved, setSaved] = useState<S | null>(null);
   const [hidden, setHidden] = useState(false);
   const [userPaused, setUserPaused] = useState(false);
@@ -141,6 +149,18 @@ export function SoloShell<S>({
     elapsed.current = 0;
     lastState.current = null;
     const r = await startRun({ gameId, mode, ...(fixedSeed ? { seed: fixedSeed } : {}), ...(challenge ? { challenge } : {}) });
+    if (!r.ok && "resetsAt" in r) {
+      // Today's free plays are used up: the waiting screen, not a game.
+      setResetsAt(r.resetsAt);
+      setPhase("out");
+      return;
+    }
+    if (!r.ok && "blocked" in r) {
+      // Today's game, already played: say so instead of starting.
+      setBlocked(r.error);
+      setPhase("out");
+      return;
+    }
     if (!r.ok) {
       toast.error(r.error);
       // Offline or signed out: still playable, the score just isn't saved.
@@ -201,8 +221,17 @@ export function SoloShell<S>({
     },
   };
 
+  // Midnight came while the waiting screen was up: start a fresh game.
+  const reopen = useCallback(() => void begin(), [begin]);
+
   async function share() {
     if (!result) return;
+    // Every game but Fix Am gets the poster studio. Fix Am's poster shows the place photo with
+    // its credit, as the photo's licence asks.
+    if (gameId !== "fix-am") {
+      setStudio(true);
+      return;
+    }
     const blob = await makePoster({
       gameName: game.name,
       scoreText: formatScore(game, result.score),
@@ -283,7 +312,8 @@ export function SoloShell<S>({
                       : `Your best: ${formatScore(game, result.best)}`}
               </p>
               <div className="mt-5 flex flex-col gap-2.5">
-                <Button size="lg" onClick={() => void begin()}>Play again</Button>
+                <Button size="lg" onClick={() => void begin()}>{run?.left === 0 ? "Play again tomorrow" : "Play again"}</Button>
+                {run?.left != null && run.left > 0 ? <PlaysLeft left={run.left} className="-mt-1" /> : null}
                 {game.kind !== "bot" && game.kind !== "daily" ? (
                   <div className="grid grid-cols-2 gap-2.5">
                     <Button size="lg" variant="outline" onClick={() => void share()}>Share</Button>
@@ -298,7 +328,45 @@ export function SoloShell<S>({
         </section>
       ) : null}
 
+      {phase === "out" && blocked ? (
+        <div className="glass mt-6 rounded-[24px] p-6 text-center">
+          <p className="display text-[1.6rem]">See you tomorrow</p>
+          <p className="mt-1 text-muted">{blocked}</p>
+          <Link prefetch={false} href={backHref} className="mt-5 inline-flex h-11 items-center rounded-full bg-fg px-5 font-semibold text-bg">
+            Back
+          </Link>
+        </div>
+      ) : null}
+
+      {phase === "out" && resetsAt ? (
+        <OutOfPlays gameName={game.name} resetsAt={resetsAt} plusHref={limits.plusHref} openNow={limits.openNow.filter((o) => o.href !== `/solo/${gameId}`)} onReopen={reopen} />
+      ) : null}
+
       {touring ? <SoloTour gameId={gameId} onDone={endTour} /> : null}
+
+      {result ? (
+        <Modal open={studio} onClose={() => setStudio(false)} title="Your poster" description="Swipe for a style. Made for your WhatsApp status, or anywhere you like.">
+          <PosterStudio
+            fileName={`amah-${gameId}`}
+            shareText={`I scored ${formatScore(game, result.score)} in ${game.name} on Amah. Beat me:`}
+            data={{
+              people: [limits.me ?? { name: myName, motif: "fig", hue: 12 }],
+              level: null,
+              headline: result.newBest ? `New best: ${formatScore(game, result.score)}` : formatScore(game, result.score),
+              stats: [
+                { value: formatScore(game, result.score), label: `in ${game.name}` },
+                ...(result.best !== result.score ? [{ value: formatScore(game, result.best), label: "my best" }] : []),
+                ...(result.plays > 1 ? [{ value: String(result.plays), label: "games played" }] : []),
+              ],
+              rivalry: null,
+              game: game.name,
+              year: new Date().getFullYear(),
+              photo: null,
+              seed: `${myName}|${gameId}`,
+            }}
+          />
+        </Modal>
+      ) : null}
 
       {result?.scoreId ? (
         <ChallengeSheet

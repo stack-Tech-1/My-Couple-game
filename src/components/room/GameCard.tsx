@@ -14,7 +14,7 @@ import { PlusTag } from "@/components/plus/PlusTag";
  * middle, and the name rides on a frosted strip. The panel is always light, so night mode
  * doesn't wash the drawing out.
  */
-export function GameCard({ game, roomId, fresh, plus, size = "normal" }: { game: GameMeta; roomId: string; fresh?: boolean; plus?: boolean; size?: "normal" | "large" | "peek" }) {
+export function GameCard({ game, roomId, fresh, plus, usedUp, size = "normal" }: { game: GameMeta; roomId: string; fresh?: boolean; plus?: boolean; usedUp?: boolean; size?: "normal" | "large" | "peek" }) {
   const look = lookFor(game.id, game.category);
   const large = size === "large";
   return (
@@ -32,7 +32,13 @@ export function GameCard({ game, roomId, fresh, plus, size = "normal" }: { game:
         <GameArt id={game.id} accent={look.accent} className={cn("w-auto transition-transform duration-300 group-hover:scale-[1.05]", large ? "h-32" : size === "peek" ? "h-16" : "h-20")} />
       </div>
       {plus ? <PlusTag className="absolute left-2.5 top-2.5" /> : null}
-      {fresh ? <span className="absolute right-2.5 top-2.5 rounded-full bg-[#1c1416] px-2 py-0.5 text-[0.68rem] font-bold text-[#fbf7f1]">New</span> : null}
+      {usedUp ? (
+        <span className="absolute right-2.5 top-2.5 inline-flex items-center gap-1 rounded-full bg-[#1c1416] px-2 py-0.5 text-[0.68rem] font-bold text-[#fbf7f1]">
+          <Icon name="moon" size={10} /> Back at midnight
+        </span>
+      ) : fresh ? (
+        <span className="absolute right-2.5 top-2.5 rounded-full bg-[#1c1416] px-2 py-0.5 text-[0.68rem] font-bold text-[#fbf7f1]">New</span>
+      ) : null}
       {/* Fixed light glass: the strip always sits on the game's own light panel. */}
       <div
         className="absolute inset-x-2 bottom-2 rounded-[15px] border border-white/75 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,.9)] backdrop-blur-xl"

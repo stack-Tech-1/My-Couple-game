@@ -19,6 +19,7 @@ import { FantasyMatch } from "@/components/afterdark/FantasyMatch";
 import { getAfterDark, getFantasy } from "@/lib/afterdark/server";
 import { hasPlus, isPlusGame } from "@/lib/plus/plans";
 import { PlusGate } from "@/components/plus/PlusGate";
+import { roomFreePlays } from "@/lib/plus/limits";
 
 export async function generateMetadata({ params }: { params: Promise<{ gameId: string }> }): Promise<Metadata> {
   const { gameId } = await params;
@@ -84,7 +85,8 @@ export default async function GamePage({ params }: { params: Promise<{ roomId: s
   const logic = GAME_LOGIC[game.id];
   if (!logic) notFound(); // every library entry is a feature, an After Dark page, or a session game
   const me = bundle.me.profile.id;
-  const active = logic ? (await activeSessions(roomId)).find((s) => s.game_id === game.id && s.players.includes(me)) : undefined;
+  const [sessions, plays] = await Promise.all([activeSessions(roomId), roomFreePlays(roomId, bundle.members.map((m) => m.profile.id), game.id)]);
+  const active = sessions.find((s) => s.game_id === game.id && s.players.includes(me));
 
   const look = lookFor(game.id, game.category);
 
@@ -105,7 +107,7 @@ export default async function GamePage({ params }: { params: Promise<{ roomId: s
               <PlusGate bundle={bundle} game={game} />
             </div>
           ) : logic ? (
-            <StartGame gameId={game.id} activeSessionId={active?.id ?? null} />
+            <StartGame gameId={game.id} activeSessionId={active?.id ?? null} plays={plays.limited ? { left: plays.left, resetsAt: plays.resetsAt } : null} />
           ) : null}
         </div>
         <div className="order-1 md:order-2" style={{ color: "#1c1416", ["--bg-raised" as string]: "#fbf7f1" }}>

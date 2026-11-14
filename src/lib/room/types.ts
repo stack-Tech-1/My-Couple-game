@@ -97,6 +97,8 @@ export type RoomBundle = {
   blocked: string[];
   /** Who in this room has Amah Plus (and whether Plus is live at all). */
   plus: PlusInfo;
+  /** A free room (nobody has Plus): each game's plays today. Null when nothing is limited. */
+  freePlays?: { used: Record<string, number>; resetsAt: string } | null;
 };
 
 export const roomSettingsSchema = z

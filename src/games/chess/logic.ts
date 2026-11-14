@@ -59,9 +59,61 @@ export const squareAt = (i: number) => `${FILES[i % 8]}${8 - Math.floor(i / 8)}`
 
 /** Rebuild the game from its move list (keeps repetition history, which a single position can't). */
 export function replay(moves: readonly string[]): Chess {
-  const g = new Chess();
-  for (const m of moves) g.move({ from: m.slice(0, 2), to: m.slice(2, 4), promotion: m[4] });
-  return g;
+  return built(moves).g;
+}
+
+/**
+ * Rebuilt positions, kept so each move only plays one new move instead of the whole game again.
+ * Replaying from scratch made every move slower than the last: about 30ms early on, over 300ms
+ * by move 400, several times per move. Entries are keyed by the move list; nothing here is
+ * shared between games except by identical move lists, which are the same position.
+ */
+type Built = { g: Chess; captured: { w: Piece[]; b: Piece[] }; last: { from: string; to: string } | null };
+const CACHE = new Map<string, Built>();
+const CACHE_MAX = 64;
+const keyOf = (moves: readonly string[]) => moves.join(",");
+const playOne = (b: Built, lan: string) => {
+  const m = b.g.move({ from: lan.slice(0, 2), to: lan.slice(2, 4), promotion: lan[4] });
+  if (m.captured) {
+    const lost = m.color === "w" ? "b" : "w";
+    b.captured[lost].push(`${lost}${m.captured}` as Piece);
+  }
+  b.last = { from: m.from, to: m.to };
+  return m;
+};
+const remember = (key: string, b: Built) => {
+  CACHE.delete(key);
+  CACHE.set(key, b);
+  while (CACHE.size > CACHE_MAX) CACHE.delete(CACHE.keys().next().value!);
+};
+
+/** The position after `moves`, read-only: callers must not play moves on it. */
+function built(moves: readonly string[]): Built {
+  const key = keyOf(moves);
+  const hit = CACHE.get(key);
+  if (hit) return hit;
+  // One move on from a position we already have: take it over and play just that move.
+  const prevKey = keyOf(moves.slice(0, -1));
+  const prev = moves.length ? CACHE.get(prevKey) : undefined;
+  let b: Built;
+  if (prev) {
+    CACHE.delete(prevKey);
+    b = prev;
+    playOne(b, moves[moves.length - 1]!);
+  } else {
+    b = { g: new Chess(), captured: { w: [], b: [] }, last: null };
+    for (const m of moves) playOne(b, m);
+  }
+  remember(key, b);
+  return b;
+}
+
+/** A position of my own to play a move on (never the shared one). */
+function owned(moves: readonly string[]): Built {
+  const key = keyOf(moves);
+  const b = built(moves);
+  CACHE.delete(key);
+  return b;
 }
 
 const colorOf = (s: ChessState, p: PlayerId): "w" | "b" => (s.players[s.white] === p ? "w" : "b");
@@ -117,9 +169,18 @@ export const chess: GameLogic<ChessState, ChessMove, ChessView, ChessConfig> = {
       if (move.action === "decline") return { ...state, drawOffer: null };
       return { ...state, drawOffer: null, winner: "tie", reason: "agreed" };
     }
-    const g = replay(state.moves);
-    const m = g.move({ from: move.from, to: move.to, promotion: move.promotion });
-    const reason = ending(g);
+    const b = owned(state.moves);
+    const lan = `${move.from}${move.to}${move.promotion ?? ""}`;
+    let m;
+    try {
+      m = playOne(b, lan);
+    } catch (e) {
+      // Not legal after all: give the position back unchanged.
+      remember(keyOf(state.moves), b);
+      throw e;
+    }
+    remember(keyOf([...state.moves, m.lan]), b);
+    const reason = ending(b.g);
     return {
       ...state,
       moves: [...state.moves, m.lan],
@@ -137,17 +198,12 @@ export const chess: GameLogic<ChessState, ChessMove, ChessView, ChessConfig> = {
 
   // Nothing hidden in chess: the view adds what the board needs to draw itself.
   viewFor(state, player) {
-    const g = replay(state.moves);
+    const b = built(state.moves);
+    const g = b.g;
     const myColor = colorOf(state, player);
     const board = g.board().flat().map((sq) => (sq ? (`${sq.color}${sq.type}` as Piece) : null));
-    const hist = g.history({ verbose: true });
     // Pieces each colour has lost, in the order they were taken.
-    const captured = { w: [] as Piece[], b: [] as Piece[] };
-    for (const m of hist) {
-      if (!m.captured) continue;
-      const lost = m.color === "w" ? "b" : "w";
-      captured[lost].push(`${lost}${m.captured}` as Piece);
-    }
+    const captured = { w: [...b.captured.w], b: [...b.captured.b] };
     const legal: LegalMove[] = [];
     if (!state.winner && g.turn() === myColor) {
       const keys = new Set<string>();
@@ -158,7 +214,7 @@ export const chess: GameLogic<ChessState, ChessMove, ChessView, ChessConfig> = {
         legal.push({ from: m.from, to: m.to, promotion: !!m.promotion });
       }
     }
-    const lastMove = hist[hist.length - 1];
+    const lastMove = b.last;
     let check: string | null = null;
     if (g.inCheck()) {
       const i = board.findIndex((p) => p === `${g.turn()}k`);

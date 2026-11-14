@@ -1,6 +1,9 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { botMove, type BotBase } from "@/lib/solo/bots";
+
+const BOT_BASES = ["whot", "ludo", "ayo", "draughts", "tic-tac-toe", "connect-four", "box-am"] as const;
 import { gameComponent } from "@/games/registry";
 import { GAME_LOGIC } from "@/games/logic";
 import { runMove } from "@/games/_engine/runner";
@@ -61,6 +64,36 @@ export function Sandbox({ gameId }: { gameId: string }) {
   );
 
   const outcome = logic.isOver(state);
+
+  // ?auto=1: bots play both seats nonstop, starting a new game when one ends. For long-session
+  // soak tests in a real browser: window.__soak counts moves and games.
+  const auto = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("auto") === "1" && (BOT_BASES as readonly string[]).includes(gameId);
+  useEffect(() => {
+    if (!auto) return;
+    const w = window as unknown as { __soak?: { moves: number; games: number } };
+    w.__soak ??= { moves: 0, games: 0 };
+    const t = setTimeout(() => {
+      const s = live.current;
+      if (logic.isOver(s).over) {
+        w.__soak!.games++;
+        setState(logic.initialState(Math.random().toString(36).slice(2), PLAYERS, config, { now: Date.now() }));
+        return;
+      }
+      for (const p of PLAYERS) {
+        const m = botMove(gameId as BotBase, logic, s, p, "easy", { now: Date.now() });
+        if (m !== null) {
+          try {
+            setState(runMove(logic, s, m, p, { now: Date.now() }).next);
+            w.__soak!.moves++;
+          } catch {
+            // A stale move: the next tick tries again.
+          }
+          return;
+        }
+      }
+    }, 120);
+    return () => clearTimeout(t);
+  });
 
   return (
     <div className="relative z-[1] px-4 py-6">

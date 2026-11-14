@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { Logo } from "@/design/Logo";
 import { Icon } from "@/design/icons";
 import { soloContext } from "@/lib/solo/context";
+import { SoloLimitsProvider } from "@/components/solo/SoloLimits";
 
 export const metadata: Metadata = { title: "Solo" };
 export const dynamic = "force-dynamic";
@@ -30,7 +31,21 @@ export default async function SoloLayout({ children }: { children: ReactNode }) 
           )}
         </div>
       </header>
-      <main className="mx-auto max-w-3xl px-4 pb-24 sm:px-8">{children}</main>
+      <main className="mx-auto max-w-3xl px-4 pb-24 sm:px-8">
+        <SoloLimitsProvider
+          value={{
+            plusHref: ctx.homeRoomId ? `/room/${ctx.homeRoomId}/settings/plus` : null,
+            me: { name: ctx.profile.display_name, motif: ctx.profile.avatar_key ?? "fig", hue: ctx.profile.avatar_hue ?? 12 },
+            openNow: [
+              { label: "Ọ̀rọ̀ of the Day", hint: "Today's word. Never limited.", href: "/solo/oro" },
+              { label: "Other Solo games", hint: "Each game has its own free plays", href: "/solo" },
+              ...(ctx.homeRoomId ? [{ label: "Your room", hint: "Chat, today's question and love notes", href: `/room/${ctx.homeRoomId}` }] : []),
+            ],
+          }}
+        >
+          {children}
+        </SoloLimitsProvider>
+      </main>
     </>
   );
 }

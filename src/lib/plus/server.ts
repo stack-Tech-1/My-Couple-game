@@ -5,7 +5,7 @@ import { siteUrl } from "@/lib/config";
 import { notify } from "@/lib/push/server";
 import { renderReceipt } from "@/lib/email/receipt";
 import { sendTransactional } from "@/lib/email/send";
-import { PLANS, isGroupPlan, naira, type PlanId, type Period, type PlusInfo } from "./plans";
+import { PLANS, STAFF_UNTIL, isGroupPlan, naira, type PlanId, type Period, type PlusInfo } from "./plans";
 import { createPlan, planCodeOf, type PaystackCharge } from "./paystack";
 export { emailKey } from "./emailKey";
 
@@ -48,6 +48,20 @@ export const plusLive = cache(async (): Promise<boolean> => {
 
 type Seat = { user_id: string; source: string; starts_at: string; ends_at: string };
 
+/** Which of these people are admins, or an admin's partner in a couple room. */
+async function staffPlus(userIds: string[]): Promise<string[]> {
+  const admin = supabaseAdmin();
+  const { data: mine } = await admin.from("room_members").select("room_id, user_id, rooms!inner(kind)").in("user_id", userIds).eq("rooms.kind", "couple");
+  const coupleRooms = [...new Set((mine ?? []).map((m) => m.room_id as string))];
+  const { data: together } = coupleRooms.length ? await admin.from("room_members").select("room_id, user_id").in("room_id", coupleRooms) : { data: [] };
+  const everyone = [...new Set([...userIds, ...(together ?? []).map((m) => m.user_id as string)])];
+  const { data: admins } = await admin.from("app_admins").select("user_id").in("user_id", everyone);
+  const staff = new Set((admins ?? []).map((a) => a.user_id as string));
+  if (!staff.size) return [];
+  const staffRooms = new Set((together ?? []).filter((m) => staff.has(m.user_id as string)).map((m) => m.room_id as string));
+  return userIds.filter((id) => staff.has(id) || (mine ?? []).some((m) => m.user_id === id && staffRooms.has(m.room_id as string)));
+}
+
 /** For each person: when their Plus ends (counting time already queued after it), and whether it's a trial. */
 export async function plusStatus(userIds: string[]): Promise<Record<string, { until: string | null; trial: boolean }>> {
   const out: Record<string, { until: string | null; trial: boolean }> = Object.fromEntries(userIds.map((id) => [id, { until: null, trial: false }]));
@@ -55,7 +69,11 @@ export async function plusStatus(userIds: string[]): Promise<Record<string, { un
   const now = new Date().toISOString();
   const { data } = await supabaseAdmin().from("plus_seats").select("user_id, source, starts_at, ends_at").in("user_id", userIds).is("revoked_at", null).gt("ends_at", now);
   const seats = (data ?? []) as Seat[];
+  // The Amah team (and each admin's partner in their couple room) always has Plus. Friend rooms
+  // don't share it. Read from the database, never from anything the phone sends.
+  for (const id of await staffPlus(userIds)) out[id] = { until: STAFF_UNTIL, trial: false };
   for (const id of userIds) {
+    if (out[id]!.until === STAFF_UNTIL) continue;
     const mine = seats.filter((s) => s.user_id === id);
     const current = mine.filter((s) => s.starts_at <= now);
     if (!current.length) continue;

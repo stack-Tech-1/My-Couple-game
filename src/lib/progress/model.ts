@@ -2,9 +2,15 @@
  * Couple progress: XP, levels and badges, all derived from room_progress() counts. Pure, so the
  * rules are easy to read, test and tune.
  */
+export type WeekDay = { day: string; status: "together" | "rest" | "missed" | "today" | "later" };
 export type Stats = {
+  /** Forgiving: one missed day a week is a rest day and doesn't break it (0030_engagement.sql). */
   streak: number;
   best_streak: number;
+  /** This week's rest day is already used. */
+  rest_used?: boolean;
+  /** Monday to Sunday of this week. */
+  week?: WeekDay[];
   shared_days: number;
   games: number;
   kinds: number;

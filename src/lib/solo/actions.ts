@@ -7,6 +7,9 @@ import { getUser } from "@/lib/room/server";
 import type { ActionResult } from "@/lib/room/types";
 import { soloGame } from "./catalog";
 import { settleChallenge } from "./server";
+import { soloFreePlays } from "@/lib/plus/limits";
+import { FREE_PLAYS_PER_DAY, untilText } from "@/lib/plus/plans";
+import { isDailyMode, todaysGame } from "@/lib/engage/rotation";
 
 async function limited(uid: string, action: string, max: number, windowSeconds: number) {
   const { data } = await supabaseAdmin().rpc("server_rate_limit", { uid, action, max_hits: max, window_seconds: windowSeconds });
@@ -21,16 +24,36 @@ const startInput = z.object({
   challenge: z.string().regex(/^[A-Za-z0-9_-]{10,40}$/).optional(),
 });
 
+/** `left`: free plays left today after this one (null when there's no limit). */
+export type StartResult = ActionResult<{ runId: string; seed: string; target: number | null; left: number | null }> | { ok: false; error: string; resetsAt: string } | { ok: false; error: string; blocked: true };
+
 /** A start ticket. The only server call when a game begins. */
-export async function startRun(raw: unknown): Promise<ActionResult<{ runId: string; seed: string; target: number | null }>> {
+export async function startRun(raw: unknown): Promise<StartResult> {
   const p = startInput.safeParse(raw);
   if (!p.success || !soloGame(p.data.gameId)) return { ok: false, error: "We don't have that game." };
   const user = await getUser();
   if (!user) return { ok: false, error: "Sign in to save your scores." };
   if (await limited(user.id, "solo_start", 120, 600)) return { ok: false, error: "Easy, tiger. Give it a minute and try again." };
+  // Today's game: the same level for everyone, one go each, and it never uses a free play.
+  const daily = isDailyMode(p.data.mode);
+  if (daily) {
+    const t = todaysGame();
+    if (p.data.gameId !== t.gameId || p.data.mode !== t.mode) return { ok: false, error: "That was yesterday's game. Today's is waiting on your home screen.", blocked: true };
+    const { count } = await supabaseAdmin().from("solo_runs").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("mode", t.mode);
+    if (count) return { ok: false, error: "You've had your go at today's game. A new one comes at midnight.", blocked: true };
+  }
+  // Without Plus, each game twice a day. Challenges are always open.
+  let left: number | null = null;
+  if (!p.data.challenge && !daily) {
+    const plays = await soloFreePlays(user.id, p.data.gameId);
+    if (plays.limited) {
+      if (plays.left <= 0) return { ok: false, error: `That's today's ${FREE_PLAYS_PER_DAY} free games. It opens again ${untilText(plays.resetsAt)}.`, resetsAt: plays.resetsAt };
+      left = plays.left - 1;
+    }
+  }
 
   const admin = supabaseAdmin();
-  let seed = p.data.seed ?? randomBytes(9).toString("base64url");
+  let seed = daily ? todaysGame().seed : (p.data.seed ?? randomBytes(9).toString("base64url"));
   let mode = p.data.mode;
   let challengeId: string | null = null;
   let target: number | null = null;
@@ -46,7 +69,7 @@ export async function startRun(raw: unknown): Promise<ActionResult<{ runId: stri
   }
   const { data, error } = await admin.from("solo_runs").insert({ user_id: user.id, game_id: p.data.gameId, mode, seed, challenge_id: challengeId }).select("id").single();
   if (error || !data) return { ok: false, error: "Couldn't start. Try again?" };
-  return { ok: true, data: { runId: data.id as string, seed, target } };
+  return { ok: true, data: { runId: data.id as string, seed, target, left } };
 }
 
 const finishInput = z.object({

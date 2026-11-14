@@ -10,7 +10,7 @@ import { useGameFlags } from "@/lib/games/FlagsProvider";
 import { AdireFill } from "@/design/adire";
 import { CATEGORY_LOOKS } from "@/games/look";
 import { GameCard } from "./GameCard";
-import { isPlusGame } from "@/lib/plus/plans";
+import { FREE_PLAYS_PER_DAY, isPlusGame } from "@/lib/plus/plans";
 
 export function Library({ heading = true }: { heading?: boolean }) {
   const { bundle } = useRoom();
@@ -36,7 +36,7 @@ export function Library({ heading = true }: { heading?: boolean }) {
               <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {games.map((g, i) => (
                   <li key={g.id} className={cn(i === 0 && "col-span-2 sm:col-span-1 sm:row-span-2")}>
-                    <GameCard game={g} roomId={bundle.room.id} size={i === 0 ? "large" : "normal"} fresh={isNew(g.id)} plus={bundle.plus.live && isPlusGame(g.id)} />
+                    <GameCard game={g} roomId={bundle.room.id} size={i === 0 ? "large" : "normal"} fresh={isNew(g.id)} plus={bundle.plus.live && isPlusGame(g.id)} usedUp={(bundle.freePlays?.used[g.id] ?? 0) >= FREE_PLAYS_PER_DAY} />
                   </li>
                 ))}
               </ul>
