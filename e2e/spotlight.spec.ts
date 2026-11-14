@@ -18,7 +18,7 @@ test("Couple and Gang of the Week: asked first, decided on Friday, shown to ever
   const inWindow = (back: number) => `${addDays(friday, -2 - back)}T12:00:00Z`; // Wednesday, Tuesday, ... of the scored week
 
   const { a, b, roomId } = await pairedRoom(["Ada", "Bo"]);
-  const [o1, f1, o2, f2, eve] = await Promise.all(["Chidi", "Funke", "Musa", "Femi", "Eve"].map((n) => onboardedUser(n)));
+  const [o1, f1, o2, f2, eve] = await Promise.all([onboardedUser("Chidi"), onboardedUser("Funke"), onboardedUser("Musa"), onboardedUser("Femi"), onboardedUser("Eve")]);
   const gang1 = await friendRoom(o1, [f1], "The Crew");
   const gang2 = await friendRoom(o2, [f2], "The Lekki Lot");
   const cron = (at: string) => request.get(`/api/cron/birthdays?at=${encodeURIComponent(at)}`, { headers: { authorization: `Bearer ${loadEnv().CRON_SECRET}` } });
