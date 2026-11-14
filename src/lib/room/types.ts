@@ -69,6 +69,8 @@ export type Room = {
   together_since: string | null;
   settings: RoomSettings;
   created_at: string;
+  /** The chat message pinned for the room (0033_chat_more.sql). */
+  pinned_message_id?: string | null;
 };
 
 export type Moment = {

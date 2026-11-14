@@ -7,7 +7,7 @@ import { PlaceScene } from "./PlaceScene";
 export function PlaceCard({ roomId, stats }: { roomId: string; stats: Stats }) {
   const place = placeOf(stats);
   return (
-    <Link prefetch={false} href={`/room/${roomId}/place`} className="glass block overflow-hidden rounded-[24px]" aria-label={`Our place: ${place.have.length} of ${PLACE_ITEMS.length} things. See it`}>
+    <Link prefetch={false} href={`/room/${roomId}/place`} className="glass block overflow-hidden rounded-[24px]">
       <PlaceScene have={place.have} level={place.level} className="block h-auto w-full" />
       <div className="px-4 py-3">
         <div className="flex items-baseline justify-between gap-3">

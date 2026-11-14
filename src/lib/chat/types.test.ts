@@ -52,8 +52,8 @@ describe("voice and sticker helpers", () => {
 
   it("keeps the local recording when the confirmed voice note arrives", () => {
     const media = { path: `${room}/voice/x.m4a`, duration: 3, mime: "audio/mp4", peaks: [] };
-    const pending: LocalMessage = { ...msg("5", "2026-10-20T10:00:00Z", me), kind: "voice", body: null, media, status: "sending", localUrl: "blob:local" };
-    const saved: LocalMessage = { ...msg("5", "2026-10-20T10:00:00.1+00:00", me), kind: "voice", body: null, media };
+    const pending: LocalMessage = { ...msg("5", "2026-10-20T10:00:00Z", me), kind: "voice", body: null, media, deleted_at: null, status: "sending", localUrl: "blob:local" };
+    const saved: LocalMessage = { ...msg("5", "2026-10-20T10:00:00.1+00:00", me), kind: "voice", body: null, media, deleted_at: null };
     const [out] = mergeMessages([pending], [saved]);
     expect(out!.status).toBeUndefined();
     expect(out!.localUrl).toBe("blob:local");

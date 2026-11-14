@@ -8,7 +8,8 @@ import { Icon } from "@/design/icons";
 import { toast } from "@/design/toast";
 import { cn } from "@/lib/cn";
 import { canRecord, startRecording, type Recorder, type Recording } from "@/lib/chat/media";
-import { describe, formatDuration, MAX_CHAT_LENGTH, type LocalMessage, type StickerMedia } from "@/lib/chat/types";
+import { canEdit, describe, formatDuration, isDeleted, MAX_CHAT_LENGTH, mentionsIn, type LocalMessage, type StickerMedia } from "@/lib/chat/types";
+import { MentionText, MessageMenu, PollBubble, PollMaker, ReactionChips, ReplyQuote, type MenuAction } from "./extras";
 import { StickerImage, VoiceNote } from "./Bubbles";
 import { StickerTray } from "./StickerTray";
 import { ReportDialog } from "@/components/safety/ReportDialog";
@@ -49,7 +50,20 @@ type Props = {
   /** When each other person last read the chat. */
   readers: Record<string, string>;
   onEarlier: () => void;
-  onSendText: (body: string) => void;
+  onSendText: (body: string, opts?: { replyTo?: string | null; mentions?: string[] }) => void;
+  onSendPoll: (question: string, options: string[]) => void;
+  /** Reactions by message, then by person. */
+  reactions: Record<string, Record<string, string>>;
+  /** Poll votes by message, then by person. */
+  votes: Record<string, Record<string, number>>;
+  pinned: LocalMessage | null;
+  onReact: (id: string, emoji: string | null) => void;
+  onEdit: (id: string, body: string) => void;
+  onDelete: (id: string) => void;
+  onPin: (id: string | null) => void;
+  onSaveMoment: (id: string) => void;
+  onVote: (id: string, option: number) => void;
+  onSearch: (q: string) => Promise<LocalMessage[]>;
   onSendSticker: (m: StickerMedia) => void;
   onSendVoice: (r: Recording) => void;
   onRetry: (m: LocalMessage) => void;
@@ -123,22 +137,100 @@ export function ChatPanel(props: Props) {
   const nameOf = (id: string) => group?.people[id]?.display_name ?? name;
   const { active: saver } = useDataSaver();
   const [reporting, setReporting] = useState<{ id: string; preview: string; sender: string } | null>(null);
-  // Press and hold (touch) or right-click (mouse) a partner's message to report it.
+  const report = (m: LocalMessage) => setReporting({ id: m.id, preview: describe(m), sender: m.sender_id });
+  const [menuFor, setMenuFor] = useState<LocalMessage | null>(null);
+  const [replyTo, setReplyTo] = useState<LocalMessage | null>(null);
+  const [editing, setEditing] = useState<LocalMessage | null>(null);
+  const [highlight, setHighlight] = useState<string | null>(null);
+  const [searching, setSearching] = useState(false);
+  const byId = new Map(messages.map((m) => [m.id, m]));
+  const names = group ? Object.values(group.people).map((p) => p.display_name) : [];
+
+  // Jump to a message (a reply's original, a search result, the pinned one) and flash it.
+  const jump = (id: string) => {
+    const el = document.getElementById(`msg-${id}`);
+    if (!el) return toast.info("That one is further back.", "Tap Earlier messages to load it.");
+    stick.current = false;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    setHighlight(id);
+    setTimeout(() => setHighlight((h) => (h === id ? null : h)), 1600);
+  };
+
+  // Press and hold (touch) or right-click (mouse) any message for its options; swipe right to reply.
   const hold = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const report = (m: LocalMessage) => setReporting({ id: m.id, preview: m.kind === "text" ? m.body : describe(m), sender: m.sender_id });
+  const swipe = useRef<{ x: number; y: number; id: string } | null>(null);
   const holdProps = (m: LocalMessage) => ({
     onContextMenu: (e: React.MouseEvent) => {
       e.preventDefault();
-      report(m);
+      setMenuFor(m);
     },
     onPointerDown: (e: React.PointerEvent) => {
       if (e.pointerType !== "touch") return;
-      hold.current = setTimeout(() => report(m), 550);
+      swipe.current = { x: e.clientX, y: e.clientY, id: m.id };
+      hold.current = setTimeout(() => setMenuFor(m), 550);
     },
-    onPointerUp: () => hold.current && clearTimeout(hold.current),
+    onPointerMove: (e: React.PointerEvent) => {
+      const s = swipe.current;
+      if (!s || s.id !== m.id) return;
+      const dx = e.clientX - s.x;
+      if ((Math.abs(e.clientY - s.y) > 24 || Math.abs(dx) > 10) && hold.current) clearTimeout(hold.current);
+      if (dx > 64 && !m.deleted_at) {
+        swipe.current = null;
+        setEditing(null);
+        setReplyTo(m);
+        navigator.vibrate?.(12);
+      }
+    },
+    onPointerUp: () => {
+      swipe.current = null;
+      if (hold.current) clearTimeout(hold.current);
+    },
     onPointerLeave: () => hold.current && clearTimeout(hold.current),
     onPointerCancel: () => hold.current && clearTimeout(hold.current),
   });
+
+  // New messages while you've scrolled up: a button to jump down, with how many.
+  const [unseen, setUnseen] = useState(0);
+  const lastCount = useRef(messages.length);
+  useEffect(() => {
+    const added = messages.length - lastCount.current;
+    lastCount.current = messages.length;
+    if (added > 0 && !stick.current && messages.at(-1)?.sender_id !== me) setUnseen((n) => n + added);
+  }, [messages, me]);
+  const toBottom = () => {
+    stick.current = true;
+    setUnseen(0);
+    listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
+  };
+
+  const menuActions = (m: LocalMessage): MenuAction[] => {
+    const mine = m.sender_id === me;
+    const live = !m.deleted_at && !m.status;
+    const list: MenuAction[] = [];
+    if (live) list.push({ icon: "reply", label: "Reply", onClick: () => (setEditing(null), setReplyTo(m)) });
+    const text = !isDeleted(m) && m.kind === "text" ? m.body : null;
+    if (live && text)
+      list.push({
+        icon: "copy",
+        label: "Copy",
+        onClick: () => void navigator.clipboard?.writeText(text).then(() => toast.success("Copied.")),
+      });
+    if (live && canEdit(m, me)) list.push({ icon: "pen", label: "Edit", onClick: () => (setReplyTo(null), setEditing(m)) });
+    if (live) list.push(props.pinned?.id === m.id ? { icon: "pin", label: "Unpin", onClick: () => props.onPin(null) } : { icon: "pin", label: group ? "Pin for everyone" : "Pin for both of you", onClick: () => props.onPin(m.id) });
+    if (live && !group && m.kind === "text") list.push({ icon: "star", label: "Save to our moments", onClick: () => props.onSaveMoment(m.id) });
+    if (!m.status)
+      list.push({
+        icon: "info",
+        label: "Info",
+        onClick: () => {
+          const seen = Object.entries(readers).filter(([id, t]) => id !== m.sender_id && Date.parse(t) >= Date.parse(m.created_at)).map(([id]) => (id === me ? "you" : nameOf(id)));
+          toast.info(`Sent ${dayLabel(m.created_at).toLowerCase() === "today" ? "today" : dayLabel(m.created_at)} at ${clockTime(m.created_at)}${m.edited_at ? ", edited" : ""}.`, mine ? (seen.length ? `Seen by ${seen.join(", ")}.` : "Not seen yet.") : undefined);
+        },
+      });
+    if (live && mine) list.push({ icon: "trash", label: "Delete for everyone", danger: true, onClick: () => props.onDelete(m.id) });
+    if (!mine && !m.deleted_at) list.push({ icon: "flag", label: "Report", danger: true, onClick: () => report(m) });
+    return list;
+  };
 
   return (
     <motion.div
@@ -172,10 +264,23 @@ export function ChatPanel(props: Props) {
             {group ? (typing ? `${typingName ?? "Someone"} is typing…` : `${group.members} ${group.members === 1 ? "person" : "people"}`) : typing ? "typing…" : online ? "here now" : "away"}
           </p>
         </div>
-        <span className="[&_button:hover]:bg-white/10 [&_button]:text-[#f6efe6]">
+        <span className="flex [&_button:hover]:bg-white/10 [&_button]:text-[#f6efe6]">
+          <IconButton icon="search" label="Search the chat" onClick={() => setSearching((s) => !s)} />
           <IconButton icon="close" label="Close chat" onClick={onClose} />
         </span>
       </div>
+      {searching ? <SearchBar messages={messages} onSearch={props.onSearch} nameOf={(id) => (id === me ? "You" : nameOf(id))} onPick={(id) => (setSearching(false), jump(id))} onClose={() => setSearching(false)} /> : null}
+      {props.pinned && !props.pinned.deleted_at ? (
+        <div className="flex items-center gap-2 border-b border-line bg-raised px-4 py-2 text-[0.85rem]">
+          <button type="button" onClick={() => jump(props.pinned!.id)} className="flex min-w-0 flex-1 items-center gap-2 text-left" aria-label={`Pinned: ${describe(props.pinned)}. Go to it`}>
+            <span className="shrink-0 text-[0.72rem] font-extrabold text-accent-ink">PINNED</span>
+            <span className="truncate">{describe(props.pinned)}</span>
+          </button>
+          <button type="button" onClick={() => props.onPin(null)} aria-label="Unpin" className="shrink-0 rounded-full p-1 text-muted hover:bg-sunk">
+            <Icon name="close" size={14} />
+          </button>
+        </div>
+      ) : null}
 
       <div
         ref={listRef}
@@ -222,27 +327,39 @@ export function ChatPanel(props: Props) {
                     <span className="eyebrow text-muted">{dayLabel(m.created_at)}</span>
                   </li>
                 ) : null}
-                <li className={cn("flex flex-col", mine ? "items-end" : "items-start", joinsPrev ? "mt-1" : "mt-3")}>
+                <li id={`msg-${m.id}`} className={cn("flex scroll-mt-24 flex-col rounded-[14px] transition-colors duration-500", mine ? "items-end" : "items-start", joinsPrev ? "mt-1" : "mt-3", highlight === m.id && "bg-[color-mix(in_srgb,var(--accent)_16%,transparent)]")}>
                   {group && !mine && !joinsPrev ? (
                     <p aria-hidden className="mb-1 ml-1 text-[0.75rem] font-semibold text-muted">{nameOf(m.sender_id)}</p>
                   ) : null}
                   <p className="sr-only">
-                    {mine ? "You" : nameOf(m.sender_id)}: {m.kind === "text" ? "" : describe(m)}
+                    {mine ? "You" : nameOf(m.sender_id)}: {m.kind === "text" && !m.deleted_at ? "" : describe(m)}
                   </p>
-                  {mine || m.status ? (
-                    <Body m={m} mine={mine} saver={false} />
-                  ) : (
-                    <div className="group relative max-w-full select-none [-webkit-touch-callout:none]" {...holdProps(m)}>
-                      <Body m={m} mine={mine} saver={saver} />
+                  <div className={cn("group relative flex max-w-full select-none flex-col [-webkit-touch-callout:none]", mine ? "items-end" : "items-start")} {...(m.status ? {} : holdProps(m))}>
+                    {m.reply_to && !m.deleted_at ? (
+                      <ReplyQuote
+                        target={byId.get(m.reply_to)}
+                        name={byId.get(m.reply_to) ? (byId.get(m.reply_to)!.sender_id === me ? "You" : nameOf(byId.get(m.reply_to)!.sender_id)) : "Earlier"}
+                        mine={mine}
+                        onJump={() => jump(m.reply_to!)}
+                      />
+                    ) : null}
+                    {!isDeleted(m) && m.kind === "poll" ? (
+                      <PollBubble m={m} votes={props.votes[m.id]} me={me} members={group?.members ?? 2} onVote={(o) => props.onVote(m.id, o)} />
+                    ) : (
+                      <Body m={m} mine={mine} saver={mine || m.status ? false : saver} names={names} />
+                    )}
+                    <ReactionChips byUser={props.reactions[m.id]} me={me} mine={mine} nameOf={nameOf} onToggle={(e) => props.onReact(m.id, props.reactions[m.id]?.[me] === e ? null : e)} />
+                    {m.status ? null : (
                       <button
                         type="button"
-                        onClick={() => report(m)}
-                        className="sr-only rounded-full border border-line bg-raised px-2.5 py-1 text-[0.75rem] font-semibold focus:not-sr-only focus:absolute focus:left-full focus:top-1/2 focus:ml-2 focus:-translate-y-1/2 focus:whitespace-nowrap"
+                        onClick={() => setMenuFor(m)}
+                        className="sr-only rounded-full border border-line bg-raised px-2.5 py-1 text-[0.75rem] font-semibold focus:not-sr-only focus:absolute focus:top-1/2 focus:-translate-y-1/2 focus:whitespace-nowrap"
+                        style={mine ? { right: "100%", marginRight: 8 } : { left: "100%", marginLeft: 8 }}
                       >
-                        Report message
+                        Message options
                       </button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                   {m.status === "failed" ? (
                     <button type="button" onClick={() => onRetry(m)} className="mt-1 text-[0.75rem] font-semibold text-accent-ink underline underline-offset-2">
                       Didn&apos;t send. Tap to retry.
@@ -250,6 +367,7 @@ export function ChatPanel(props: Props) {
                   ) : endsRun ? (
                     <p className="mt-1 text-[0.7rem] text-muted">
                       {m.status === "sending" && m.kind === "voice" ? "Sending…" : clockTime(m.created_at)}
+                      {m.edited_at && !m.deleted_at ? " · Edited" : ""}
                       {mine && m.id === myLast?.id ? seenLabel : ""}
                     </p>
                   ) : null}
@@ -270,7 +388,27 @@ export function ChatPanel(props: Props) {
         ) : null}
       </div>
 
-      <Composer {...props} onBeforeSend={pin} />
+      {unseen > 0 ? (
+        <div className="pointer-events-none relative">
+          <button type="button" onClick={toBottom} className="pointer-events-auto absolute bottom-3 right-4 rounded-full border-[1.5px] border-line bg-raised px-3.5 py-1.5 text-[0.82rem] font-extrabold shadow-[0_8px_20px_-10px_rgba(0,0,0,.5)]">
+            ↓ {unseen} new
+          </button>
+        </div>
+      ) : null}
+
+      <Composer {...props} onBeforeSend={pin} replyTo={replyTo} onCancelReply={() => setReplyTo(null)} editing={editing} onCancelEdit={() => setEditing(null)} replyName={replyTo ? (replyTo.sender_id === me ? "yourself" : nameOf(replyTo.sender_id)) : ""} />
+      <MessageMenu
+        m={menuFor}
+        open={!!menuFor}
+        onClose={() => setMenuFor(null)}
+        myReaction={menuFor ? props.reactions[menuFor.id]?.[me] : undefined}
+        onReact={(e) => {
+          if (menuFor) props.onReact(menuFor.id, e);
+          setMenuFor(null);
+        }}
+        actions={menuFor ? menuActions(menuFor) : []}
+        preview={menuFor ? <span className="line-clamp-3">{describe(menuFor)}</span> : null}
+      />
       <ReportDialog
         open={!!reporting}
         onClose={() => setReporting(null)}
@@ -282,9 +420,17 @@ export function ChatPanel(props: Props) {
   );
 }
 
-function Body({ m, mine, saver }: { m: LocalMessage; mine: boolean; saver: boolean }) {
+function Body({ m, mine, saver, names }: { m: LocalMessage; mine: boolean; saver: boolean; names: string[] }) {
   const pending = m.status === "sending" && "opacity-60";
   const failed = m.status === "failed" && "opacity-60 ring-2 ring-accent-ink";
+  if (isDeleted(m)) {
+    return (
+      <div className={cn("flex items-center gap-1.5 rounded-[18px] border-[1.5px] border-dashed border-line px-3.5 py-2 text-[0.88rem] italic text-muted")}>
+        <Icon name="trash" size={14} /> This message was deleted
+      </div>
+    );
+  }
+  if (m.kind === "poll") return null;
   if (m.kind === "sticker") {
     return (
       <div className={cn("rounded-[14px]", pending, failed)}>
@@ -300,13 +446,97 @@ function Body({ m, mine, saver }: { m: LocalMessage; mine: boolean; saver: boole
       </div>
     );
   }
-  return <div className={cn("max-w-[82%] whitespace-pre-wrap break-words px-3.5 py-2 text-[0.95rem] leading-snug", bubble, pending, failed)}>{m.body}</div>;
+  return (
+    <div className={cn("max-w-[82%] whitespace-pre-wrap break-words px-3.5 py-2 text-[0.95rem] leading-snug", bubble, pending, failed)}>
+      <MentionText text={m.body} names={names} mine={mine} />
+    </div>
+  );
+}
+
+/** Search this chat: what's loaded right away, older messages from the server. */
+function SearchBar({ messages, onSearch, nameOf, onPick, onClose }: { messages: LocalMessage[]; onSearch: (q: string) => Promise<LocalMessage[]>; nameOf: (id: string) => string; onPick: (id: string) => void; onClose: () => void }) {
+  const [q, setQ] = useState("");
+  const [older, setOlder] = useState<LocalMessage[]>([]);
+  const term = q.trim().toLowerCase();
+  const here = term.length >= 2 ? messages.filter((m) => !isDeleted(m) && (m.kind === "text" || m.kind === "poll") && m.body.toLowerCase().includes(term)) : [];
+  useEffect(() => {
+    if (term.length < 2) return setOlder([]);
+    const t = setTimeout(() => void onSearch(term).then(setOlder), 350);
+    return () => clearTimeout(t);
+  }, [term, onSearch]);
+  const ids = new Set(here.map((m) => m.id));
+  const results = [...here, ...older.filter((m) => !ids.has(m.id))].sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at)).slice(0, 30);
+  return (
+    <div className="border-b border-line bg-raised px-3 py-2">
+      <div className="flex items-center gap-2">
+        <Icon name="search" size={16} className="text-muted" />
+        <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => e.key === "Escape" && (e.stopPropagation(), onClose())} placeholder="Search messages" aria-label="Search messages" className="h-9 min-w-0 flex-1 bg-transparent text-[0.95rem] outline-none" />
+        <button type="button" onClick={onClose} className="text-[0.85rem] font-semibold text-muted">
+          Done
+        </button>
+      </div>
+      {term.length >= 2 ? (
+        <ul className="mt-1 max-h-60 overflow-y-auto" aria-label="Search results">
+          {results.length ? (
+            results.map((m) => (
+              <li key={m.id}>
+                <button type="button" onClick={() => onPick(m.id)} className="w-full rounded-[10px] px-2 py-1.5 text-left hover:bg-sunk">
+                  <span className="block text-[0.72rem] font-bold text-muted">
+                    {nameOf(m.sender_id)}, {dayLabel(m.created_at)}
+                  </span>
+                  <span className="line-clamp-1 text-[0.88rem]">{describe(m)}</span>
+                </button>
+              </li>
+            ))
+          ) : (
+            <li className="px-2 py-2 text-[0.85rem] text-muted">Nothing matches that.</li>
+          )}
+        </ul>
+      ) : null}
+    </div>
+  );
 }
 
 // ---- composer ------------------------------------------------------------------------------------
 
-function Composer({ roomId, me, partner, onSendText, onSendSticker, onSendVoice, onTyping, onBeforeSend }: Props & { onBeforeSend: () => void }) {
+function Composer({
+  roomId,
+  me,
+  partner,
+  group,
+  onSendText,
+  onSendSticker,
+  onSendVoice,
+  onSendPoll,
+  onEdit,
+  onTyping,
+  onBeforeSend,
+  replyTo,
+  onCancelReply,
+  replyName,
+  editing,
+  onCancelEdit,
+}: Props & { onBeforeSend: () => void; replyTo: LocalMessage | null; onCancelReply: () => void; replyName: string; editing: LocalMessage | null; onCancelEdit: () => void }) {
   const [draft, setDraft] = useState("");
+  const [polling, setPolling] = useState(false);
+  // Editing: the message's text in the box. Replying: the box is ready to type.
+  useEffect(() => {
+    if (editing && !isDeleted(editing) && editing.kind === "text") {
+      setDraft(editing.body);
+      requestAnimationFrame(() => inputRef.current?.focus());
+    }
+  }, [editing]);
+  useEffect(() => {
+    if (replyTo) requestAnimationFrame(() => inputRef.current?.focus());
+  }, [replyTo]);
+  // @tags in friend rooms: the word being typed after an @, and who it could be.
+  const people = group ? Object.entries(group.people).filter(([id]) => id !== me).map(([id, p]) => ({ id, name: p.display_name })) : [];
+  const tagging = group ? /(?:^|\s)@([^\s@]*)$/.exec(draft)?.[1] : undefined;
+  const suggestions = tagging !== undefined ? people.filter((p) => p.name.toLowerCase().startsWith(tagging.toLowerCase())).slice(0, 5) : [];
+  const tag = (name: string) => {
+    setDraft((d) => d.replace(/@([^\s@]*)$/, `@${name} `));
+    inputRef.current?.focus();
+  };
   const [tray, setTray] = useState(false);
   const [recorder, setRecorder] = useState<Recorder | null>(null);
   const [starting, setStarting] = useState(false);
@@ -329,8 +559,14 @@ function Composer({ roomId, me, partner, onSendText, onSendSticker, onSendVoice,
     e?.preventDefault();
     const body = draft.trim();
     if (!body) return;
-    onBeforeSend();
-    onSendText(body);
+    if (editing) {
+      if (body !== (!isDeleted(editing) && editing.kind === "text" ? editing.body : "")) onEdit(editing.id, body);
+      onCancelEdit();
+    } else {
+      onBeforeSend();
+      onSendText(body, { replyTo: replyTo?.id ?? null, mentions: mentionsIn(body, people) });
+      onCancelReply();
+    }
     setDraft("");
     if (inputRef.current) inputRef.current.style.height = "auto";
     inputRef.current?.focus();
@@ -381,7 +617,47 @@ function Composer({ roomId, me, partner, onSendText, onSendSticker, onSendVoice,
 
   return (
     <div>
+      {suggestions.length ? (
+        <ul className="mx-2.5 overflow-hidden rounded-t-[16px] border border-b-0 border-line bg-raised" aria-label="Tag someone">
+          {suggestions.map((p) => (
+            <li key={p.id}>
+              <button type="button" onClick={() => tag(p.name)} className="flex w-full items-center gap-2.5 px-4 py-2 text-left font-semibold hover:bg-sunk">
+                <Avatar name={p.name} motif={group!.people[p.id]!.avatar_key} hue={group!.people[p.id]!.avatar_hue} size={26} />
+                {p.name}
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {replyTo || editing ? (
+        <div className="flex items-center gap-2 border-t border-line bg-sunk px-3.5 py-2">
+          <div className="min-w-0 flex-1 border-l-[3px] border-accent pl-2.5 text-[0.82rem]">
+            <p className="font-bold text-accent-ink">{editing ? "Editing your message" : `Replying to ${replyName}`}</p>
+            <p className="truncate text-muted">{describe((editing ?? replyTo)!)}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              if (editing) {
+                onCancelEdit();
+                setDraft("");
+              } else onCancelReply();
+            }}
+            aria-label={editing ? "Stop editing" : "Cancel reply"}
+            className="rounded-full p-1.5 text-muted hover:bg-raised"
+          >
+            <Icon name="close" size={16} />
+          </button>
+        </div>
+      ) : null}
       <form onSubmit={send} className="glass flex items-end gap-1.5 rounded-t-[22px] border-x-0 border-b-0 px-2.5 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
+        {group ? (
+          <button type="button" onClick={() => setPolling(true)} aria-label="Make a poll" className="flex h-11 w-9 shrink-0 items-center justify-center rounded-full text-muted hover:bg-sunk hover:text-fg">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
+              <path d="M5 19V11M12 19V5M19 19v-5" />
+            </svg>
+          </button>
+        ) : null}
         <button
           type="button"
           onClick={() => (locked ? setUpsell(true) : setTray((t) => !t))}
@@ -449,6 +725,7 @@ function Composer({ roomId, me, partner, onSendText, onSendSticker, onSendVoice,
           }}
         />
       ) : null}
+      {group ? <PollMaker open={polling} onClose={() => setPolling(false)} onSend={(q, o) => (onBeforeSend(), onSendPoll(q, o))} /> : null}
       <Modal open={upsell} onClose={() => setUpsell(false)} title="Voice notes and stickers" description="Sending them is part of Amah Plus. You can always hear and see the ones sent to you.">
         <PlusPlans roomId={roomId} roomKind={bundle.room.kind} partnerName={bundle.partner?.profile.display_name ?? null} trialAvailable={!bundle.plus.trialUsed} />
       </Modal>

@@ -91,13 +91,17 @@ export async function notifyChatMessage(messageId: unknown): Promise<ActionResul
   const id = z.uuid().safeParse(messageId);
   const user = await getUser();
   if (!id.success || !user) return { ok: true, data: null };
-  const { data: m } = await (await supabaseServer()).from("chat_messages").select("room_id, sender_id, kind, body").eq("id", id.data).maybeSingle();
+  const { data: m } = await (await supabaseServer()).from("chat_messages").select("room_id, sender_id, kind, body, mentions").eq("id", id.data).maybeSingle();
   if (!m || m.sender_id !== user.id) return { ok: true, data: null };
   after(async () => {
     const [name, { data: room }] = await Promise.all([displayName(user.id), supabaseAdmin().from("rooms").select("kind, name").eq("id", m.room_id).maybeSingle()]);
     const title = room?.kind === "friends" ? `${name} in ${room.name}` : name;
-    const body = m.kind === "voice" ? "🎤 Voice message" : m.kind === "sticker" ? "Sent a sticker" : String(m.body ?? "").slice(0, 120);
+    const body = m.kind === "voice" ? "🎤 Voice message" : m.kind === "sticker" ? "Sent a sticker" : m.kind === "poll" ? `Poll: ${String(m.body ?? "")}`.slice(0, 120) : String(m.body ?? "").slice(0, 120);
     await notifyPartner(m.room_id as string, user.id, "messages", { title, body, url: `/room/${m.room_id}?chat=1`, tag: `chat-${m.room_id}` });
+    // People tagged with @ get "mentioned you" instead: same tag, so it replaces the general one.
+    const tagged = ((m.mentions as string[] | null) ?? []).filter((u) => u !== user.id);
+    if (tagged.length)
+      await notifyPartner(m.room_id as string, user.id, "messages", { title: `${name} mentioned you${room?.kind === "friends" ? ` in ${room.name}` : ""}`, body, url: `/room/${m.room_id}?chat=1`, tag: `chat-${m.room_id}` }, tagged);
   });
   return { ok: true, data: null };
 }

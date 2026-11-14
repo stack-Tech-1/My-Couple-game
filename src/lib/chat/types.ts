@@ -23,18 +23,40 @@ export const voiceMediaSchema = z.object({
 });
 export type VoiceMedia = z.infer<typeof voiceMediaSchema>;
 
+export const MAX_POLL_OPTIONS = 6;
+export const pollSchema = z.object({ options: z.array(z.string().min(1).max(60)).min(2).max(MAX_POLL_OPTIONS) });
+export type Poll = z.infer<typeof pollSchema>;
+
 const base = {
   id: z.uuid(),
   room_id: z.uuid(),
   sender_id: z.uuid(),
   created_at: z.string(),
+  /** The message this one answers (0033_chat_more.sql). */
+  reply_to: z.uuid().nullish(),
+  /** People tagged with @ (friend rooms). */
+  mentions: z.array(z.uuid()).max(8).nullish(),
+  edited_at: z.string().nullish(),
 };
-export const chatMessageSchema = z.discriminatedUnion("kind", [
-  z.object({ ...base, kind: z.literal("text"), body: z.string().min(1).max(MAX_CHAT_LENGTH), media: z.null().optional() }),
-  z.object({ ...base, kind: z.literal("sticker"), body: z.null().optional(), media: stickerMediaSchema }),
-  z.object({ ...base, kind: z.literal("voice"), body: z.null().optional(), media: voiceMediaSchema }),
+const live = z.discriminatedUnion("kind", [
+  z.object({ ...base, kind: z.literal("text"), body: z.string().min(1).max(MAX_CHAT_LENGTH), media: z.null().optional(), deleted_at: z.null().optional() }),
+  z.object({ ...base, kind: z.literal("sticker"), body: z.null().optional(), media: stickerMediaSchema, deleted_at: z.null().optional() }),
+  z.object({ ...base, kind: z.literal("voice"), body: z.null().optional(), media: voiceMediaSchema, deleted_at: z.null().optional() }),
+  z.object({ ...base, kind: z.literal("poll"), body: z.string().min(1).max(200), media: z.null().optional(), poll: pollSchema, deleted_at: z.null().optional() }),
 ]);
+/** Deleted for everyone: the row stays so replies still point somewhere; the content is gone. */
+const deleted = z.object({ ...base, kind: z.enum(["text", "sticker", "voice", "poll"]), body: z.null().optional(), media: z.null().optional(), deleted_at: z.string() });
+export const chatMessageSchema = z.union([deleted, live]);
 export type ChatMessage = z.infer<typeof chatMessageSchema>;
+export type LiveMessage = z.infer<typeof live>;
+export const isDeleted = (m: ChatMessage): m is z.infer<typeof deleted> => !!m.deleted_at;
+
+/** Your own text can be edited for 15 minutes after sending. */
+export const EDIT_WINDOW_MS = 15 * 60_000;
+export const canEdit = (m: ChatMessage, me: string, now = Date.now()) => m.sender_id === me && m.kind === "text" && !m.deleted_at && now - Date.parse(m.created_at) < EDIT_WINDOW_MS;
+
+/** Quick reactions, in order. */
+export const QUICK_REACTIONS = ["❤️", "😂", "😮", "😢", "🙏", "🔥"] as const;
 
 /**
  * A message as the sender sees it before the database has confirmed it. `localUrl` lets a voice
@@ -44,9 +66,16 @@ export type LocalMessage = ChatMessage & { status?: "sending" | "failed"; localU
 
 /** One-line summary for previews and screen readers. */
 export function describe(m: ChatMessage): string {
+  if (isDeleted(m)) return "This message was deleted";
   if (m.kind === "sticker") return "Sticker";
   if (m.kind === "voice") return `Voice message, ${formatDuration(m.media.duration)}`;
+  if (m.kind === "poll") return `Poll: ${m.body}`;
   return m.body;
+}
+
+/** The people tagged in a message that still has their @name in it (for sending). */
+export function mentionsIn(text: string, people: { id: string; name: string }[]): string[] {
+  return people.filter((p) => text.includes(`@${p.name}`)).map((p) => p.id).slice(0, 8);
 }
 
 export function formatDuration(seconds: number): string {

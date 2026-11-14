@@ -11,7 +11,7 @@ test("Our place: things arrive as a couple does things together, and the next on
     const now = new Date().toISOString();
     await admin.from("game_sessions").insert(Array.from({ length: 12 }, () => ({ room_id: roomId, game_id: "whot", players: [a.id, b.id], status: "finished", outcome: "win", winner: a.id, finished_at: now })));
     await page.goto(await signInPath(a.email, `/room/${roomId}`));
-    const card = page.getByRole("link", { name: /Our place: \d+ of 26 things/ });
+    const card = page.getByRole("link", { name: /Our place \d+ of 26 things/ });
     await expect(card).toBeVisible();
     await card.click();
     await expect(page.getByRole("heading", { name: "Our place", level: 1 })).toBeVisible();

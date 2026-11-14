@@ -7,7 +7,7 @@ import { Avatar } from "@/design/Avatar";
 import { Icon } from "@/design/icons";
 import { toast } from "@/design/toast";
 import { cn } from "@/lib/cn";
-import { CHAT_PAGE, chatMessageSchema, countUnread, describe, mergeMessages, type ChatMessage, type LocalMessage, type StickerMedia } from "@/lib/chat/types";
+import { CHAT_PAGE, chatMessageSchema, countUnread, describe, isDeleted, mergeMessages, type ChatMessage, type LocalMessage, type StickerMedia } from "@/lib/chat/types";
 import { extFor, PRIVATE_BUCKET, type Recording } from "@/lib/chat/media";
 import { ChatPanel } from "./ChatPanel";
 import { notifyChatMessage } from "@/lib/push/actions";
@@ -15,7 +15,17 @@ import { useRoom } from "@/lib/realtime/RoomProvider";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import { playSound } from "@/lib/sound";
 
-const COLS = "id, room_id, sender_id, kind, body, media, created_at";
+const COLS = "id, room_id, sender_id, kind, body, media, created_at, reply_to, mentions, poll, edited_at, deleted_at";
+type ByUser<T> = Record<string, Record<string, T>>;
+/** Set (or with null, clear) one person's reaction or vote on one message. */
+function setOne<T>(set: React.Dispatch<React.SetStateAction<ByUser<T>>>, msg: string, user: string, value: T | null) {
+  set((all) => {
+    const mine = { ...(all[msg] ?? {}) };
+    if (value === null) delete mine[user];
+    else mine[user] = value;
+    return { ...all, [msg]: mine };
+  });
+}
 
 /** Rows from the database, keeping only well-formed ones (an unknown kind from a newer version is skipped). */
 const parseRows = (rows: unknown[] | null): ChatMessage[] =>
@@ -65,6 +75,8 @@ function ChatInner() {
   // Who is typing (null: nobody).
   const [typing, setTyping] = useState<string | null>(null);
   const [preview, setPreview] = useState<ChatMessage | null>(null);
+  const [reactions, setReactions] = useState<ByUser<string>>({});
+  const [votes, setVotes] = useState<ByUser<number>>({});
 
   const openRef = useRef(open);
   openRef.current = open;
@@ -77,10 +89,22 @@ function ChatInner() {
   // ---- loading -------------------------------------------------------------------------------
   const refresh = useCallback(async () => {
     const sb = supabaseBrowser();
-    const [{ data: rows }, { data: reads }] = await Promise.all([
+    const [{ data: rows }, { data: reads }, { data: reacts }, { data: polls }] = await Promise.all([
       sb.from("chat_messages").select(COLS).eq("room_id", roomId).order("created_at", { ascending: false }).limit(CHAT_PAGE),
       sb.from("chat_reads").select("user_id, read_at").eq("room_id", roomId),
+      sb.from("chat_reactions").select("message_id, user_id, emoji").eq("room_id", roomId).order("created_at", { ascending: false }).limit(2000),
+      sb.from("chat_poll_votes").select("message_id, user_id, option").eq("room_id", roomId).limit(2000),
     ]);
+    if (reacts) {
+      const next: ByUser<string> = {};
+      for (const r of reacts as { message_id: string; user_id: string; emoji: string }[]) (next[r.message_id] ??= {})[r.user_id] = r.emoji;
+      setReactions(next);
+    }
+    if (polls) {
+      const next: ByUser<number> = {};
+      for (const v of polls as { message_id: string; user_id: string; option: number }[]) (next[v.message_id] ??= {})[v.user_id] = v.option;
+      setVotes(next);
+    }
     if (rows) {
       const latest = parseRows(rows);
       latest.forEach((m) => known.current.add(m.id));
@@ -213,6 +237,24 @@ function ChatInner() {
         const parsed = chatMessageSchema.safeParse(p.new);
         if (parsed.success) receive(parsed.data);
       })
+      // Edited or deleted for everyone: replace our copy (never a new-message preview).
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "chat_messages", filter: `room_id=eq.${roomId}` }, (p) => {
+        const parsed = chatMessageSchema.safeParse(p.new);
+        if (parsed.success) setMessages((list) => mergeMessages(list, [parsed.data]));
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "chat_reactions", filter: `room_id=eq.${roomId}` }, (p) => {
+        if (p.eventType === "DELETE") {
+          const o = p.old as { message_id?: string; user_id?: string };
+          if (o.message_id && o.user_id) setOne(setReactions, o.message_id, o.user_id, null);
+        } else {
+          const n = p.new as { message_id: string; user_id: string; emoji: string };
+          setOne(setReactions, n.message_id, n.user_id, n.emoji);
+        }
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "chat_poll_votes", filter: `room_id=eq.${roomId}` }, (p) => {
+        const n = p.new as { message_id?: string; user_id?: string; option?: number };
+        if (n.message_id && n.user_id && typeof n.option === "number") setOne(setVotes, n.message_id, n.user_id, n.option);
+      })
       .on("postgres_changes", { event: "*", schema: "public", table: "chat_reads", filter: `room_id=eq.${roomId}` }, (p) => {
         const r = p.new as { user_id?: string; read_at?: string };
         if (typeof r.read_at !== "string") return;
@@ -262,7 +304,7 @@ function ChatInner() {
         setMessages((list) => list.map((m) => (m.id === msg.id ? { ...m, status: "failed" } : m)));
         if (rateLimited) toast.info("Slow down a little.", "Messages will send again in a minute.");
       };
-      if (msg.kind === "voice") {
+      if (msg.kind === "voice" && !isDeleted(msg)) {
         const audio = pendingAudio.current.get(msg.id);
         if (audio) {
           const { error: up } = await sb.storage.from(PRIVATE_BUCKET).upload(msg.media.path, audio, { contentType: msg.media.mime, upsert: false });
@@ -271,7 +313,17 @@ function ChatInner() {
           pendingAudio.current.delete(msg.id);
         }
       }
-      const row = { id: msg.id, room_id: roomId, sender_id: me, kind: msg.kind, body: msg.kind === "text" ? msg.body : null, media: msg.kind === "text" ? null : msg.media };
+      const row = {
+        id: msg.id,
+        room_id: roomId,
+        sender_id: me,
+        kind: msg.kind,
+        body: msg.kind === "text" || msg.kind === "poll" ? msg.body : null,
+        media: msg.kind === "text" || msg.kind === "poll" ? null : msg.media,
+        ...(msg.kind === "poll" && !isDeleted(msg) ? { poll: msg.poll } : {}),
+        ...(msg.reply_to ? { reply_to: msg.reply_to } : {}),
+        ...(msg.mentions?.length ? { mentions: msg.mentions } : {}),
+      };
       const { data, error } = await sb.from("chat_messages").insert(row).select(COLS).single();
       if (error || !data) {
         // Already saved on an earlier try (the response got lost): just pick it up.
@@ -298,7 +350,86 @@ function ChatInner() {
     [roomId, me, persist],
   );
 
-  const sendText = useCallback((body: string) => draft({ kind: "text", body }), [draft]);
+  const sendText = useCallback(
+    (body: string, opts?: { replyTo?: string | null; mentions?: string[] }) => draft({ kind: "text", body, reply_to: opts?.replyTo ?? null, mentions: opts?.mentions ?? [] } as Omit<ChatMessage, "id" | "room_id" | "sender_id" | "created_at">),
+    [draft],
+  );
+  const sendPoll = useCallback((question: string, options: string[]) => draft({ kind: "poll", body: question, poll: { options } } as Omit<ChatMessage, "id" | "room_id" | "sender_id" | "created_at">), [draft]);
+
+  // ---- reacting, editing, deleting, pinning, saving, voting -----------------------------------
+  // Each changes the database through its own function (0033_chat_more.sql); our copy updates
+  // straight away and Postgres Changes bring everyone else's.
+  const rpc = useCallback(async (fn: string, args: Record<string, unknown>, failMsg: string) => {
+    const { error } = await supabaseBrowser().rpc(fn, args);
+    if (error) toast.error(error.message.includes("too late") ? "It's been more than 15 minutes, so it can't be edited now." : failMsg);
+    return !error;
+  }, []);
+  const react = useCallback(
+    (id: string, emoji: string | null) => {
+      setOne(setReactions, id, me, emoji);
+      void rpc("chat_react", { p_message: id, p_emoji: emoji }, "That reaction didn't go through.");
+    },
+    [me, rpc],
+  );
+  const edit = useCallback(
+    (id: string, body: string) => {
+      setMessages((list) => list.map((m) => (m.id === id && m.kind === "text" && !isDeleted(m) ? { ...m, body, edited_at: new Date().toISOString() } : m)));
+      void rpc("chat_edit", { p_message: id, p_body: body }, "Couldn't save that edit.").then((ok) => !ok && void refresh());
+    },
+    [rpc, refresh],
+  );
+  const del = useCallback(
+    (id: string) => {
+      setMessages((list) => list.map((m) => (m.id === id ? ({ ...m, body: null, media: null, deleted_at: new Date().toISOString() } as LocalMessage) : m)));
+      void rpc("chat_delete_for_all", { p_message: id }, "Couldn't delete that.").then((ok) => !ok && void refresh());
+    },
+    [rpc, refresh],
+  );
+  // Pinning shows straight away here and is told to everyone else on the room channel (the room
+  // row changing would only reach them on their next page refresh).
+  const [pinnedId, setPinnedId] = useState<string | null>(bundle.room.pinned_message_id ?? null);
+  useEffect(() => setPinnedId(bundle.room.pinned_message_id ?? null), [bundle.room.pinned_message_id]);
+  useEffect(
+    () =>
+      on("chat:pin", (p) => {
+        const id = (p as { id?: unknown } | null)?.id;
+        if (id === null || typeof id === "string") setPinnedId(id);
+      }),
+    [on],
+  );
+  const pinMessage = useCallback(
+    (id: string | null) => {
+      setPinnedId(id);
+      void rpc("chat_pin", { p_room: roomId, p_message: id }, "Couldn't pin that.").then((ok) => ok && broadcast("chat:pin", { id }));
+    },
+    [rpc, roomId, broadcast],
+  );
+  const saveMoment = useCallback(
+    (id: string) => void rpc("chat_save_moment", { p_message: id }, "Couldn't save that.").then((ok) => ok && toast.success("Saved to your moments.")),
+    [rpc],
+  );
+  const vote = useCallback(
+    (id: string, option: number) => {
+      setOne(setVotes, id, me, option);
+      void rpc("chat_vote", { p_message: id, p_option: option }, "That vote didn't go through.");
+    },
+    [me, rpc],
+  );
+  const search = useCallback(
+    async (q: string): Promise<LocalMessage[]> => {
+      const { data } = await supabaseBrowser().from("chat_messages").select(COLS).eq("room_id", roomId).is("deleted_at", null).ilike("body", `%${q.replace(/[%_\\]/g, (c) => `\\${c}`)}%`).order("created_at", { ascending: false }).limit(30);
+      return parseRows(data);
+    },
+    [roomId],
+  );
+  // The pinned message: from what's loaded, or fetched on its own.
+  const [pinnedFetched, setPinnedFetched] = useState<ChatMessage | null>(null);
+  const pinnedLoaded = pinnedId ? messages.find((m) => m.id === pinnedId) : undefined;
+  useEffect(() => {
+    if (!pinnedId || pinnedLoaded) return;
+    void supabaseBrowser().from("chat_messages").select(COLS).eq("id", pinnedId).maybeSingle().then(({ data }) => setPinnedFetched(data ? (parseRows([data])[0] ?? null) : null));
+  }, [pinnedId, pinnedLoaded]);
+  const pinned = pinnedId ? (pinnedLoaded ?? (pinnedFetched?.id === pinnedId ? pinnedFetched : null)) : null;
   const sendSticker = useCallback((media: StickerMedia) => draft({ kind: "sticker", media }), [draft]);
   const sendVoice = useCallback(
     (r: Recording) => {
@@ -401,6 +532,17 @@ function ChatInner() {
               readers={readers}
               onEarlier={loadEarlier}
               onSendText={sendText}
+              onSendPoll={sendPoll}
+              reactions={reactions}
+              votes={votes}
+              pinned={pinned}
+              onReact={react}
+              onEdit={edit}
+              onDelete={del}
+              onPin={pinMessage}
+              onSaveMoment={saveMoment}
+              onVote={vote}
+              onSearch={search}
               onSendSticker={sendSticker}
               onSendVoice={sendVoice}
               onRetry={retry}

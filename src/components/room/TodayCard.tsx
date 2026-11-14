@@ -40,6 +40,7 @@ export function TodayCard({ roomId, today, streak, restUsed, week }: { roomId: s
             {week.map((d, i) => (
               <li key={d.day} className="flex flex-col items-center gap-1">
                 <span
+                  role="img"
                   className={cn(
                     "flex h-8 w-full items-center justify-center rounded-[9px] text-[0.62rem] font-extrabold",
                     d.status === "together" && "bg-accent text-[#fff8f0]",
@@ -86,13 +87,13 @@ export function TodayCard({ roomId, today, streak, restUsed, week }: { roomId: s
 
       <div className="grid grid-cols-2 gap-3">
         <Link prefetch={false} href="/solo/oro" className="glass rounded-[18px] p-3.5">
-          <p className="text-[0.7rem] font-extrabold text-[#82601f]">Ọ̀RỌ̀ OF THE DAY</p>
+          <p className="text-[0.7rem] font-extrabold" style={{ color: "var(--cat-personal-ink)" }}>Ọ̀RỌ̀ OF THE DAY</p>
           <p className="mt-1.5 font-bold leading-snug">{today.word.finished ? (today.word.solved ? `Solved in ${today.word.guesses}` : "Not this time") : today.word.started ? `${today.word.guesses} guess${today.word.guesses === 1 ? "" : "es"} so far` : "One word, six guesses"}</p>
           <p className="mt-1 text-[0.78rem] text-muted">{today.word.finished ? "A new one at midnight" : "Play it"}</p>
         </Link>
         {today.freeGame ? (
           <Link prefetch={false} href={`/room/${roomId}/games/${today.freeGame.gameId}`} className="glass rounded-[18px] p-3.5">
-            <p className="text-[0.7rem] font-extrabold text-[#5b3fa0]">FREE THIS WEEK</p>
+            <p className="text-[0.7rem] font-extrabold" style={{ color: "var(--cat-romantic-ink)" }}>FREE THIS WEEK</p>
             <p className="mt-1.5 font-bold leading-snug">{today.freeGame.name}</p>
             <p className="mt-1 text-[0.78rem] text-muted">A Plus game, open to everyone until Sunday</p>
           </Link>
