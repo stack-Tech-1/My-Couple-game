@@ -26,6 +26,31 @@ export function TodayCard({ roomId, today, streak, restUsed, week }: { roomId: s
         <p className="text-[0.85rem] font-semibold text-muted">{date}</p>
       </div>
 
+      {/* A themed week on the Nigerian calendar, with a keepsake for playing together. */}
+      {today.theme ? (
+        <div className="rounded-[22px] px-4 py-3.5" style={{ background: today.theme.theme.colors.bg, color: today.theme.theme.colors.ink }}>
+          <div className="flex items-baseline justify-between gap-3">
+            <p className="display text-[1.35rem] leading-tight">{today.theme.theme.name}</p>
+            <p className="shrink-0 text-[0.72rem] font-extrabold opacity-80">THIS WEEK</p>
+          </div>
+          <p className="mt-0.5 text-[0.85rem] opacity-90">{today.theme.theme.blurb}</p>
+          {today.theme.games >= today.theme.theme.goal ? (
+            <p className="mt-2 text-[0.85rem] font-extrabold" style={{ color: today.theme.theme.colors.accent }}>
+              Keepsake earned: {today.theme.theme.keepsake}
+            </p>
+          ) : (
+            <>
+              <p className="mt-2 text-[0.8rem] font-bold">
+                {today.theme.games} of {today.theme.theme.goal} games together for the {today.theme.theme.keepsake} keepsake
+              </p>
+              <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[rgba(255,255,255,.2)]" aria-hidden>
+                <div className="h-full rounded-full" style={{ width: `${Math.round((today.theme.games / today.theme.theme.goal) * 100)}%`, background: today.theme.theme.colors.accent }} />
+              </div>
+            </>
+          )}
+        </div>
+      ) : null}
+
       {/* The streak and this week. */}
       {week?.length ? (
         <div className="glass rounded-[22px] px-4 py-3.5">

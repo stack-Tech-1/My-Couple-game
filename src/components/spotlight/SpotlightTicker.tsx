@@ -8,10 +8,13 @@ import { winnerLine, winnerName, type SpotlightWinner } from "@/lib/engage/spotl
  * This week's winners as a thin headline strip that flows right to left across the top. Hidden
  * while a game is being played. Holds still for people who've asked for less motion.
  */
-export function SpotlightTicker({ winners }: { winners: SpotlightWinner[] }) {
+export function SpotlightTicker({ winners, theme = null }: { winners: SpotlightWinner[]; theme?: { name: string; blurb: string } | null }) {
   const path = usePathname();
-  if (!winners.length || /\/(play|watch)\//.test(path)) return null;
-  const items = winners.map((w) => `${w.kind === "couple" ? "Couple of the Week" : "Gang of the Week"}: ${winnerName(w)}, ${winnerLine(w)}`);
+  if ((!winners.length && !theme) || /\/(play|watch)\//.test(path)) return null;
+  const items = [
+    ...(theme ? [`${theme.name}: ${theme.blurb}`] : []),
+    ...winners.map((w) => `${w.kind === "couple" ? "Couple of the Week" : "Gang of the Week"}: ${winnerName(w)}, ${winnerLine(w)}`),
+  ];
   const line = (
     <>
       {items.map((t, i) => (
@@ -20,8 +23,12 @@ export function SpotlightTicker({ winners }: { winners: SpotlightWinner[] }) {
           <span aria-hidden className="mx-5 text-[#d6ad55]">✦</span>
         </span>
       ))}
-      <span className="font-extrabold text-[#fff6dc]">Send them love</span>
-      <span aria-hidden className="mx-5 text-[#d6ad55]">✦</span>
+      {winners.length ? (
+        <>
+          <span className="font-extrabold text-[#fff6dc]">Send them love</span>
+          <span aria-hidden className="mx-5 text-[#d6ad55]">✦</span>
+        </>
+      ) : null}
     </>
   );
   return (

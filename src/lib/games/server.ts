@@ -15,6 +15,7 @@ import { wordChecker } from "./dictionary";
 import { FREE_MAX_PLAYERS, FREE_PLAYS_PER_DAY, countsAsPlay, isPlusGame, untilText } from "@/lib/plus/plans";
 import { lackingPlus } from "@/lib/plus/server";
 import { roomFreePlays } from "@/lib/plus/limits";
+import { surpriseFor } from "@/lib/engage/surprise";
 
 /** Both current members confirmed 18+ and opted in. The same gate the database uses. */
 async function spicyUnlocked(roomId: string): Promise<boolean> {
@@ -290,18 +291,31 @@ export async function submitMove(sessionId: string, rawMove: unknown): Promise<S
     if (error) throw new ApiError(500, "Couldn't save that move. Try again?");
     if (isRow(data)) {
       const s = data;
+      // Now and then a finished game turns up a rare collectible: about 1 in 30, decided by the
+      // game itself (so it's fair and can't be farmed by refreshing), never in After Dark.
+      if (s.status === "finished" && !isSpicy(initial.game_id)) {
+        const surprise = surpriseFor(sessionId, initial.game_id);
+        if (surprise) after(async () => void (await admin.from("moments").insert({ room_id: initial.room_id, kind: "surprise", actor_id: null, payload: { name: surprise, gameId: initial.game_id, session: sessionId } })));
+      }
       if (s.status === "active") {
-        // One notification per game, quietly kept up to date, and only if they're away.
+        // One notification per game, quietly kept up to date, and only if they're away. Only the
+        // people in this game: in a friend room the others aren't playing.
         after(async () => {
           const name = await displayName(user.id);
           const game = isSpicy(initial.game_id) ? null : (gameMeta(initial.game_id)?.name ?? "your game");
-          await notifyPartner(initial.room_id, user.id, "turns", {
-            title: game ? `Your move in ${game}` : "Your move",
-            body: `${name} just played. Tap to carry on.`,
-            url: `/room/${initial.room_id}/play/${sessionId}`,
-            tag: `game-${sessionId}`,
-            quiet: true,
-          });
+          await notifyPartner(
+            initial.room_id,
+            user.id,
+            "turns",
+            {
+              title: game ? `Your move in ${game}` : "Your move",
+              body: `${name} just played. Tap to carry on.`,
+              url: `/room/${initial.room_id}/play/${sessionId}`,
+              tag: `game-${sessionId}`,
+              quiet: true,
+            },
+            s.players.filter((p) => p !== user.id),
+          );
         });
       }
       return { session: s, view: logic.viewFor(result.next, user.id), version: s.version, serverNow: Date.now() };

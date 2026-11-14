@@ -4,6 +4,7 @@ import { gameMeta, isFriendGame } from "@/games/catalog";
 import { soloGame, formatScore } from "@/lib/solo/catalog";
 import type { RoomBundle } from "@/lib/room/types";
 import { freeGameOfWeek, lagosDate, todaysGame } from "./rotation";
+import { themeOn, type Theme } from "./themes";
 
 export type TodayMemory = { id: string; prompt: string; when: "year" | "month" | "taken"; years: number };
 export type Today = {
@@ -12,6 +13,8 @@ export type Today = {
   freeGame: { gameId: string; name: string; endsAt: string } | null;
   word: { started: boolean; finished: boolean; guesses: number; solved: boolean };
   memory: TodayMemory | null;
+  /** A themed week on the Nigerian calendar, and the room's games together during it. */
+  theme: { theme: Theme; games: number } | null;
 };
 
 /**
@@ -25,11 +28,20 @@ export async function getToday(bundle: RoomBundle, at = Date.now()): Promise<Tod
   const people = bundle.members.filter((m) => !bundle.blocked.includes(m.profile.id));
   const ids = people.map((m) => m.profile.id);
   const day = lagosDate(at);
-  const [{ data: scores }, { data: runs }, { data: word }, { data: memories }] = await Promise.all([
+  const theme = themeOn(day);
+  const [{ data: scores }, { data: runs }, { data: word }, { data: memories }, { count: themeGames }] = await Promise.all([
     admin.from("solo_scores").select("user_id, score").eq("game_id", t.gameId).eq("mode", t.mode).in("user_id", ids),
     admin.from("solo_runs").select("user_id").eq("game_id", t.gameId).eq("mode", t.mode).in("user_id", ids),
     admin.from("solo_word_plays").select("guesses, solved, finished_at").eq("user_id", me).eq("day", day).maybeSingle(),
     bundle.room.kind === "couple" ? admin.from("memories").select("id, prompt, taken_on, created_at").eq("room_id", bundle.room.id).order("created_at", { ascending: false }).limit(500) : Promise.resolve({ data: [] }),
+    theme
+      ? admin
+          .from("game_sessions")
+          .select("id", { count: "exact", head: true })
+          .eq("room_id", bundle.room.id)
+          .eq("status", "finished")
+          .gte("finished_at", new Date(`${theme.start}T00:00:00+01:00`).toISOString())
+      : Promise.resolve({ count: 0 }),
   ]);
   const g = soloGame(t.gameId)!;
   const best = new Map<string, number>();
@@ -58,6 +70,7 @@ export async function getToday(bundle: RoomBundle, at = Date.now()): Promise<Tod
     freeGame: fits ? { gameId: fw.gameId, name: fwMeta.name, endsAt: fw.endsAt } : null,
     word: { started: !!word, finished: !!word?.finished_at, guesses: ((word?.guesses as string[] | undefined) ?? []).length, solved: !!word?.solved },
     memory: onThisDay((memories ?? []) as { id: string; prompt: string; taken_on: string | null; created_at: string }[], day),
+    theme: theme ? { theme, games: themeGames ?? 0 } : null,
   };
 }
 

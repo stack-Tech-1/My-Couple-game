@@ -18,7 +18,10 @@ import { Heartbeat } from "@/components/room/Heartbeat";
 import { TabBar } from "@/components/room/TabBar";
 import { currentSpotlight, mySpotlightAsks } from "@/lib/engage/spotlight";
 import { SpotlightTicker } from "@/components/spotlight/SpotlightTicker";
+import { themeOn } from "@/lib/engage/themes";
+import { lagosDate } from "@/lib/engage/rotation";
 import { SpotlightAsk } from "@/components/spotlight/SpotlightAsk";
+import { GentleStop } from "@/components/room/GentleStop";
 
 export const dynamic = "force-dynamic";
 
@@ -64,13 +67,14 @@ export default async function RoomLayout({ children, params }: { children: React
     <RoomProvider bundle={bundle}>
       <GameFlagsProvider flags={flags}>
         <RoomHeader feedbackUnread={feedbackUnread} />
-        <SpotlightTicker winners={winners} />
+        <SpotlightTicker winners={winners} theme={themeOn(lagosDate())} />
         <ConnectionBanner />
         <AnnouncementBar items={forMe(announcements, bundle)} />
         <InviteListener />
         <Heartbeat userId={bundle.me.profile.id} />
         <main className="mx-auto max-w-6xl px-4 pb-32 sm:px-8 sm:pb-24">{children}</main>
         <TabBar />
+        <GentleStop partnerName={bundle.partner?.profile.display_name ?? null} />
         {terms !== "ok" ? <TermsGate firstTime={terms === "first"} /> : roomAsks.length ? <SpotlightAsk asks={roomAsks} names={bundle.members.map((m) => m.profile.real_name ?? m.profile.display_name).join(" & ")} /> : null}
       </GameFlagsProvider>
     </RoomProvider>

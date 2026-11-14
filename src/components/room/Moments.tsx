@@ -45,6 +45,8 @@ export function Moments({ moments }: { moments: Moment[] }) {
         return `Ticked off the bucket list: ${typeof m.payload.title === "string" ? m.payload.title : "something big"}.`;
       case "daily_both":
         return "You both answered today's question.";
+      case "surprise":
+        return `A rare find: the “${typeof m.payload.name === "string" ? m.payload.name : "mystery"}” card turned up after ${game ?? "a game"}. About 1 game in 30 has one.`;
       case "chat_saved":
         return `${nameOf(m.actor_id)} saved a message: “${typeof m.payload.text === "string" ? m.payload.text : ""}”`;
       case "renamed": {

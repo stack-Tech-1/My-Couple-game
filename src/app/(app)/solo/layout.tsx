@@ -7,6 +7,8 @@ import { soloContext } from "@/lib/solo/context";
 import { SoloLimitsProvider } from "@/components/solo/SoloLimits";
 import { currentSpotlight } from "@/lib/engage/spotlight";
 import { SpotlightTicker } from "@/components/spotlight/SpotlightTicker";
+import { themeOn } from "@/lib/engage/themes";
+import { lagosDate } from "@/lib/engage/rotation";
 
 export const metadata: Metadata = { title: "Solo" };
 export const dynamic = "force-dynamic";
@@ -33,7 +35,7 @@ export default async function SoloLayout({ children }: { children: ReactNode }) 
           )}
         </div>
       </header>
-      <SpotlightTicker winners={winners} />
+      <SpotlightTicker winners={winners} theme={themeOn(lagosDate())} />
       <main className="mx-auto max-w-3xl px-4 pb-24 sm:px-8">
         <SoloLimitsProvider
           value={{

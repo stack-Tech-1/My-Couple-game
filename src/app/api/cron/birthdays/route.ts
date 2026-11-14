@@ -4,6 +4,7 @@ import { sendPlusReminders } from "@/lib/plus/server";
 import { grantEarlyMonthIfDue } from "@/lib/plus/admin";
 import { health } from "@/lib/admin/audit";
 import { runSpotlight } from "@/lib/engage/spotlight";
+import { remindWaitingMoves } from "@/lib/engage/waiting";
 
 export const dynamic = "force-dynamic";
 
@@ -28,12 +29,13 @@ export async function GET(req: Request) {
       return null;
     }
   };
-  const [birthdays, plus, early, spotlight] = await Promise.all([
+  const [birthdays, plus, early, spotlight, waiting] = await Promise.all([
     run("daily_birthdays", () => sendBirthdayReminders(now), (r) => JSON.stringify(r).slice(0, 200)),
     run("daily_plus_reminders", () => sendPlusReminders(now), (r) => `${r.sent} reminders sent`),
     run("daily_early_month", () => grantEarlyMonthIfDue(), (r) => (r == null ? "Nothing to do" : `${r} free months given in total`)),
     run("daily_spotlight", () => runSpotlight(now.getTime()), (r) => (r.asked ? `${r.asked} rooms asked` : r.won.length ? `${r.won.length} winners` : "Nothing to do")),
+    run("daily_waiting_moves", () => remindWaitingMoves(now.getTime()), (r) => `${r.reminded} reminders sent`),
   ]);
   await health("daily_job", true, "Ran");
-  return NextResponse.json({ birthdays, plus, early, spotlight });
+  return NextResponse.json({ birthdays, plus, early, spotlight, waiting });
 }
