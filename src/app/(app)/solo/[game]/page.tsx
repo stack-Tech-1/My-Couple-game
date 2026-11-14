@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Icon } from "@/design/icons";
 import { PageBackdrop } from "@/components/room/HomeBackdrop";
 import { ArcadeScreen, BotScreen, FixAmScreen } from "@/components/solo/SoloScreens";
@@ -12,15 +12,18 @@ import { getOro } from "@/lib/solo/oro";
 import { fixamToday } from "@/lib/solo/fixam-server";
 import { SoloBoards } from "@/components/solo/SoloBoards";
 import { todaysGame } from "@/lib/engage/rotation";
+import { MamaHome } from "@/components/solo/mama/MamaHome";
+import { mamaCareer } from "@/lib/solo/mama-server";
+import { AREAS, DAYS, DIFFICULTIES, DIFFICULTY_NAME, ITEM_NAME, areaIndex, dayOpen, newOnDay, type Difficulty } from "@/lib/solo/games/mama";
 
 export async function generateMetadata({ params }: { params: Promise<{ game: string }> }): Promise<Metadata> {
   const { game } = await params;
   return { title: soloGame(game)?.name ?? "Solo" };
 }
 
-export default async function SoloGamePage({ params, searchParams }: { params: Promise<{ game: string }>; searchParams: Promise<{ challenge?: string; daily?: string }> }) {
+export default async function SoloGamePage({ params, searchParams }: { params: Promise<{ game: string }>; searchParams: Promise<{ challenge?: string; daily?: string; mode?: string }> }) {
   const { game: id } = await params;
-  const { challenge, daily: dailyParam } = await searchParams;
+  const { challenge, daily: dailyParam, mode: modeParam } = await searchParams;
   // Today's game: the same level for everyone, from the Today card.
   const t = todaysGame();
   const daily = dailyParam === "1" && t.gameId === id ? { mode: t.mode, seed: t.seed } : null;
@@ -49,6 +52,8 @@ export default async function SoloGamePage({ params, searchParams }: { params: P
     body = r.ok ? <Oro initial={r.data} myName={ctx.profile.display_name} soundOn={ctx.soundOn} toured={toured} /> : <p className="text-muted">{r.error}</p>;
   } else if (game.id === "fix-am") {
     body = <FixAmScreen {...common} {...await fixamToday(ctx.user.id, lagosDay())} />;
+  } else if (game.id === "mama-put" && !daily && !common.challenge) {
+    body = await mamaPutBody(ctx.user.id, modeParam, common, ctx.rooms);
   } else if (game.kind === "bot") {
     body = <BotScreen gameId={game.id} base={game.base!} myName={ctx.profile.display_name} soundOn={ctx.soundOn} toured={toured} />;
   } else {
@@ -65,5 +70,45 @@ export default async function SoloGamePage({ params, searchParams }: { params: P
       {backdrop}
       {body}
     </div>
+  );
+}
+
+/** Mama Put: the career map and shop, or a chosen day or difficulty. */
+async function mamaPutBody(userId: string, mode: string | undefined, common: { myName: string; soundOn: boolean; toured: boolean; challenge: string | null }, rooms: Parameters<typeof SoloBoards>[0]["rooms"]) {
+  const career = await mamaCareer(userId);
+  const day = mode ? /^day-(\d{1,2})$/.exec(mode) : null;
+  if (day) {
+    const d = Number(day[1]);
+    if (d < 1 || d > DAYS || !dayOpen(d, (n) => career.dayBest[n - 1] ?? undefined)) redirect("/solo/mama-put");
+    const area = areaIndex(d);
+    const dishes = newOnDay(d);
+    return (
+      <ArcadeScreen
+        gameId="mama-put"
+        {...common}
+        play={{
+          mode: `day-${d}`,
+          careerDay: d,
+          owned: career.owned[area] ?? [],
+          title: `Day ${d} · ${AREAS[area]}`,
+          tagline: dishes.length ? `New on the menu today: ${dishes.map((x) => ITEM_NAME[x]).join(", ")}.` : "Serve every plate before they get vexed.",
+        }}
+      />
+    );
+  }
+  if (mode && (DIFFICULTIES as readonly string[]).includes(mode)) {
+    const k = mode as Difficulty;
+    return (
+      <>
+        <ArcadeScreen gameId="mama-put" {...common} play={{ mode: k, title: `Mama Put · ${DIFFICULTY_NAME[k]}`, tagline: "90 seconds, the full menu, a standard buka." }} />
+        <SoloBoards gameId="mama-put" rooms={rooms} me={userId} mode={k} />
+      </>
+    );
+  }
+  return (
+    <>
+      <MamaHome career={career} />
+      <SoloBoards gameId="mama-put" rooms={rooms} me={userId} />
+    </>
   );
 }

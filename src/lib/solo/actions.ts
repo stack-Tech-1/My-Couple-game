@@ -10,6 +10,8 @@ import { settleChallenge } from "./server";
 import { soloFreePlays } from "@/lib/plus/limits";
 import { FREE_PLAYS_PER_DAY, untilText } from "@/lib/plus/plans";
 import { isDailyMode, todaysGame } from "@/lib/engage/rotation";
+import { DAYS, FREE_CAREER_MODES, dayOpen } from "./games/mama";
+import { mamaDayBest } from "./mama-server";
 
 async function limited(uid: string, action: string, max: number, windowSeconds: number) {
   const { data } = await supabaseAdmin().rpc("server_rate_limit", { uid, action, max_hits: max, window_seconds: windowSeconds });
@@ -42,9 +44,18 @@ export async function startRun(raw: unknown): Promise<StartResult> {
     const { count } = await supabaseAdmin().from("solo_runs").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("mode", t.mode);
     if (count) return { ok: false, error: "You've had your go at today's game. A new one comes at midnight.", blocked: true };
   }
-  // Without Plus, each game twice a day. Challenges are always open.
+  // Mama Put's career: days open in order, one star on the day before.
+  const careerDay = p.data.gameId === "mama-put" ? /^day-(\d{1,2})$/.exec(p.data.mode) : null;
+  if (careerDay) {
+    const day = Number(careerDay[1]);
+    if (day < 1 || day > DAYS) return { ok: false, error: "There's no such day.", blocked: true };
+    const before = day > 1 ? await mamaDayBest(user.id, day - 1) : null;
+    if (!dayOpen(day, () => before ?? undefined)) return { ok: false, error: `Get a star on day ${day - 1} first.`, blocked: true };
+  }
+  // Without Plus, each game twice a day. Challenges are always open, and so is Mama Put's Yaba.
   let left: number | null = null;
-  if (!p.data.challenge && !daily) {
+  const freeMode = p.data.gameId === "mama-put" && (FREE_CAREER_MODES as readonly string[]).includes(p.data.mode);
+  if (!p.data.challenge && !daily && !freeMode) {
     const plays = await soloFreePlays(user.id, p.data.gameId);
     if (plays.limited) {
       if (plays.left <= 0) return { ok: false, error: `That's today's ${FREE_PLAYS_PER_DAY} free games. It opens again ${untilText(plays.resetsAt)}.`, resetsAt: plays.resetsAt };

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DAYS, FRY_SECONDS, QUICK, UPGRADES, add, bin, careerDay, configFor, fry, newMama, newOnDay, select, serve, stars, tick, waiting, type MamaConfig, type MamaState } from "./mama";
+import { DAYS, FRY_SECONDS, QUICK, UPGRADES, areaIndex, dayOpen, upgradePrice, add, bin, careerDay, configFor, fry, newMama, newOnDay, select, serve, stars, tick, waiting, type MamaConfig, type MamaState } from "./mama";
 
 /**
  * A test player that plays like a person who knows the game: it looks after whoever is closest
@@ -89,10 +89,11 @@ describe("Mama Put career and difficulty", () => {
     expect(careerDay(30).menu).toHaveLength(11);
   });
 
-  it("shop upgrades: ambience helps on the hard days only, never in Yaba or quick rushes", () => {
+  it("shop upgrades: ambience counts half in Yaba, three quarters in Ikeja, fully after; never in quick rushes", () => {
     const all = UPGRADES.map((u) => u.id);
-    expect(configFor("day-3", all).patience).toBe(careerDay(3).patience);
     expect(configFor("hard", all)).toBe(QUICK.hard);
+    expect(configFor("day-3", all).patience).toBeCloseTo(careerDay(3).patience * 1.2, 5);
+    expect(configFor("day-10", all).patience).toBeCloseTo(careerDay(10).patience * 1.3, 5);
     expect(configFor("day-25", all).patience).toBeCloseTo(careerDay(25).patience * 1.4, 5);
     expect(configFor("day-12", ["fan"]).patience).toBeGreaterThan(careerDay(12).patience);
     expect(configFor("day-12", ["fan"]).patience).toBeLessThan(careerDay(12).patience * 1.05);
@@ -109,6 +110,19 @@ describe("Mama Put career and difficulty", () => {
     expect(s.fry.stage).toBe("ready");
     expect(cfg.tips).toBe(1.1);
     expect(cfg.owned).toEqual(["big-pan", "non-stick", "tip-jar"]);
+  });
+
+  it("prices rise by area, days open in order", () => {
+    expect(upgradePrice(0, "fan")).toBe(15000);
+    expect(upgradePrice(1, "fan")).toBe(22500);
+    expect(upgradePrice(4, "paint")).toBe(480000);
+    expect(areaIndex(6)).toBe(0);
+    expect(areaIndex(7)).toBe(1);
+    expect(areaIndex(30)).toBe(4);
+    const best: Record<number, number> = { 1: careerDay(1).stars[0], 2: careerDay(2).stars[0] - 1 };
+    expect(dayOpen(1, () => undefined)).toBe(true);
+    expect(dayOpen(2, (d) => best[d])).toBe(true);
+    expect(dayOpen(3, (d) => best[d])).toBe(false);
   });
 
   it("reads modes", () => {

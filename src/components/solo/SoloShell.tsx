@@ -66,6 +66,7 @@ export function SoloShell<S>({
   header,
   toured = false,
   extras,
+  doneView,
   children,
 }: {
   gameId: string;
@@ -81,6 +82,8 @@ export function SoloShell<S>({
   /** This person has already been through the game's how-to-play tour. */
   toured?: boolean;
   extras?: SoloApi<S>["extras"];
+  /** A game's own finish screen (Mama Put's career day), in place of the score and buttons. */
+  doneView?: (r: { score: number; best: number; newBest: boolean; again: () => void; share: () => void }) => ReactNode;
   children: (api: SoloApi<S>) => ReactNode;
 }) {
   const game = soloGame(gameId)!;
@@ -303,7 +306,9 @@ export function SoloShell<S>({
 
       {phase === "done" ? (
         <section aria-live="polite" aria-labelledby="solo-result-h" className="glass mt-5 rounded-[26px] p-5 text-center">
-          {result ? (
+          {result && doneView ? (
+            doneView({ score: result.score, best: result.best, newBest: result.newBest, again: () => void begin(), share: () => void share() })
+          ) : result ? (
             <>
               <p id="solo-result-h" className="display text-[2.4rem] leading-none">{formatScore(game, result.score)}</p>
               <p className="mt-2 font-semibold">

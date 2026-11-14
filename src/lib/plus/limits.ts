@@ -1,6 +1,7 @@
 import "server-only";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { soloGame } from "@/lib/solo/catalog";
+import { FREE_CAREER_MODES } from "@/lib/solo/games/mama";
 import { FREE_PLAYS_PER_DAY, countsAsPlay, lagosDayBounds, type FreePlays } from "./plans";
 import { lackingPlus, plusLive } from "./server";
 
@@ -28,28 +29,32 @@ export async function roomFreePlays(roomId: string, memberIds: string[], gameId:
 }
 
 /** Free plays left today in a Solo or bot game, for one person. Challenges and today's game don't count. */
+/** Plays that never count against the free limit: Mama Put's Yaba days. */
+const freeSoloMode = (gameId: string, mode: string) => gameId === "mama-put" && (FREE_CAREER_MODES as readonly string[]).includes(mode);
+
 export async function soloFreePlays(userId: string, gameId: string, at = Date.now()): Promise<FreePlays> {
   const { start, end } = lagosDayBounds(at);
   const g = soloGame(gameId);
   if (!g || g.kind === "daily" || !(await plusLive()) || !(await lackingPlus([userId])).length) return open(end);
-  const { count } = await supabaseAdmin()
+  const { data } = await supabaseAdmin()
     .from("solo_runs")
-    .select("id", { count: "exact", head: true })
+    .select("mode")
     .eq("user_id", userId)
     .eq("game_id", gameId)
     .is("challenge_id", null)
     .not("mode", "like", "d-%")
-    .gte("started_at", start);
-  return counted(count ?? 0, end);
+    .gte("started_at", start)
+    .limit(200);
+  return counted((data ?? []).filter((r) => !freeSoloMode(gameId, r.mode as string)).length, end);
 }
 
 /** Every Solo game's plays today for one person, in one read (for the Solo home). */
 export async function soloFreePlaysAll(userId: string, at = Date.now()): Promise<{ limited: boolean; used: Record<string, number>; resetsAt: string }> {
   const { start, end } = lagosDayBounds(at);
   if (!(await plusLive()) || !(await lackingPlus([userId])).length) return { limited: false, used: {}, resetsAt: end };
-  const { data } = await supabaseAdmin().from("solo_runs").select("game_id").eq("user_id", userId).is("challenge_id", null).not("mode", "like", "d-%").gte("started_at", start).limit(500);
+  const { data } = await supabaseAdmin().from("solo_runs").select("game_id, mode").eq("user_id", userId).is("challenge_id", null).not("mode", "like", "d-%").gte("started_at", start).limit(500);
   const used: Record<string, number> = {};
-  for (const r of data ?? []) used[r.game_id as string] = (used[r.game_id as string] ?? 0) + 1;
+  for (const r of data ?? []) if (!freeSoloMode(r.game_id as string, r.mode as string)) used[r.game_id as string] = (used[r.game_id as string] ?? 0) + 1;
   return { limited: true, used, resetsAt: end };
 }
 

@@ -46,10 +46,11 @@ export type MamaConfig = {
 };
 
 /**
- * Shop upgrades, bought with Mama Put savings (all the naira you've taken in). They only count
- * in the career: quick rushes are the same for everyone, so their leaderboards stay fair.
- * Ambience keeps customers patient on the harder days: no help in Yaba, growing through Ikeja
- * and Surulere, in full from Lekki. Kitchen upgrades help every day.
+ * Shop upgrades, bought with Mama Put savings (all the naira you've taken in). Each area is its
+ * own restaurant, so each starts bare and is kitted out on its own, at that area's prices. They
+ * only count in the career: quick rushes are the same for everyone, so their leaderboards stay
+ * fair. Ambience keeps customers patient (half strength in Yaba, three quarters in Ikeja, in
+ * full from Surulere); kitchen upgrades help every day.
  */
 export const UPGRADES = [
   { id: "fan", name: "Standing fan", price: 15000, kind: "vibe", patience: 0.05, about: "Cool breeze: customers wait 5% longer." },
@@ -65,8 +66,18 @@ export const UPGRADES = [
 export type UpgradeId = (typeof UPGRADES)[number]["id"];
 export const isUpgrade = (id: string): id is UpgradeId => UPGRADES.some((u) => u.id === id);
 
-/** How much ambience counts on a career day: 0 in Yaba, rising to full by Lekki (day 19). */
-export const vibeWeight = (day: number) => (day <= 6 ? 0 : day >= 19 ? 1 : (day - 6) / 13);
+/** Which area a career day is in: 0 Yaba … 4 Victoria Island. */
+export const areaIndex = (day: number) => Math.max(0, Math.min(AREAS.length - 1, Math.floor((day - 1) / 6)));
+/** Upgrades cost more in the fancier areas. */
+export const AREA_PRICE = [1, 1.5, 2, 3, 4] as const;
+export const upgradePrice = (area: number, id: UpgradeId) => Math.round((UPGRADES.find((u) => u.id === id)!.price * (AREA_PRICE[area] ?? 1)) / 500) * 500;
+/** How much ambience counts in each area. */
+const AREA_VIBE = [0.5, 0.75, 1, 1, 1] as const;
+export const vibeWeight = (day: number) => AREA_VIBE[areaIndex(day)] ?? 1;
+/** Career days that never use a free play: the whole of Yaba, so new players can get hooked. */
+export const FREE_CAREER_MODES = ["day-1", "day-2", "day-3", "day-4", "day-5", "day-6"] as const;
+/** A career day opens once the day before has at least one star. */
+export const dayOpen = (day: number, best: (day: number) => number | undefined) => day <= 1 || (best(day - 1) ?? 0) >= careerDay(day - 1).stars[0];
 
 /** A career day's rules with the shop's upgrades applied. */
 export function withUpgrades(cfg: MamaConfig, day: number, owned: readonly string[]): MamaConfig {

@@ -11,6 +11,7 @@ import { SoloShell } from "./SoloShell";
 type AnySaved = any;
 import type { FixPicture } from "./games/FixAm";
 import { Credit } from "./Credit";
+import { MamaDayDone } from "./mama/MamaDayDone";
 
 // Each game is its own download, fetched only when you open it.
 const loading = () => <p className="py-16 text-center text-muted">Setting up…</p>;
@@ -31,8 +32,19 @@ export const BotScreen = dynamic(() => import("./BotScreen").then((m) => m.BotSc
 type Common = { myName: string; soundOn: boolean; challenge: string | null; toured: boolean };
 
 /** Blend Am, Ajo, Okada Rush and Reflex Training: one frame, one game. */
-export function ArcadeScreen({ gameId, daily = null, ...c }: Common & { gameId: string; daily?: { mode: string; seed: string } | null }) {
+export function ArcadeScreen({
+  gameId,
+  daily = null,
+  play = null,
+  ...c
+}: Common & {
+  gameId: string;
+  daily?: { mode: string; seed: string } | null;
+  /** A chosen version (Mama Put's difficulty or career day) and what it needs, such as upgrades. */
+  play?: { mode: string; title: string; tagline: string; owned?: readonly string[]; careerDay?: number } | null;
+}) {
   const game = soloGame(gameId)!;
+  const careerDay = play?.careerDay;
   return (
     <SoloShell<AnySaved>
       gameId={gameId}
@@ -41,7 +53,9 @@ export function ArcadeScreen({ gameId, daily = null, ...c }: Common & { gameId: 
       challenge={c.challenge}
       toured={c.toured}
       {...(daily ? { mode: daily.mode, seed: daily.seed, backHref: "/room" } : {})}
-      header={<Title name={daily ? `Today's game: ${game.name}` : game.name} tagline={daily ? "The same level for everyone today. You get one go." : game.tagline} />}
+      {...(play ? { mode: play.mode, backHref: `/solo/${gameId}`, extras: { owned: play.owned ?? [] } } : {})}
+      {...(careerDay ? { doneView: (r: { score: number; newBest: boolean; again: () => void; share: () => void }) => <MamaDayDone day={careerDay} score={r.score} newBest={r.newBest} again={r.again} share={r.share} /> } : {})}
+      header={<Title name={daily ? `Today's game: ${game.name}` : (play?.title ?? game.name)} tagline={daily ? "The same level for everyone today. You get one go." : (play?.tagline ?? game.tagline)} />}
     >
       {(api) =>
         gameId === "blend-am" ? (

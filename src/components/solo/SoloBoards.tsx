@@ -5,7 +5,7 @@ import { roomBoard } from "@/lib/solo/server";
 import type { RoomSummary } from "@/lib/room/types";
 
 /** This week's best in each of my rooms (with at least two people), for one Solo game. */
-export async function SoloBoards({ gameId, rooms, me }: { gameId: string; rooms: RoomSummary[]; me: string }) {
+export async function SoloBoards({ gameId, rooms, me, mode = "normal" }: { gameId: string; rooms: RoomSummary[]; me: string; mode?: string }) {
   const game = soloGame(gameId);
   const shared = rooms.filter((r) => r.members > 1).slice(0, 3);
   if (!game || game.kind === "bot" || !shared.length) return null;
@@ -13,14 +13,14 @@ export async function SoloBoards({ gameId, rooms, me }: { gameId: string; rooms:
   const { data: members } = await admin.from("room_members").select("room_id, user_id").in("room_id", shared.map((r) => r.id));
   const ids = [...new Set((members ?? []).map((m) => m.user_id as string))];
   const { data: people } = await admin.from("profiles").select("id, display_name, avatar_key, avatar_hue").in("id", ids);
-  const boards = await Promise.all(shared.map(async (r) => ({ room: r, rows: await roomBoard((members ?? []).filter((m) => m.room_id === r.id).map((m) => m.user_id as string), gameId) })));
+  const boards = await Promise.all(shared.map(async (r) => ({ room: r, rows: await roomBoard((members ?? []).filter((m) => m.room_id === r.id).map((m) => m.user_id as string), gameId, mode) })));
   const person = (id: string) => (people ?? []).find((p) => p.id === id);
   const shown = boards.filter((b) => b.rows.length);
   if (!shown.length) return null;
 
   return (
     <section aria-labelledby="boards-h" className="mt-8">
-      <h2 id="boards-h" className="display text-[1.4rem]">This week in your rooms</h2>
+      <h2 id="boards-h" className="display text-[1.4rem]">This week in your rooms{mode !== "normal" ? ` · ${mode[0]!.toUpperCase()}${mode.slice(1)}` : ""}</h2>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         {shown.map(({ room, rows }) => (
           <div key={room.id} className="glass rounded-[20px] p-4">
