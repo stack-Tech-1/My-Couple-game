@@ -45,14 +45,16 @@ const H = 400;
 /** Where everything goes on the 800 × 400 stage. One table, so new scene art is a quick re-fit. */
 const L = {
   spotX: [110, 300, 500, 690] as const,
-  customerBottom: 204,
+  customerBottom: 210,
   customerHeight: 152,
   bubbleY: 6,
-  counterTop: 172,
-  plateY: 198,
-  serveY: 236,
-  kitchenTop: 254,
-  shelves: [322, 394] as const,
+  /** The signboard's middle, from the scene art. */
+  sign: [382, 52] as const,
+  /** The counter's back edge: the counter is drawn again from here down, over the customers. */
+  counterTop: 173,
+  plateY: 197,
+  /** Where food sits on the two kitchen shelves. */
+  shelves: [287, 361] as const,
 };
 
 /** Width ÷ height of each picture, so they keep their shape. */
@@ -99,6 +101,15 @@ const RATIO: Record<string, number> = {
   "f-jollof": 1.426,
   "f-moin": 1.167,
   "f-stew": 1.481,
+  "stove-off": 1.31,
+  "stove-oil": 1.299,
+  "stove-raw": 1.293,
+  "stove-frying": 1.293,
+  "stove-ready": 1.299,
+  "stove-burnt": 1.299,
+  gas: 0.759,
+  "gas-new": 0.797,
+  scene: 2,
   "up-bunting": 3.1,
   "up-chairs": 1.594,
   "up-fan": 0.58,
@@ -133,18 +144,18 @@ const PEOPLE = ["aunty", "fila", "corper", "student", "oga", "baba"] as const;
 
 /** Upgrades on the wall, behind the customers: [upgrade, picture, centre x, bottom y, width]. */
 const DECOR_BACK: [string, string, number, number, number][] = [
-  ["paint", "up-bunting", 160, 64, 150],
-  ["paint", "up-bunting", 640, 64, 150],
-  ["tv", "up-tv", 760, 92, 70],
-  ["generator", "up-generator", 22, 176, 40],
-  ["chairs", "up-chairs", 780, 178, 56],
+  ["paint", "up-bunting", 120, 30, 120],
+  ["paint", "up-bunting", 660, 30, 120],
+  ["tv", "up-tv", 54, 118, 66],
+  ["generator", "up-generator", 742, 146, 44],
+  ["chairs", "up-chairs", 36, 176, 56],
 ];
 /** Upgrades on the counter, facing the customers. */
 const DECOR_COUNTER: [string, string, number, number, number][] = [
-  ["fan", "up-fan", 22, 196, 30],
-  ["radio", "up-radio", 400, 200, 36],
-  ["tip-jar", "up-tipjar", 205, 202, 20],
-  ["paint", "up-plant", 595, 202, 28],
+  ["fan", "up-fan", 22, 202, 30],
+  ["radio", "up-radio", 400, 206, 36],
+  ["tip-jar", "up-tipjar", 210, 210, 20],
+  ["paint", "up-plant", 785, 210, 28],
 ];
 
 /** A picture placed by its bottom-centre point, at a given width. */
@@ -187,19 +198,19 @@ type Station = [
   string,
 ];
 const STATIONS: Station[] = [
-  ["jollof", "st-jollof", 52, L.shelves[0], 76, "Jollof"],
-  ["rice", "st-rice", 146, L.shelves[0], 84, "White rice"],
-  ["stew", "st-stew", 240, L.shelves[0], 78, "Stew"],
-  ["egusi", "st-egusi", 332, L.shelves[0], 74, "Egusi"],
-  ["beef", "st-beef", 432, L.shelves[0], 86, "Beef"],
-  ["chicken", "st-chicken", 530, L.shelves[0], 84, "Chicken"],
-  ["fish", "st-fish", 628, L.shelves[0], 86, "Fish"],
-  ["bin", "bin", 740, L.shelves[0], 40, "Bin plate"],
-  ["fry", "", 92, L.shelves[1], 150, "Dodo"],
-  ["gas", "", 206, L.shelves[1], 40, "Gas"],
-  ["eba", "st-eba", 300, L.shelves[1], 70, "Eba"],
-  ["moin", "st-moin", 398, L.shelves[1], 72, "Moin moin"],
-  ["drink", "st-drink", 498, L.shelves[1], 72, "Cold drinks"],
+  ["jollof", "st-jollof", 56, L.shelves[0], 62, "Jollof"],
+  ["rice", "st-rice", 150, L.shelves[0], 72, "White rice"],
+  ["stew", "st-stew", 246, L.shelves[0], 66, "Stew"],
+  ["egusi", "st-egusi", 338, L.shelves[0], 62, "Egusi"],
+  ["beef", "st-beef", 438, L.shelves[0], 84, "Beef"],
+  ["chicken", "st-chicken", 536, L.shelves[0], 82, "Chicken"],
+  ["fish", "st-fish", 634, L.shelves[0], 84, "Fish"],
+  ["bin", "bin", 742, L.shelves[0], 38, "Bin plate"],
+  ["fry", "", 74, L.shelves[1], 104, "Dodo"],
+  ["gas", "gas", 168, L.shelves[1], 40, "Gas"],
+  ["eba", "st-eba", 264, L.shelves[1], 68, "Eba"],
+  ["moin", "st-moin", 362, L.shelves[1], 70, "Moin moin"],
+  ["drink", "st-drink", 462, L.shelves[1], 70, "Cold drinks"],
 ];
 const STEAMING = new Set(["jollof", "rice", "stew", "egusi"]);
 
@@ -221,16 +232,19 @@ function cast(spots: MamaState["spots"]): string[] {
   });
 }
 
-const panPic = (stage: MamaState["fry"]["stage"], t: number) =>
+/** The stove with the pan on it: off, hot oil, raw plantain, frying, golden, burnt. */
+const stovePic = (stage: MamaState["fry"]["stage"], t: number) =>
   stage === "idle"
-    ? "pan-empty"
+    ? "stove-off"
     : stage === "frying"
-      ? t < 1.4
-        ? "pan-raw"
-        : "pan-frying"
+      ? t < 0.5
+        ? "stove-oil"
+        : t < 1.5
+          ? "stove-raw"
+          : "stove-frying"
       : stage === "ready"
-        ? "pan-ready"
-        : "pan-burnt";
+        ? "stove-ready"
+        : "stove-burnt";
 
 type Fx = {
   id: number;
@@ -606,15 +620,15 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
         : null;
   const hint =
     step?.kind === "wait"
-      ? "Your first customer is coming. Watch her order in the bubble."
+      ? "Your first customer is coming. Their order shows in the bubble."
       : step?.kind === "plate"
-        ? "Tap the plate in front of her. That's the plate you'll dish onto."
+        ? "Tap the plate in front of your customer. That's the plate you'll dish onto."
         : step?.kind === "add"
-          ? `She wants ${s.spots[0]!.order.map((x) => ITEM_NAME[x]).join(", ")}. Tap the ${ITEM_NAME[step.item].toLowerCase()} in the kitchen.`
+          ? `Your customer wants ${s.spots[0]!.order.map((x) => ITEM_NAME[x]).join(", ")}. Tap the ${ITEM_NAME[step.item].toLowerCase()} in the kitchen.`
           : step?.kind === "bin"
-            ? "That's not what she ordered. Tap the bin to clear the plate."
+            ? "That's not what they ordered. Tap the bin to clear the plate."
             : step?.kind === "serve"
-              ? "Everything she wants is on the plate. Tap Serve!"
+              ? "Everything they want is on the plate. Tap Serve!"
               : null;
 
   return (
@@ -646,45 +660,24 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
         >
           <style>{CSS}</style>
           <defs>
-            <linearGradient id="mp-floor" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stopColor="#f3e7d2" />
-              <stop offset="1" stopColor="#e6d3b5" />
-            </linearGradient>
-            <pattern
-              id="mp-tiles"
-              width="32"
-              height="32"
-              patternUnits="userSpaceOnUse"
-            >
-              <rect width="32" height="32" fill="url(#mp-floor)" />
-              <path d="M0 .5H32M.5 0V32" stroke="#dcc9a9" strokeWidth="1" />
-            </pattern>
-            <linearGradient id="mp-shelf" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stopColor="#f1eee9" />
-              <stop offset="1" stopColor="#c8c1b6" />
-            </linearGradient>
             <filter id="mp-ds" x="-30%" y="-30%" width="160%" height="160%">
               <feDropShadow dx="0" dy="2" stdDeviation="2" floodOpacity=".3" />
             </filter>
           </defs>
 
-          {/* The restaurant (stand-in until the wide scene art arrives). */}
-          <image
-            href={src("wall")}
-            x={0}
-            y={0}
-            width={W}
-            height={L.counterTop + 8}
-            preserveAspectRatio="xMidYMid slice"
-          />
+          {/* The restaurant: one wide scene, with the name painted on its signboard. */}
+          <clipPath id="mp-front">
+            <rect x="0" y={L.counterTop} width={W} height={H - L.counterTop} />
+          </clipPath>
+          <image href={src("scene")} x={0} y={0} width={W} height={H} />
           <text
-            x={W / 2}
-            y={30}
+            x={L.sign[0]}
+            y={L.sign[1]}
             textAnchor="middle"
             fontFamily="Fraunces, serif"
             fontStyle="italic"
             fontWeight="900"
-            fontSize="20"
+            fontSize="30"
             fill="#c43a22"
           >
             Mama Put
@@ -742,14 +735,14 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
             );
           })}
 
-          {/* The counter (stand-in) and what's on it. */}
+          {/* The counter and kitchen again, in front of the customers, then what's on the counter. */}
           <image
-            href={src("counter")}
-            x={-10}
-            y={L.counterTop}
-            width={W + 20}
-            height={L.kitchenTop - L.counterTop + 6}
-            preserveAspectRatio="none"
+            href={src("scene")}
+            x={0}
+            y={0}
+            width={W}
+            height={H}
+            clipPath="url(#mp-front)"
           />
           {DECOR_COUNTER.filter(([id]) => owned.has(id)).map(
             ([id, pic, x, bottom, w]) => (
@@ -926,32 +919,33 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
                       }
                       style={{ cursor: "pointer", outline: "none" }}
                     >
+                      {/* On the counter, just right of the plate. */}
                       <rect
-                        x={x - 34}
-                        y={L.serveY - 11}
-                        width="68"
+                        x={x + 42}
+                        y={L.plateY - 11}
+                        width="50"
                         height="22"
                         rx="11"
                         fill="#1c1416"
                       />
                       <text
-                        x={x}
-                        y={L.serveY + 4}
+                        x={x + 67}
+                        y={L.plateY + 4}
                         textAnchor="middle"
                         fontFamily="Manrope, sans-serif"
                         fontWeight="800"
                         fontSize="10.5"
                         fill="#f6efe6"
                       >
-                        Serve →
+                        Serve
                       </text>
                       {step?.kind === "serve" && i === 0 ? (
                         <rect
-                          x={x - 40}
-                          y={L.serveY - 16}
-                          width="80"
-                          height="32"
-                          rx="16"
+                          x={x + 36}
+                          y={L.plateY - 17}
+                          width="62"
+                          height="34"
+                          rx="17"
                           fill="none"
                           stroke="#2e9b57"
                           className="mp-point"
@@ -964,42 +958,8 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
             })}
           </g>
 
-          {/* The kitchen (stand-in back wall and shelves). */}
-          <rect
-            x="0"
-            y={L.kitchenTop}
-            width={W}
-            height={H - L.kitchenTop}
-            fill="url(#mp-tiles)"
-          />
-          <rect
-            x="0"
-            y={L.kitchenTop}
-            width={W}
-            height="8"
-            fill="rgba(58,26,8,.2)"
-          />
-          {L.shelves.map((y) => (
-            <g key={y}>
-              <rect
-                x="6"
-                y={y - 7}
-                width={W - 12}
-                height="10"
-                rx="4"
-                fill="url(#mp-shelf)"
-              />
-              <rect
-                x="6"
-                y={y + 2}
-                width={W - 12}
-                height="3"
-                rx="1.5"
-                fill="#9e978c"
-              />
-            </g>
-          ))}
-          {STATIONS.map(([what, pic, x, bottom, w, label]) => (
+          {/* The kitchen: food on the scene's two shelves. */}
+          {STATIONS.map(([what, pic, x, bottom, w]) => (
             <g key={what}>
               <g
                 key={taps[what] ?? 0}
@@ -1007,15 +967,11 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
               >
                 {what === "fry" ? (
                   <>
-                    <Pic name="stove" x={x} bottom={bottom} w={w} />
                     <Pic
-                      name={panPic(s.fry.stage, s.fry.t)}
-                      x={x - 26}
-                      bottom={bottom - 26}
-                      w={
-                        (s.fry.stage === "burnt" ? 70 : 80) *
-                        (owned.has("big-pan") ? 1.12 : 1)
-                      }
+                      name={stovePic(s.fry.stage, s.fry.t)}
+                      x={x}
+                      bottom={bottom}
+                      w={w * (owned.has("big-pan") ? 1.08 : 1)}
                     />
                     {(s.fry.stage === "frying" || s.fry.stage === "ready") &&
                     gasLeft(s) > 0 ? (
@@ -1023,8 +979,8 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
                         {[-18, -6, 6, 18].map((dx, k) => (
                           <circle
                             key={k}
-                            cx={x - 26 + dx}
-                            cy={bottom - 52 + (k % 2) * 5}
+                            cx={x - 14 + dx}
+                            cy={bottom - 62 + (k % 2) * 5}
                             r="1.5"
                             fill="none"
                             stroke="#fff8d2"
@@ -1036,15 +992,34 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
                     ) : null}
                     {s.fry.stage === "ready" ? (
                       <ellipse
-                        cx={x - 26}
-                        cy={bottom - 46}
-                        rx="32"
-                        ry="12"
+                        cx={x - 12}
+                        cy={bottom - 58}
+                        rx="34"
+                        ry="13"
                         fill="none"
                         stroke="#f6c453"
                         strokeWidth="3"
                         className="mp-ready"
                       />
+                    ) : null}
+                    {s.fry.stage === "burnt" ? (
+                      <g
+                        className="mp-steam"
+                        fill="none"
+                        stroke="#5a5a5a"
+                        strokeLinecap="round"
+                        pointerEvents="none"
+                      >
+                        {[-14, -2, 10].map((dx, k) => (
+                          <path
+                            key={dx}
+                            d={`M${x - 12 + dx} ${bottom - 66} q-6 -9 0 -18 q6 -9 0 -18`}
+                            strokeWidth={5 - k}
+                            opacity=".55"
+                            style={{ animationDelay: `${k * 0.5}s` }}
+                          />
+                        ))}
+                      </g>
                     ) : null}
                   </>
                 ) : what === "gas" ? (
@@ -1056,9 +1031,26 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
               {STEAMING.has(what)
                 ? steam(x - 2, bottom - w / (RATIO[pic] ?? 1) + 4)
                 : null}
+              {pointAt?.[0] === what ? (
+                <rect
+                  x={x - w / 2 - 6}
+                  y={bottom - 70}
+                  width={w + 12}
+                  height="82"
+                  rx="14"
+                  fill="none"
+                  stroke="#2e9b57"
+                  className="mp-point"
+                />
+              ) : null}
+            </g>
+          ))}
+          {/* Labels last, so food on the shelf below never covers them. */}
+          {STATIONS.map(([what, , x, bottom, , label]) => (
+            <g key={`label-${what}`} pointerEvents="none">
               <text
-                x={what === "fry" ? x - 26 : x}
-                y={bottom + 14}
+                x={x}
+                y={bottom + 16}
                 textAnchor="middle"
                 fontFamily="Manrope, sans-serif"
                 fontWeight="800"
@@ -1089,25 +1081,13 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
                       : "Gas"
                     : label}
               </text>
-              {pointAt?.[0] === what ? (
-                <rect
-                  x={x - w / 2 - 6}
-                  y={bottom - 70}
-                  width={w + 12}
-                  height="82"
-                  rx="14"
-                  fill="none"
-                  stroke="#2e9b57"
-                  className="mp-point"
-                />
-              ) : null}
             </g>
           ))}
           {STATIONS.map(([what, , x, bottom, w, label]) => {
             const b =
               what === "fry"
-                ? { x: x - w / 2, y: bottom - 72, w, h: 88 }
-                : { x: x - w / 2 - 6, y: bottom - 68, w: w + 12, h: 84 };
+                ? { x: x - w / 2, y: bottom - 80, w, h: 98 }
+                : { x: x - w / 2 - 5, y: bottom - 62, w: w + 10, h: 80 };
             return (
               <rect
                 key={what}
@@ -1218,10 +1198,10 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
           )}
         </svg>
 
-        {/* The clock, takings and stars, out of the way in the corners. */}
-        <div className="pointer-events-none absolute inset-x-2 top-2 flex items-start justify-between gap-2">
+        {/* The clock, takings and stars, in the free corner of the kitchen. */}
+        <div className="pointer-events-none absolute bottom-[2.5%] right-[1.5%] flex items-center gap-1">
           <p
-            className="rounded-full bg-[rgba(255,250,242,.92)] px-3 py-1 font-[Fraunces,serif] text-[0.95rem] font-semibold leading-tight text-[#2a1d17] shadow"
+            className="rounded-full bg-[rgba(255,250,242,.92)] px-2.5 py-0.5 font-[Fraunces,serif] text-[0.85rem] font-semibold leading-tight text-[#2a1d17] shadow"
             aria-label={
               step
                 ? "The clock starts after your first customer"
@@ -1235,7 +1215,7 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
           </p>
           <div className="flex items-center gap-1.5">
             <p
-              className="rounded-full bg-[rgba(255,250,242,.92)] px-3 py-1 font-[Fraunces,serif] text-[0.95rem] font-semibold leading-tight text-[#2e7d32] shadow"
+              className="rounded-full bg-[rgba(255,250,242,.92)] px-2.5 py-0.5 font-[Fraunces,serif] text-[0.85rem] font-semibold leading-tight text-[#2e7d32] shadow"
               aria-label={`₦${s.money} taken. ${st} of 3 stars. Next star at ₦${rules.stars[st] ?? rules.stars[2]}`}
             >
               ₦{s.money.toLocaleString("en-NG")}{" "}
@@ -1366,58 +1346,30 @@ function GasCylinder({
   level: number;
 }) {
   const col = level > 0.5 ? "#2e9b57" : level > 0.2 ? "#e9a13c" : "#e0402e";
+  // A just-filled cylinder wears its seal for a moment.
+  const fresh = level >= 0.97;
   return (
     <g className={level <= 0.2 ? "mp-warn" : undefined}>
-      <rect
-        x={x - 15}
-        y={bottom - 58}
-        width="30"
-        height="54"
-        rx="12"
-        fill="#1f5fa8"
-        stroke="#123c70"
-        strokeWidth="1.5"
-      />
-      <rect
-        x={x - 11}
-        y={bottom - 52}
-        width="5"
-        height="40"
-        rx="2.5"
-        fill="#fff"
-        opacity=".25"
-      />
-      <rect
-        x={x - 8}
-        y={bottom - 66}
-        width="16"
-        height="10"
-        rx="3"
-        fill="#2a2d31"
-      />
-      <rect x={x - 4} y={bottom - 72} width="8" height="7" rx="2" fill="#555" />
-      <rect
-        x={x - 17}
-        y={bottom - 6}
-        width="34"
-        height="5"
-        rx="2"
-        fill="#123c70"
+      <Pic
+        name={fresh ? "gas-new" : "gas"}
+        x={x}
+        bottom={bottom}
+        w={fresh ? 42 : 40}
       />
       {/* The gauge. */}
       <rect
-        x={x + 18}
-        y={bottom - 56}
+        x={x + 23}
+        y={bottom - 52}
         width="6"
-        height="48"
+        height="46"
         rx="3"
-        fill="rgba(0,0,0,.18)"
+        fill="rgba(0,0,0,.25)"
       />
       <rect
-        x={x + 18}
-        y={bottom - 8 - 48 * Math.max(0, level)}
+        x={x + 23}
+        y={bottom - 6 - 46 * Math.max(0, level)}
         width="6"
-        height={48 * Math.max(0, level)}
+        height={46 * Math.max(0, level)}
         rx="3"
         fill={col}
       />

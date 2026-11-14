@@ -38,7 +38,17 @@ const SHEETS = [
     { "up-fan": 120, "up-chairs": 220, "up-radio": 130, "up-tv": 200, "up-generator": 150, "up-bunting": 760, "up-plant": 120, "up-pan": 150, "up-tipjar": 120 },
     { backdrop: "grey", pockets: false },
   ],
+  // Landscape: the stove with the pan on it, six stages; the gas cylinder, plain and new.
+  ["Plantain Frying Progression on Six Stoves.png", [null, "stove-off", "stove-oil", "stove-raw", "stove-frying", "stove-ready", "stove-burnt"], { "stove-off": 300, "stove-oil": 300, "stove-raw": 300, "stove-frying": 300, "stove-ready": 300, "stove-burnt": 300 }, { backdrop: "grey", pockets: false }],
+  ["Sealed Blue Gas Cylinders.png", ["gas", "gas-new"], { gas: 110, "gas-new": 110 }, { backdrop: "grey", pockets: false }],
 ];
+
+/**
+ * Whole scenes for the landscape game: [sheet, name, rows to keep]. The image tools make 3:2
+ * pictures; a phone held sideways is 2:1, so a band of rows is kept (the scene prompts leave
+ * ceiling and floor strips for this) and saved at 1600 × 800.
+ */
+const SCENES = [["Warm Cartoon Restaurant Counter Interior-1.png", "scene", 40]];
 
 const widthFor = (name, extra = {}) =>
   extra[name] ?? (name.startsWith("cust-") ? 250 : name.startsWith("st-") ? 230 : name.startsWith("pan-") ? 220 : name === "plate" ? 180 : name.startsWith("p-") ? 96 : 230);
@@ -64,5 +74,13 @@ for (const [file, names, extra = {}, how = {}] of SHEETS) {
       total += statSync(food).size;
     }
   }
+}
+for (const [file, name, top] of SCENES) {
+  const { default: sharp } = await import("sharp");
+  const meta = await sharp(path.join(SRC, file)).metadata();
+  const band = Math.round(meta.width / 2);
+  const out = path.join(OUT, `${name}.webp`);
+  await sharp(path.join(SRC, file)).extract({ left: 0, top, width: meta.width, height: Math.min(band, meta.height - top) }).resize(1600, 800).webp({ quality: 74, effort: 6 }).toFile(out);
+  total += statSync(out).size;
 }
 console.log(`${readdirSync(OUT).length} files, ${(total / 1024).toFixed(0)} KB in ${OUT}`);
