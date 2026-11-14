@@ -21,6 +21,8 @@ import { PosterStudio } from "@/components/poster/PosterStudio";
 /** What every Solo game gets from the frame. */
 export type SoloApi<S> = {
   seed: string;
+  /** Which version is being played: "normal", a difficulty, a career day ("day-4")… */
+  mode: string;
   /** A game saved on this phone, to carry on from (null for a fresh game). */
   saved: S | null;
   paused: boolean;
@@ -185,6 +187,7 @@ export function SoloShell<S>({
 
   const api: SoloApi<S> = {
     seed: run?.seed ?? "",
+    mode,
     saved,
     paused,
     target: run?.target ?? null,

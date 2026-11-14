@@ -14,3 +14,7 @@ supabase/.temp/.tmp*
 
 # Reference photos of published card decks: copyrighted, never committed
 card-photos/
+
+# AI-made art sheets (30 MB): the source for scripts/art. Keep a backup; only the small
+# files built from them in public/games are committed.
+game images/

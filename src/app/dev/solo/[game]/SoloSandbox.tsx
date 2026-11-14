@@ -23,9 +23,11 @@ export function SoloSandbox({ gameId }: { gameId: string }) {
   const [round, setRound] = useState(0);
   const [paused, setPaused] = useState(false);
   const [score, setScore] = useState<number | null>(null);
+  // ?mode=hard or ?mode=day-12 tries a difficulty or career day.
+  const mode = typeof window === "undefined" ? "normal" : (new URLSearchParams(window.location.search).get("mode") ?? "normal");
   const api = useMemo<AnyApi>(
-    () => ({ seed: `sandbox-${round}`, saved: null, paused, save: () => {}, end: (s) => setScore(s), sound: (n) => playSound(n), target: null }),
-    [round, paused],
+    () => ({ seed: `sandbox-${round}`, mode, saved: null, paused, save: () => {}, end: (s) => setScore(s), sound: (n) => playSound(n), target: null }),
+    [round, paused, mode],
   );
   const Game = games[gameId];
   return (
