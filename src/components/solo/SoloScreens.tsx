@@ -41,7 +41,7 @@ export function ArcadeScreen({
   gameId: string;
   daily?: { mode: string; seed: string } | null;
   /** A chosen version (Mama Put's difficulty or career day) and what it needs, such as upgrades. */
-  play?: { mode: string; title: string; tagline: string; owned?: readonly string[]; careerDay?: number } | null;
+  play?: { mode: string; title: string; tagline: string; owned?: readonly string[]; tutorial?: boolean; careerDay?: number } | null;
 }) {
   const game = soloGame(gameId)!;
   const careerDay = play?.careerDay;
@@ -53,7 +53,7 @@ export function ArcadeScreen({
       challenge={c.challenge}
       toured={c.toured}
       {...(daily ? { mode: daily.mode, seed: daily.seed, backHref: "/room" } : {})}
-      {...(play ? { mode: play.mode, backHref: `/solo/${gameId}`, extras: { owned: play.owned ?? [] } } : {})}
+      {...(play ? { mode: play.mode, backHref: `/solo/${gameId}`, extras: { owned: play.owned ?? [], tutorial: play.tutorial } } : {})}
       {...(careerDay ? { doneView: (r: { score: number; newBest: boolean; again: () => void; share: () => void }) => <MamaDayDone day={careerDay} score={r.score} newBest={r.newBest} again={r.again} share={r.share} /> } : {})}
       header={<Title name={daily ? `Today's game: ${game.name}` : (play?.title ?? game.name)} tagline={daily ? "The same level for everyone today. You get one go." : (play?.tagline ?? game.tagline)} />}
     >

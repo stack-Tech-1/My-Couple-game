@@ -90,6 +90,8 @@ async function mamaPutBody(userId: string, mode: string | undefined, common: { m
           mode: `day-${d}`,
           careerDay: d,
           owned: career.owned[area] ?? [],
+          // A first-ever go at day 1 starts with the tutorial.
+          tutorial: d === 1 && career.dayBest[0] == null,
           title: `Day ${d} · ${AREAS[area]}`,
           tagline: dishes.length ? `New on the menu today: ${dishes.map((x) => ITEM_NAME[x]).join(", ")}.` : "Serve every plate before they get vexed.",
         }}

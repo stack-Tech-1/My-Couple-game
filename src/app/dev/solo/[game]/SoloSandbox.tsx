@@ -29,9 +29,10 @@ export function SoloSandbox({ gameId }: { gameId: string }) {
   const mode = q.get("mode") ?? "normal";
   // ?shop=fan,tv or ?shop=all tries Mama Put's upgrades.
   const shop = q.get("shop") ?? "";
+  const tut = q.get("tutorial") === "1";
   const api = useMemo<AnyApi>(
-    () => ({ seed: `sandbox-${round}`, mode, extras: { owned: shop === "all" ? UPGRADES.map((u) => u.id) : shop.split(",").filter(Boolean) }, saved: null, paused, save: () => {}, end: (s) => setScore(s), sound: (n) => playSound(n), target: null }),
-    [round, paused, mode, shop],
+    () => ({ seed: `sandbox-${round}`, mode, extras: { owned: shop === "all" ? UPGRADES.map((u) => u.id) : shop.split(",").filter(Boolean), tutorial: tut }, saved: null, paused, save: () => {}, end: (s) => setScore(s), sound: (n) => playSound(n), target: null }),
+    [round, paused, mode, shop, tut],
   );
   const Game = games[gameId];
   return (
