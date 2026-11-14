@@ -31,6 +31,13 @@ const SHEETS = [
   ["Glossy Nigerian Platter Collection.png", ["plate", "p-jollof", "p-rice", "p-stew", "p-eba", "p-egusi"]],
   ["Glossy Nigerian Food Sticker Sheet.png", ["p-beef", "p-chicken", "p-fish", "p-dodo", "p-moin", "p-drink"]],
   ["Joyful Ankara-Clad Food Vendor Poses.png", ["mama-happy", "mama-sad"], { "mama-happy": 300, "mama-sad": 300 }],
+  // Shop upgrades: a grey studio backdrop rather than transparency, and the corners carry smudges.
+  [
+    "b14-upgrades.png",
+    [null, "up-fan", "up-chairs", "up-radio", null, "up-tv", "up-generator", "up-bunting", "up-plant", "up-pan", "up-tipjar"],
+    { "up-fan": 120, "up-chairs": 220, "up-radio": 130, "up-tv": 200, "up-generator": 150, "up-bunting": 760, "up-plant": 120, "up-pan": 150, "up-tipjar": 120 },
+    { backdrop: "grey", pockets: false },
+  ],
 ];
 
 const widthFor = (name, extra = {}) =>
@@ -38,8 +45,8 @@ const widthFor = (name, extra = {}) =>
 
 mkdirSync(OUT, { recursive: true });
 let total = 0;
-for (const [file, names, extra = {}] of SHEETS) {
-  const items = await cutSheet(path.join(SRC, file));
+for (const [file, names, extra = {}, how = {}] of SHEETS) {
+  const items = await cutSheet(path.join(SRC, file), how);
   if (items.length < names.length) throw new Error(`${file}: expected at least ${names.length} items, found ${items.length}`);
   for (let k = 0; k < names.length; k++) {
     const name = names[k];

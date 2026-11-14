@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { playSound } from "@/lib/sound";
 import { formatScore, soloGame } from "@/lib/solo/catalog";
 import type { SoloApi } from "@/components/solo/SoloShell";
+import { UPGRADES } from "@/lib/solo/games/mama";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- each game types its own state
 type AnyApi = SoloApi<any>;
@@ -24,10 +25,13 @@ export function SoloSandbox({ gameId }: { gameId: string }) {
   const [paused, setPaused] = useState(false);
   const [score, setScore] = useState<number | null>(null);
   // ?mode=hard or ?mode=day-12 tries a difficulty or career day.
-  const mode = typeof window === "undefined" ? "normal" : (new URLSearchParams(window.location.search).get("mode") ?? "normal");
+  const q = typeof window === "undefined" ? new URLSearchParams() : new URLSearchParams(window.location.search);
+  const mode = q.get("mode") ?? "normal";
+  // ?shop=fan,tv or ?shop=all tries Mama Put's upgrades.
+  const shop = q.get("shop") ?? "";
   const api = useMemo<AnyApi>(
-    () => ({ seed: `sandbox-${round}`, mode, saved: null, paused, save: () => {}, end: (s) => setScore(s), sound: (n) => playSound(n), target: null }),
-    [round, paused, mode],
+    () => ({ seed: `sandbox-${round}`, mode, extras: { owned: shop === "all" ? UPGRADES.map((u) => u.id) : shop.split(",").filter(Boolean) }, saved: null, paused, save: () => {}, end: (s) => setScore(s), sound: (n) => playSound(n), target: null }),
+    [round, paused, mode, shop],
   );
   const Game = games[gameId];
   return (

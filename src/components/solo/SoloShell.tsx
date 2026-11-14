@@ -23,6 +23,8 @@ export type SoloApi<S> = {
   seed: string;
   /** Which version is being played: "normal", a difficulty, a career day ("day-4")… */
   mode: string;
+  /** Anything else the game needs from the server, such as Mama Put's shop upgrades. */
+  extras?: { owned?: readonly string[] };
   /** A game saved on this phone, to carry on from (null for a fresh game). */
   saved: S | null;
   paused: boolean;
@@ -63,6 +65,7 @@ export function SoloShell<S>({
   backHref = "/solo",
   header,
   toured = false,
+  extras,
   children,
 }: {
   gameId: string;
@@ -77,6 +80,7 @@ export function SoloShell<S>({
   header?: ReactNode;
   /** This person has already been through the game's how-to-play tour. */
   toured?: boolean;
+  extras?: SoloApi<S>["extras"];
   children: (api: SoloApi<S>) => ReactNode;
 }) {
   const game = soloGame(gameId)!;
@@ -188,6 +192,7 @@ export function SoloShell<S>({
   const api: SoloApi<S> = {
     seed: run?.seed ?? "",
     mode,
+    extras,
     saved,
     paused,
     target: run?.target ?? null,

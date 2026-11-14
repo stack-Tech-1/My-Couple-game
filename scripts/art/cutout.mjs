@@ -10,7 +10,7 @@
  */
 import sharp from "sharp";
 
-export async function cutSheet(file, { minArea = 4000 } = {}) {
+export async function cutSheet(file, { minArea = 4000, backdrop = "auto", pockets = true } = {}) {
   const meta = await sharp(file).metadata();
   const { data, info } = await sharp(file).removeAlpha().raw().toBuffer({ resolveWithObject: true });
   const real = meta.hasAlpha ? await sharp(file).ensureAlpha().raw().toBuffer() : null;
@@ -22,13 +22,22 @@ export async function cutSheet(file, { minArea = 4000 } = {}) {
     return [x > 0 ? i - 1 : -1, x < W - 1 ? i + 1 : -1, y > 0 ? i - W : -1, y < H - 1 ? i + W : -1];
   };
 
-  if (real) {
+  // "grey": a flat grey studio backdrop (sometimes partly see-through) instead of transparency.
+  if (real && backdrop !== "grey") {
     for (let i = 0; i < N; i++) alpha[i] = real[i * 4 + 3] > 24 ? real[i * 4 + 3] : 0;
   } else {
     const bgLike = new Uint8Array(N);
     for (let i = 0; i < N; i++) {
       const r = data[i * 3], g = data[i * 3 + 1], b = data[i * 3 + 2];
-      bgLike[i] = Math.max(r, g, b) - Math.min(r, g, b) < 14 && Math.min(r, g, b) > 196 ? 1 : 0;
+      const sat = Math.max(r, g, b) - Math.min(r, g, b);
+      bgLike[i] =
+        backdrop === "grey"
+          ? (real && real[i * 4 + 3] < 200) || (sat < 16 && Math.min(r, g, b) > 80 && Math.max(r, g, b) < 215)
+            ? 1
+            : 0
+          : sat < 14 && Math.min(r, g, b) > 196
+            ? 1
+            : 0;
     }
     const bg = new Uint8Array(N);
     let h = 0, t = 0;
@@ -57,7 +66,8 @@ export async function cutSheet(file, { minArea = 4000 } = {}) {
         else if (v > 212 && v < 236) mid++;
         for (const j of near(i, W, H)) if (j >= 0 && !seen[j] && bgLike[j] && !bg[j]) (seen[j] = 1), (q[t++] = j);
       }
-      if (t > 250 && light > t * 0.2 && mid > t * 0.2) for (let k = 0; k < t; k++) bg[q[k]] = 1;
+      const pocket = !pockets ? false : backdrop === "grey" ? t > 400 : t > 250 && light > t * 0.2 && mid > t * 0.2;
+      if (pocket) for (let k = 0; k < t; k++) bg[q[k]] = 1;
     }
     for (let i = 0; i < N; i++) if (!bg[i]) alpha[i] = near(i, W, H).some((j) => j >= 0 && bg[j]) ? 150 : 255;
   }

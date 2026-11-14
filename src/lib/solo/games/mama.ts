@@ -36,7 +36,52 @@ export type MamaConfig = {
   extras: number;
   /** Naira for one, two and three stars. */
   stars: readonly [number, number, number];
+  /** Seconds for dodo to fry, and how long it waits before burning (kitchen upgrades). */
+  fry?: number;
+  burn?: number;
+  /** Tip multiplier (the tip jar). */
+  tips?: number;
+  /** Shop upgrades in play, so the buka can show them. */
+  owned?: readonly UpgradeId[];
 };
+
+/**
+ * Shop upgrades, bought with Mama Put savings (all the naira you've taken in). They only count
+ * in the career: quick rushes are the same for everyone, so their leaderboards stay fair.
+ * Ambience keeps customers patient on the harder days: no help in Yaba, growing through Ikeja
+ * and Surulere, in full from Lekki. Kitchen upgrades help every day.
+ */
+export const UPGRADES = [
+  { id: "fan", name: "Standing fan", price: 15000, kind: "vibe", patience: 0.05, about: "Cool breeze: customers wait 5% longer." },
+  { id: "chairs", name: "Chairs and table", price: 25000, kind: "vibe", patience: 0.05, about: "A seat while they wait: 5% more patience." },
+  { id: "radio", name: "Radio", price: 35000, kind: "vibe", patience: 0.06, about: "Music playing: 6% more patience." },
+  { id: "tv", name: "TV with football", price: 60000, kind: "vibe", patience: 0.08, about: "Match on the screen: 8% more patience." },
+  { id: "generator", name: "Generator", price: 90000, kind: "vibe", patience: 0.08, about: "Light no go off: 8% more patience." },
+  { id: "paint", name: "Fresh paint and bunting", price: 120000, kind: "vibe", patience: 0.08, about: "A buka people love: 8% more patience." },
+  { id: "big-pan", name: "Big frying pan", price: 30000, kind: "kitchen", patience: 0, about: "Dodo fries a third faster." },
+  { id: "non-stick", name: "Non-stick pan", price: 45000, kind: "kitchen", patience: 0, about: "Dodo takes much longer to burn." },
+  { id: "tip-jar", name: "Tip jar", price: 50000, kind: "kitchen", patience: 0, about: "10% more in tips." },
+] as const;
+export type UpgradeId = (typeof UPGRADES)[number]["id"];
+export const isUpgrade = (id: string): id is UpgradeId => UPGRADES.some((u) => u.id === id);
+
+/** How much ambience counts on a career day: 0 in Yaba, rising to full by Lekki (day 19). */
+export const vibeWeight = (day: number) => (day <= 6 ? 0 : day >= 19 ? 1 : (day - 6) / 13);
+
+/** A career day's rules with the shop's upgrades applied. */
+export function withUpgrades(cfg: MamaConfig, day: number, owned: readonly string[]): MamaConfig {
+  const have = UPGRADES.filter((u) => owned.includes(u.id));
+  if (!have.length) return cfg;
+  const vibe = have.reduce((t, u) => t + u.patience, 0) * vibeWeight(day);
+  return {
+    ...cfg,
+    patience: cfg.patience * (1 + vibe),
+    fry: owned.includes("big-pan") ? FRY_SECONDS / 1.5 : cfg.fry,
+    burn: owned.includes("non-stick") ? BURN_AFTER * 1.7 : cfg.burn,
+    tips: owned.includes("tip-jar") ? 1.1 : cfg.tips,
+    owned: have.map((u) => u.id),
+  };
+}
 
 export const DIFFICULTIES = ["easy", "normal", "hard"] as const;
 export type Difficulty = (typeof DIFFICULTIES)[number];
@@ -82,10 +127,13 @@ const DAY_STARS: readonly (readonly [number, number, number])[] = [
   [6100, 10400, 17300], [6100, 10400, 17300], [6100, 10400, 17300],
 ];
 
-/** The rules for a mode: "easy" | "normal" | "hard" | "day-N". Anything else plays Normal. */
-export function configFor(mode: string): MamaConfig {
+/**
+ * The rules for a mode: "easy" | "normal" | "hard" | "day-N". Anything else plays Normal. Shop
+ * upgrades only apply to career days.
+ */
+export function configFor(mode: string, owned: readonly string[] = []): MamaConfig {
   const day = /^day-(\d{1,2})$/.exec(mode);
-  if (day) return careerDay(Number(day[1]));
+  if (day) return withUpgrades(careerDay(Number(day[1])), Number(day[1]), owned);
   return QUICK[(DIFFICULTIES as readonly string[]).includes(mode) ? (mode as Difficulty) : "normal"];
 }
 
@@ -161,8 +209,9 @@ export function tick(seed: string, s0: MamaState, dt: number): MamaState {
   }
   // The frying pan.
   const f = s.fry;
-  if (f.stage === "frying") s.fry = f.t + dt >= FRY_SECONDS ? { stage: "ready", t: 0 } : { stage: "frying", t: f.t + dt };
-  else if (f.stage === "ready") s.fry = f.t + dt >= BURN_AFTER ? { stage: "burnt", t: 0 } : { stage: "ready", t: f.t + dt };
+  const rules = rulesOf(s);
+  if (f.stage === "frying") s.fry = f.t + dt >= (rules.fry ?? FRY_SECONDS) ? { stage: "ready", t: 0 } : { stage: "frying", t: f.t + dt };
+  else if (f.stage === "ready") s.fry = f.t + dt >= (rules.burn ?? BURN_AFTER) ? { stage: "burnt", t: 0 } : { stage: "ready", t: f.t + dt };
   // Someone new walks in.
   const free = s.spots.findIndex((c) => !c);
   const cfg = rulesOf(s);
@@ -219,7 +268,7 @@ export function serve(s: MamaState, i: number): { state: MamaState; paid: number
   if (!waiting(c) || !plate.length || s.over) return { state: s, paid: 0, tip: 0, right: false };
   const right = sameOrder(plate, c.order);
   const price = right ? orderPrice(c.order) : 0;
-  const tip = right ? Math.round((price * 0.3 * (c.patience / c.max)) / 50) * 50 : 0;
+  const tip = right ? Math.round((price * 0.3 * (c.patience / c.max) * (rulesOf(s).tips ?? 1)) / 50) * 50 : 0;
   const spots = s.spots.map((x, j) => (j === i ? { ...c, leaving: { at: s.time, paid: price + tip } } : x));
   const plates = s.plates.map((p, j) => (j === i ? [] : p));
   // Move the selection to someone still waiting.

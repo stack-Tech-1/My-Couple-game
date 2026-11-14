@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DAYS, QUICK, add, bin, careerDay, configFor, fry, newMama, newOnDay, select, serve, stars, tick, waiting, type MamaConfig, type MamaState } from "./mama";
+import { DAYS, FRY_SECONDS, QUICK, UPGRADES, add, bin, careerDay, configFor, fry, newMama, newOnDay, select, serve, stars, tick, waiting, type MamaConfig, type MamaState } from "./mama";
 
 /**
  * A test player that plays like a person who knows the game: it looks after whoever is closest
@@ -87,6 +87,28 @@ describe("Mama Put career and difficulty", () => {
     expect(newOnDay(5)).toEqual(["dodo"]);
     expect(newOnDay(13)).toEqual(["moin"]);
     expect(careerDay(30).menu).toHaveLength(11);
+  });
+
+  it("shop upgrades: ambience helps on the hard days only, never in Yaba or quick rushes", () => {
+    const all = UPGRADES.map((u) => u.id);
+    expect(configFor("day-3", all).patience).toBe(careerDay(3).patience);
+    expect(configFor("hard", all)).toBe(QUICK.hard);
+    expect(configFor("day-25", all).patience).toBeCloseTo(careerDay(25).patience * 1.4, 5);
+    expect(configFor("day-12", ["fan"]).patience).toBeGreaterThan(careerDay(12).patience);
+    expect(configFor("day-12", ["fan"]).patience).toBeLessThan(careerDay(12).patience * 1.05);
+    // A slow player on the last day does clearly better in a fully kitted buka.
+    expect(takings(configFor("day-30", all), 1.3)).toBeGreaterThan(takings(careerDay(30), 1.3) * 1.2);
+  });
+
+  it("kitchen upgrades: the big pan fries faster, non-stick burns later, the tip jar pays more", () => {
+    const cfg = configFor("day-8", ["big-pan", "non-stick", "tip-jar"]);
+    let s = fry(newMama("pan", cfg));
+    s = tick("pan", s, FRY_SECONDS / 1.5 + 0.01);
+    expect(s.fry.stage).toBe("ready");
+    s = tick("pan", s, 9);
+    expect(s.fry.stage).toBe("ready");
+    expect(cfg.tips).toBe(1.1);
+    expect(cfg.owned).toEqual(["big-pan", "non-stick", "tip-jar"]);
   });
 
   it("reads modes", () => {

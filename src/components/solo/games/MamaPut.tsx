@@ -22,7 +22,24 @@ const RATIO: Record<string, number> = {
   "st-beef": 1.811, "st-chicken": 1.729, "st-drink": 1.198, "st-eba": 1.156, "st-egusi": 1.25, "st-fish": 1.84, "st-jollof": 1.1, "st-moin": 1.173, "st-rice": 1.377, "st-stew": 1.299,
   "p-beef": 1.297, "p-chicken": 1.352, "p-dodo": 1.333, "p-drink": 0.379, "p-eba": 1.412, "p-egusi": 1.433, "p-fish": 1.455, "p-jollof": 1.433, "p-moin": 1.352, "p-rice": 1.433, "p-stew": 1.412,
   "f-beef": 1.116, "f-chicken": 1.328, "f-dodo": 1.481, "f-eba": 1.116, "f-egusi": 1.262, "f-fish": 1.711, "f-jollof": 1.426, "f-moin": 1.167, "f-stew": 1.481,
+  "up-bunting": 3.1, "up-chairs": 1.594, "up-fan": 0.58, "up-generator": 1.261, "up-pan": 1.899, "up-plant": 1, "up-radio": 1.04, "up-tipjar": 0.723, "up-tv": 1.563,
 };
+
+/** Shop upgrades the buka shows, behind the customers: [upgrade, picture, centre x, bottom y, width]. */
+const DECOR_BACK: [string, string, number, number, number][] = [
+  ["paint", "up-bunting", 62, 74, 118],
+  ["paint", "up-bunting", 312, 74, 118],
+  ["tv", "up-tv", 336, 56, 62],
+  ["generator", "up-generator", 345, 126, 40],
+  ["radio", "up-radio", 30, 58, 34],
+  ["fan", "up-fan", 20, 192, 34],
+  ["chairs", "up-chairs", 350, 194, 62],
+];
+/** And the ones that sit on the counter, in front of them. */
+const DECOR_FRONT: [string, string, number, number, number][] = [
+  ["tip-jar", "up-tipjar", 360, 214, 22],
+  ["paint", "up-plant", 14, 212, 30],
+];
 const CUSTOMER_RATIO: Record<string, number> = {
   "aunty-angry": 0.643, "aunty-happy": 0.723, "aunty-wait": 0.678, "baba-angry": 0.751, "baba-happy": 0.789, "baba-wait": 0.737,
   "corper-angry": 0.635, "corper-happy": 0.742, "corper-wait": 0.693, "fila-angry": 0.631, "fila-happy": 0.712, "fila-wait": 0.672,
@@ -97,8 +114,10 @@ const CSS = `
   .mp-coin { animation: mp-coin .85s cubic-bezier(.5,0,.75,.4) both; }
   @keyframes mp-coin { 0% { transform: translate(0, 0) scale(1); opacity: 1; } 100% { transform: translate(var(--dx), var(--dy)) scale(.45); opacity: .2; } }
   .mp-ready { animation: mp-glow 1s ease-in-out infinite alternate; }
+  .mp-sway { animation: mp-sway 2.2s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 100%; }
+  @keyframes mp-sway { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
   @keyframes mp-glow { from { opacity: .35; } to { opacity: .9; } }
-  @media (prefers-reduced-motion: reduce) { .mp-breathe, .mp-cheer, .mp-shake, .mp-tap, .mp-drop, .mp-steam path, .mp-sizzle circle, .mp-ready { animation: none; } .mp-float, .mp-coin { animation-duration: .01s; } }
+  @media (prefers-reduced-motion: reduce) { .mp-breathe, .mp-cheer, .mp-shake, .mp-tap, .mp-drop, .mp-steam path, .mp-sizzle circle, .mp-ready, .mp-sway { animation: none; } .mp-float, .mp-coin { animation-duration: .01s; } }
 `;
 
 const steam = (x: number, y: number) => (
@@ -110,7 +129,7 @@ const steam = (x: number, y: number) => (
 );
 
 export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
-  const [s, setS] = useState<MamaState>(() => api.saved ?? newMama(api.seed, configFor(api.mode)));
+  const [s, setS] = useState<MamaState>(() => api.saved ?? newMama(api.seed, configFor(api.mode, api.extras?.owned ?? [])));
   const state = useRef(s);
   const [fx, setFx] = useState<Fx[]>([]);
   const [taps, setTaps] = useState<Record<string, number>>({});
@@ -120,6 +139,7 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
   const apiRef = useRef(api);
   apiRef.current = api;
   const rules = rulesOf(s);
+  const owned = new Set<string>(rules.owned ?? []);
 
   // Load every picture up front, so faces and pans change without a flicker.
   useEffect(() => {
@@ -276,6 +296,9 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
           <text x={W / 2} y={29} textAnchor="middle" fontFamily="Fraunces, serif" fontStyle="italic" fontWeight="900" fontSize="19" fill="#c43a22">
             Mama Put
           </text>
+          {DECOR_BACK.filter(([id]) => owned.has(id)).map(([id, pic, x, bottom, w]) => (
+            <Pic key={`${pic}-${x}`} name={pic} x={x} bottom={bottom} w={w} className={id === "fan" ? "mp-sway" : undefined} />
+          ))}
 
           {/* Customers: walk in, breathe while they wait, cheer or storm off. */}
           {s.spots.map((c, i) => {
@@ -296,6 +319,9 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
           })}
 
           <image href={src("counter")} x={-22} y={190} width={418} height={418 / RATIO.counter!} preserveAspectRatio="none" />
+          {DECOR_FRONT.filter(([id]) => owned.has(id)).map(([, pic, x, bottom, w]) => (
+            <Pic key={pic} name={pic} x={x} bottom={bottom} w={w} />
+          ))}
 
           {/* What each customer wants, and how long they'll wait. */}
           {s.spots.map((c, i) => {
@@ -378,7 +404,7 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
                 {what === "fry" ? (
                   <>
                     <Pic name="stove" x={x} bottom={bottom + 4} w={136} />
-                    <Pic name={panPic(s.fry.stage, s.fry.t)} x={x + 2} bottom={bottom - 12} w={s.fry.stage === "burnt" ? 92 : 104} />
+                    <Pic name={panPic(s.fry.stage, s.fry.t)} x={x + 2} bottom={bottom - 12} w={(s.fry.stage === "burnt" ? 92 : 104) * (owned.has("big-pan") ? 1.12 : 1)} />
                     {s.fry.stage === "frying" || s.fry.stage === "ready" ? (
                       <g className="mp-sizzle" pointerEvents="none">
                         {[-22, -8, 6, 20, -14, 12].map((dx, k) => (
