@@ -16,6 +16,9 @@ import { TERMS_VERSION } from "@/lib/legal";
 import { unreadReplies } from "@/lib/feedback/server";
 import { Heartbeat } from "@/components/room/Heartbeat";
 import { TabBar } from "@/components/room/TabBar";
+import { currentSpotlight, mySpotlightAsks } from "@/lib/engage/spotlight";
+import { SpotlightTicker } from "@/components/spotlight/SpotlightTicker";
+import { SpotlightAsk } from "@/components/spotlight/SpotlightAsk";
 
 export const dynamic = "force-dynamic";
 
@@ -54,19 +57,21 @@ export default async function RoomLayout({ children, params }: { children: React
   after(async () => {
     await sb.from("profiles").update({ last_room_id: roomId }).eq("id", bundle.me.profile.id).or(`last_room_id.is.null,last_room_id.neq.${roomId}`);
   });
-  const [terms, feedbackUnread] = await Promise.all([termsStatus(bundle.me.profile.id), unreadReplies()]);
+  const [terms, feedbackUnread, winners, asks] = await Promise.all([termsStatus(bundle.me.profile.id), unreadReplies(), currentSpotlight(), mySpotlightAsks(bundle.me.profile.id)]);
+  const roomAsks = asks.filter((a) => a.roomId === roomId);
 
   return (
     <RoomProvider bundle={bundle}>
       <GameFlagsProvider flags={flags}>
         <RoomHeader feedbackUnread={feedbackUnread} />
+        <SpotlightTicker winners={winners} />
         <ConnectionBanner />
         <AnnouncementBar items={forMe(announcements, bundle)} />
         <InviteListener />
         <Heartbeat userId={bundle.me.profile.id} />
         <main className="mx-auto max-w-6xl px-4 pb-32 sm:px-8 sm:pb-24">{children}</main>
         <TabBar />
-        {terms !== "ok" ? <TermsGate firstTime={terms === "first"} /> : null}
+        {terms !== "ok" ? <TermsGate firstTime={terms === "first"} /> : roomAsks.length ? <SpotlightAsk asks={roomAsks} names={bundle.members.map((m) => m.profile.real_name ?? m.profile.display_name).join(" & ")} /> : null}
       </GameFlagsProvider>
     </RoomProvider>
   );

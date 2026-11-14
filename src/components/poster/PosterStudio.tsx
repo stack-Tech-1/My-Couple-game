@@ -14,9 +14,9 @@ const PHOTO_STYLES = new Set<PosterStyle>(["studio", "nollywood"]);
  * Pick a poster: four styles side by side to swipe through, an optional photo (Studio and
  * Nollywood), then share or save. Everything is drawn on the phone; a photo never leaves it.
  */
-export function PosterStudio({ data, shareText, link = "https://playamah.app", fileName = "amah" }: { data: PosterData; shareText: string; link?: string; fileName?: string }) {
+export function PosterStudio({ data, shareText, link = "https://playamah.app", fileName = "amah", initial }: { data: PosterData; shareText: string; link?: string; fileName?: string; initial?: PosterStyle }) {
   const [photo, setPhoto] = useState<string | null>(null);
-  const [style, setStyle] = useState<PosterStyle>(() => defaultStyle(data));
+  const [style, setStyle] = useState<PosterStyle>(() => initial ?? defaultStyle(data));
   const [previews, setPreviews] = useState<Partial<Record<PosterStyle, string>>>({});
   const [busy, setBusy] = useState(false);
   const rail = useRef<HTMLDivElement>(null);

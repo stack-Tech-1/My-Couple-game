@@ -3,6 +3,7 @@ import { sendBirthdayReminders } from "@/lib/birthdays-server";
 import { sendPlusReminders } from "@/lib/plus/server";
 import { grantEarlyMonthIfDue } from "@/lib/plus/admin";
 import { health } from "@/lib/admin/audit";
+import { runSpotlight } from "@/lib/engage/spotlight";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,9 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET;
   if (!secret || req.headers.get("authorization") !== `Bearer ${secret}`) return new NextResponse("Unauthorized", { status: 401 });
-  const now = new Date();
+  // Tests may pretend it's another day (the test project only), to check Thursday and Friday.
+  const at = process.env.AMAH_ENV === "test" ? new URL(req.url).searchParams.get("at") : null;
+  const now = at && !Number.isNaN(Date.parse(at)) ? new Date(at) : new Date();
   const run = async <T,>(key: string, job: () => Promise<T>, say: (r: T) => string): Promise<T | null> => {
     try {
       const r = await job();
@@ -25,11 +28,12 @@ export async function GET(req: Request) {
       return null;
     }
   };
-  const [birthdays, plus, early] = await Promise.all([
+  const [birthdays, plus, early, spotlight] = await Promise.all([
     run("daily_birthdays", () => sendBirthdayReminders(now), (r) => JSON.stringify(r).slice(0, 200)),
     run("daily_plus_reminders", () => sendPlusReminders(now), (r) => `${r.sent} reminders sent`),
     run("daily_early_month", () => grantEarlyMonthIfDue(), (r) => (r == null ? "Nothing to do" : `${r} free months given in total`)),
+    run("daily_spotlight", () => runSpotlight(now.getTime()), (r) => (r.asked ? `${r.asked} rooms asked` : r.won.length ? `${r.won.length} winners` : "Nothing to do")),
   ]);
   await health("daily_job", true, "Ran");
-  return NextResponse.json({ birthdays, plus, early });
+  return NextResponse.json({ birthdays, plus, early, spotlight });
 }

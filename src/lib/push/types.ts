@@ -1,4 +1,4 @@
-export const PUSH_KINDS = ["invites", "turns", "messages", "daily", "nudges", "notes", "birthdays", "plus"] as const;
+export const PUSH_KINDS = ["invites", "turns", "messages", "daily", "nudges", "notes", "birthdays", "plus", "spotlight"] as const;
 export type PushKind = (typeof PUSH_KINDS)[number];
 export const PUSH_LABEL: Record<PushKind, { label: string; description: string }> = {
   invites: { label: "Game invites", description: "When your partner wants to play, or wants a rematch." },
@@ -9,5 +9,6 @@ export const PUSH_LABEL: Record<PushKind, { label: string; description: string }
   notes: { label: "Love notes", description: "When a letter arrives for you." },
   birthdays: { label: "Birthdays", description: "A heads-up three days before someone in your rooms has a birthday, and on the day." },
   plus: { label: "Amah Plus", description: "When a friend gives you Plus, and a reminder before yours runs out." },
+  spotlight: { label: "Couple and Gang of the Week", description: "When you're in the running, so you can say whether to be shown, and when you win." },
 };
 export type PushPrefs = Record<PushKind, boolean>;

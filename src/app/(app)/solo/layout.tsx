@@ -5,13 +5,15 @@ import { Logo } from "@/design/Logo";
 import { Icon } from "@/design/icons";
 import { soloContext } from "@/lib/solo/context";
 import { SoloLimitsProvider } from "@/components/solo/SoloLimits";
+import { currentSpotlight } from "@/lib/engage/spotlight";
+import { SpotlightTicker } from "@/components/spotlight/SpotlightTicker";
 
 export const metadata: Metadata = { title: "Solo" };
 export const dynamic = "force-dynamic";
 
 /** Solo works with or without a room: its own light header, a way back to your room if you have one. */
 export default async function SoloLayout({ children }: { children: ReactNode }) {
-  const ctx = await soloContext();
+  const [ctx, winners] = await Promise.all([soloContext(), currentSpotlight()]);
   return (
     <>
       <header className="sticky top-0 z-40 border-b border-[color-mix(in_srgb,var(--line)_70%,transparent)] bg-[color-mix(in_srgb,var(--bg)_72%,transparent)] backdrop-blur-xl">
@@ -31,6 +33,7 @@ export default async function SoloLayout({ children }: { children: ReactNode }) 
           )}
         </div>
       </header>
+      <SpotlightTicker winners={winners} />
       <main className="mx-auto max-w-3xl px-4 pb-24 sm:px-8">
         <SoloLimitsProvider
           value={{
