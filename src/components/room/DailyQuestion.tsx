@@ -30,7 +30,7 @@ export function DailyQuestion({ daily, full = false }: { daily: DailyState; full
       if (!res.ok) return void toast.error(res.error);
       send("daily:answered", {});
       setText("");
-      router.refresh();
+      refreshWhenFree(() => router.refresh());
     });
   };
 

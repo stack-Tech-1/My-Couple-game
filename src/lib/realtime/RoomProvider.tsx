@@ -7,7 +7,7 @@ import { z } from "zod";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import type { RoomBundle } from "@/lib/room/types";
 import { applyTheme, loadThemePref, resolveTheme, type ThemeName } from "@/lib/theme/theme";
-import { MAX_WAIT, savingNow, trackActions } from "./actionsInFlight";
+import { refreshWhenFree, trackActions } from "./actionsInFlight";
 
 /** What each person broadcasts about themselves via presence. */
 export const presenceSchema = z.object({
@@ -89,19 +89,12 @@ export function RoomProvider({ bundle, children }: { bundle: RoomBundle; childre
       setPartnerPresence(parsed?.success ? parsed.data : null);
     };
 
-    // Database changes refresh the page, but a moment later and only once for a burst: a refresh
-    // that lands while one of my own saves is still on its way back cancels that save's reply,
-    // and the page would never show what I just saved.
-    let pending: ReturnType<typeof setTimeout> | undefined;
-    const refreshSoon = (wait = 800, since = Date.now()) => {
-      clearTimeout(pending);
-      pending = setTimeout(() => {
-        if (cancelled) return;
-        // One of my saves is still coming back: wait for it (within reason), then refresh.
-        if (savingNow() && Date.now() - since < MAX_WAIT) return refreshSoon(500, since);
-        router.refresh();
-      }, wait);
-    };
+    // Database changes refresh the page, but a moment later and only once for a burst, through the
+    // same queue as every other background refresh (see refreshWhenFree).
+    const refreshSoon = () =>
+      refreshWhenFree(() => {
+        if (!cancelled) router.refresh();
+      }, 800);
 
     const connect = async () => {
       await supabase.realtime.setAuth();
@@ -147,7 +140,6 @@ export function RoomProvider({ bundle, children }: { bundle: RoomBundle; childre
     return () => {
       cancelled = true;
       clearTimeout(retry);
-      clearTimeout(pending);
       window.removeEventListener("offline", offline);
       window.removeEventListener("online", online);
       const ch = channelRef.current;

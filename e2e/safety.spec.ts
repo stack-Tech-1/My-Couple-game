@@ -96,8 +96,9 @@ test("terms prompt, reporting, data saver, install card and blocking in the app"
     const chat = pa.getByRole("dialog", { name: "Chat with Bo" });
     await expect(chat.getByRole("button", { name: /Sticker\s*Tap to show/ })).toBeVisible();
 
-    // --- Report one of Bo's messages from the chat (right-click on a computer).
+    // --- Report one of Bo's messages from the chat (right-click on a computer opens the message menu).
     await chat.getByText("answer me now or else").click({ button: "right" });
+    await pa.getByRole("dialog", { name: "Message options" }).getByRole("button", { name: "Report" }).click();
     const report = pa.getByRole("dialog", { name: "Report this message" });
     await expect(report.getByText("answer me now or else")).toBeVisible();
     await report.getByText("Harassment, threats or abuse").click();

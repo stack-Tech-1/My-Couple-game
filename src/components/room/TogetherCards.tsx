@@ -15,7 +15,10 @@ import { daysTogether, daysUntil, isAnniversary, MOODS, moodInfo, type Challenge
 const input = "h-11 rounded-[var(--radius)] border-[1.5px] border-line bg-bg px-3 text-[0.95rem] focus:border-line-strong focus:outline-none";
 const EVENT = "together:changed";
 
-/** Runs an action, tells the partner's app to refresh, and refreshes ours. */
+/**
+ * Runs an action, tells the partner's app to refresh, and refreshes ours. The actions don't
+ * revalidate (see together/actions.ts), so their replies are small and always come back.
+ */
 function useTogetherAction() {
   const router = useRouter();
   const { send } = useRoom();
@@ -26,7 +29,10 @@ function useTogetherAction() {
       if (!res.ok) return void toast.error(res.error ?? "That didn't work.");
       send(EVENT, {});
       onOk?.();
-      router.refresh();
+      const refresh = () => router.refresh();
+      refreshWhenFree(refresh);
+      // A second look a little later: on a bad connection the first refresh can get lost.
+      setTimeout(() => refreshWhenFree(refresh), 5000);
     });
   return { pending, run };
 }
@@ -43,7 +49,11 @@ const when = (n: number) => (n === 0 ? "today!" : n === 1 ? "tomorrow" : `in ${n
 
 export function TogetherCard({ countdowns }: { countdowns: Countdown[] }) {
   const { bundle } = useRoom();
-  const since = bundle.room.together_since;
+  // What I just saved shows at once; the page refresh only confirms it (and on a bad connection
+  // a refresh can get lost, which used to leave the old card on screen).
+  const [saved, setSaved] = useState<{ value: string | null; over: string | null } | null>(null);
+  const fromServer = bundle.room.together_since;
+  const since = saved && saved.over === fromServer ? saved.value : fromServer;
   // Separate busy states: saving the date mustn't block adding a countdown.
   const { pending, run } = useTogetherAction();
   const cd = useTogetherAction();
@@ -56,7 +66,13 @@ export function TogetherCard({ countdowns }: { countdowns: Countdown[] }) {
 
   function saveSince(e: FormEvent) {
     e.preventDefault();
-    run(() => setTogetherSince(date), () => setEditing(false));
+    run(
+      () => setTogetherSince(date),
+      () => {
+        setSaved({ value: date || null, over: fromServer });
+        setEditing(false);
+      },
+    );
   }
   function add(e: FormEvent) {
     e.preventDefault();

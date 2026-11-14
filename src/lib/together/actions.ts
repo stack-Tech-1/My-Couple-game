@@ -1,7 +1,6 @@
 "use server";
 
 import { after } from "next/server";
-import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { challengeById } from "@/content/challenges";
 import { friendlyError } from "@/lib/errors";
@@ -19,10 +18,12 @@ async function room() {
   if (!bundle) throw new Error("not signed in");
   return { bundle, roomId: bundle.room.id, me: bundle.me.profile.id, supabase: await supabaseServer() };
 }
-const done = (roomId: string): ActionResult => {
-  revalidatePath(`/room/${roomId}`, "layout");
-  return { ok: true, data: null };
-};
+/**
+ * No revalidatePath here on purpose: that makes the reply carry a re-render of the whole room,
+ * which on a slow connection can be cut off, and then the save never returns and the card
+ * freezes. The card refreshes the page itself once the (now tiny) reply is back.
+ */
+const done = (_roomId: string): ActionResult => ({ ok: true, data: null });
 
 export async function setTogetherSince(date: unknown): Promise<ActionResult> {
   try {

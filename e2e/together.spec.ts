@@ -55,21 +55,21 @@ test("anniversary, countdowns, mood and a challenge, live in two browsers", asyn
     await together.getByLabel("When did you two get together?").fill(d.toISOString().slice(0, 10));
     await together.getByRole("button", { name: "Save" }).click();
     await expect(together).toContainText("Happy first anniversary!");
-    await expect(pb.getByRole("region", { name: "Together" })).toContainText("Happy first anniversary!", { timeout: 10_000 });
+    await expect(pb.getByRole("region", { name: "Together" })).toContainText("Happy first anniversary!", { timeout: 20_000 });
     await expect(together.getByRole("button", { name: "Edit" })).toBeVisible();
 
     await together.getByLabel("What are you counting down to?").fill("Lagos trip");
     await together.getByLabel("Date").fill(shift(3));
     await together.getByRole("button", { name: "Add" }).click();
     await expect(together).toContainText("Lagos trip");
-    await expect(pb.getByRole("region", { name: "Together" })).toContainText("in 3 days", { timeout: 10_000 });
+    await expect(pb.getByRole("region", { name: "Together" })).toContainText("in 3 days", { timeout: 20_000 });
 
     // Ada checks in; Bo sees it.
     const mood = pa.getByRole("region", { name: "How are you today?" });
     await mood.getByRole("radio", { name: /Missing you/ }).click();
     await mood.getByLabel("Add a few words (optional)").fill("long day without you");
     await mood.getByRole("button", { name: "Share" }).click();
-    await expect(pb.getByRole("region", { name: "How are you today?" })).toContainText("Ada is feeling missing you", { timeout: 10_000 });
+    await expect(pb.getByRole("region", { name: "How are you today?" })).toContainText("Ada is feeling missing you", { timeout: 20_000 });
     await expect(pb.getByText("“long day without you”")).toBeVisible();
 
     // Start a challenge; both tick today.
@@ -80,9 +80,9 @@ test("anniversary, countdowns, mood and a challenge, live in two browsers", asyn
     await running.getByRole("button", { name: "Mark mine done" }).click();
     await expect(running.getByRole("button", { name: "You did it" })).toBeVisible();
     const bView = pb.getByRole("region", { name: "Miles Apart" });
-    await expect(bView).toContainText("Ada did it", { timeout: 10_000 });
+    await expect(bView).toContainText("Ada did it", { timeout: 20_000 });
     await bView.getByRole("button", { name: "Mark mine done" }).click();
-    await expect(running).toContainText("1 done together", { timeout: 10_000 });
+    await expect(running).toContainText("1 done together", { timeout: 20_000 });
     if (process.env.SHOTS_DIR) await pa.screenshot({ path: `${process.env.SHOTS_DIR}/together.png`, fullPage: true });
 
     expect(errors).toEqual([]);
