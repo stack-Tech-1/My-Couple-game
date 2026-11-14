@@ -17,12 +17,14 @@ import { GamesPeek } from "@/components/room/GamesPeek";
 import { PAGE_LOOKS } from "@/games/look";
 import { SeatPrompt } from "@/components/plus/SeatPrompt";
 import { SoloHomeCard } from "@/components/solo/SoloHomeCard";
+import { friendWeek } from "@/lib/engage/weekly";
+import { WeeklyTable } from "./WeeklyTable";
 
 /** Home of a friend room: who's here, the leaderboard, your games in progress, and the friend library. */
 export async function FriendRoomHome({ roomId }: { roomId: string }) {
   const bundle = await getRoom(roomId);
   if (!bundle) return null;
-  const [board, active, checklist] = await Promise.all([scoreboard(roomId), activeSessions(roomId), startChecklist(bundle)]);
+  const [board, active, checklist, week] = await Promise.all([scoreboard(roomId), activeSessions(roomId), startChecklist(bundle), friendWeek(roomId, bundle.members.map((m) => m.profile.id))]);
   const me = bundle.me.profile.id;
   const isOwner = bundle.room.owner_id === me;
   const owner = bundle.members.find((m) => m.profile.id === bundle.room.owner_id);
@@ -54,6 +56,11 @@ export async function FriendRoomHome({ roomId }: { roomId: string }) {
       </div>
       <WelcomeTour />
       <ActiveGames sessions={active} me={me} />
+      {bundle.members.length > 1 ? (
+        <div className="mt-8">
+          <WeeklyTable week={week} members={bundle.members} me={me} roomName={bundle.room.name} />
+        </div>
+      ) : null}
       {watchable.length ? (
         <section aria-labelledby="live-h" className="mt-8">
           <h2 id="live-h" className="eyebrow text-muted">Live in this room</h2>
