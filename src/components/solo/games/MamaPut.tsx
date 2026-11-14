@@ -206,7 +206,8 @@ const STATIONS: Station[] = [
   ["chicken", "st-chicken", 536, L.shelves[0], 82, "Chicken"],
   ["fish", "st-fish", 634, L.shelves[0], 84, "Fish"],
   ["bin", "bin", 742, L.shelves[0], 38, "Bin plate"],
-  ["fry", "", 74, L.shelves[1], 104, "Dodo"],
+  // The stove stands on the floor in front of the lower shelf, clear of the labels above.
+  ["fry", "", 70, 397, 80, "Dodo"],
   ["gas", "gas", 168, L.shelves[1], 40, "Gas"],
   ["eba", "st-eba", 264, L.shelves[1], 68, "Eba"],
   ["moin", "st-moin", 362, L.shelves[1], 70, "Moin moin"],
@@ -979,8 +980,8 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
                         {[-18, -6, 6, 18].map((dx, k) => (
                           <circle
                             key={k}
-                            cx={x - 14 + dx}
-                            cy={bottom - 62 + (k % 2) * 5}
+                            cx={x - 11 + dx * 0.8}
+                            cy={bottom - 48 + (k % 2) * 4}
                             r="1.5"
                             fill="none"
                             stroke="#fff8d2"
@@ -992,10 +993,10 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
                     ) : null}
                     {s.fry.stage === "ready" ? (
                       <ellipse
-                        cx={x - 12}
-                        cy={bottom - 58}
-                        rx="34"
-                        ry="13"
+                        cx={x - 9}
+                        cy={bottom - 45}
+                        rx="26"
+                        ry="10"
                         fill="none"
                         stroke="#f6c453"
                         strokeWidth="3"
@@ -1013,7 +1014,7 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
                         {[-14, -2, 10].map((dx, k) => (
                           <path
                             key={dx}
-                            d={`M${x - 12 + dx} ${bottom - 66} q-6 -9 0 -18 q6 -9 0 -18`}
+                            d={`M${x - 12 + dx} ${bottom - 52} q-6 -9 0 -18 q6 -9 0 -18`}
                             strokeWidth={5 - k}
                             opacity=".55"
                             style={{ animationDelay: `${k * 0.5}s` }}
@@ -1050,7 +1051,7 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
             <g key={`label-${what}`} pointerEvents="none">
               <text
                 x={x}
-                y={bottom + 16}
+                y={what === "fry" ? bottom - 66 : bottom + (bottom === L.shelves[0] ? 12 : 16)}
                 textAnchor="middle"
                 fontFamily="Manrope, sans-serif"
                 fontWeight="800"
@@ -1086,7 +1087,7 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
           {STATIONS.map(([what, , x, bottom, w, label]) => {
             const b =
               what === "fry"
-                ? { x: x - w / 2, y: bottom - 80, w, h: 98 }
+                ? { x: x - w / 2 - 6, y: bottom - 76, w: w + 12, h: 78 }
                 : { x: x - w / 2 - 5, y: bottom - 62, w: w + 10, h: 80 };
             return (
               <rect
