@@ -12,6 +12,8 @@ import { FREE_PLAYS_PER_DAY, untilText } from "@/lib/plus/plans";
 import { isDailyMode, todaysGame } from "@/lib/engage/rotation";
 import { DAYS, FREE_CAREER_MODES, dayOpen } from "./games/mama";
 import { mamaDayBest } from "./mama-server";
+import { ROUTES, routeOpen } from "./games/okada";
+import { okadaRouteBest } from "./okada-server";
 
 async function limited(uid: string, action: string, max: number, windowSeconds: number) {
   const { data } = await supabaseAdmin().rpc("server_rate_limit", { uid, action, max_hits: max, window_seconds: windowSeconds });
@@ -51,6 +53,14 @@ export async function startRun(raw: unknown): Promise<StartResult> {
     if (day < 1 || day > DAYS) return { ok: false, error: "There's no such day.", blocked: true };
     const before = day > 1 ? await mamaDayBest(user.id, day - 1) : null;
     if (!dayOpen(day, () => before ?? undefined)) return { ok: false, error: `Get a star on day ${day - 1} first.`, blocked: true };
+  }
+  // Okada Rush: routes open in order, one star on the route before.
+  const route = p.data.gameId === "okada-rush" ? /^route-(\d)$/.exec(p.data.mode) : null;
+  if (route) {
+    const n = Number(route[1]);
+    if (n < 1 || n > ROUTES.length) return { ok: false, error: "There's no such route.", blocked: true };
+    const before = n > 1 ? await okadaRouteBest(user.id, n - 1) : null;
+    if (!routeOpen(n, () => before ?? undefined)) return { ok: false, error: `Get a star on ${ROUTES[n - 2]} first.`, blocked: true };
   }
   // Without Plus, each game twice a day. Challenges are always open, and so is Mama Put's Yaba.
   let left: number | null = null;

@@ -7,7 +7,6 @@ import { SOLO_GAMES, isSoloGame } from "./catalog";
 import { isPlusGame } from "@/lib/plus/plans";
 import { canFitAnywhere, fits, isOver as blendOver, newBlend, place, SIZE } from "./games/blend";
 import { N, canMove, move, newAjo } from "./games/ajo";
-import { COLS, ROWS, newOkada, step, turn } from "./games/okada";
 import { fixScore, newFix, slide, solved } from "./games/fixam";
 import { BOT_ID, botMove, type BotBase } from "./bots";
 
@@ -88,26 +87,7 @@ describe("Ajo", () => {
   });
 });
 
-describe("Okada Rush", () => {
-  it("drives, turns, never reverses, and crashes at the edge", () => {
-    let s = newOkada("o");
-    expect(s.body).toHaveLength(3);
-    expect(turn(s, "down")).toBe(s); // straight back on yourself is ignored
-    s = turn(s, "left");
-    for (let k = 0; k < COLS + ROWS && !s.over; k++) s = step("o", s).state;
-    expect(s.over).toBe(true);
-  });
-
-  it("picks up a passenger and grows", () => {
-    const s = newOkada("p");
-    const head = s.body[0]!;
-    const withRider = { ...s, rider: head - COLS, traffic: [] };
-    const r = step("p", withRider);
-    expect(r.picked).toBe(true);
-    expect(r.state.score).toBe(1);
-    expect(r.state.body).toHaveLength(4);
-  });
-});
+// Okada Rush has its own tests: games/okada.test.ts.
 
 describe("Fix Am", () => {
   it("shuffles into a solvable, unsolved board and solves by sliding", () => {

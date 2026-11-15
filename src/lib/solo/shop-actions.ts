@@ -6,6 +6,7 @@ import { getUser } from "@/lib/room/server";
 import type { ActionResult } from "@/lib/room/types";
 import { AREAS, isUpgrade, upgradePrice, type UpgradeId } from "./games/mama";
 import { mamaOwned } from "./mama-server";
+import { GEAR, SKINS, isGear, isSkin } from "./games/okada";
 
 const buyInput = z.object({ area: z.number().int().min(0).max(AREAS.length - 1), item: z.string().max(30) });
 
@@ -23,4 +24,21 @@ export async function buyMamaUpgrade(raw: unknown): Promise<ActionResult<{ savin
     return { ok: false, error: "Couldn't buy it. Try again?" };
   }
   return { ok: true, data: { savings: Number(data), owned: await mamaOwned(user.id, p.data.area) } };
+}
+
+/** Buy Okada Rush gear or a bike colour. The price comes from here, never the phone. */
+export async function buyOkadaGear(raw: unknown): Promise<ActionResult<{ savings: number }>> {
+  const p = z.object({ item: z.string().max(30) }).safeParse(raw);
+  const item = p.success ? p.data.item : "";
+  const price = isGear(item) ? GEAR.find((g) => g.id === item)!.price : isSkin(item) ? SKINS.find((s) => s.id === item)!.price : null;
+  if (price == null || item === "skin-red") return { ok: false, error: "The garage doesn't sell that." };
+  const user = await getUser();
+  if (!user) return { ok: false, error: "Sign in to shop." };
+  const { data, error } = await supabaseAdmin().rpc("solo_shop_buy", { p_user: user.id, p_game: "okada-rush", p_area: 0, p_item: item, p_price: price });
+  if (error) {
+    if (error.message.includes("not enough savings")) return { ok: false, error: "Not enough savings yet. A few more rides!" };
+    if (error.message.includes("already owned")) return { ok: false, error: "You already have that." };
+    return { ok: false, error: "Couldn't buy it. Try again?" };
+  }
+  return { ok: true, data: { savings: Number(data) } };
 }

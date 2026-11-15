@@ -51,12 +51,13 @@ export const SOLO_GAMES: SoloGame[] = [
   {
     id: "okada-rush",
     name: "Okada Rush",
-    tagline: "Weave through Lagos traffic. Pick up passengers.",
+    tagline: "Weave through Lagos traffic. Carry passengers to their stop.",
     kind: "arcade",
     free: true,
-    unit: "passengers",
+    unit: "naira",
     look: { bg: "#4a4144", ink: "#5a5054", motif: "isan", accent: "#f2b705" },
-    cap: (s) => 5 + Math.ceil(s / 0.9),
+    // Naira in fares and tips; the best routes pay about ₦50 a second.
+    cap: (s) => 3000 + s * 300,
   },
   {
     id: "fix-am",
@@ -195,7 +196,7 @@ export type BotLevel = (typeof BOT_LEVELS)[number]["id"];
 /** How a score reads to people. */
 export function formatScore(g: SoloGame, score: number): string {
   if (g.id === "reflex") return `${score} ms`;
-  if (g.id === "mama-put") return `₦${score.toLocaleString("en-NG")}`;
+  if (g.id === "mama-put" || g.id === "okada-rush") return `₦${score.toLocaleString("en-NG")}`;
   if (g.id === "oro") return score === 7 ? "Not solved" : `${score}/6`;
   if (g.kind === "bot") return score ? "Won" : "Lost";
   return `${score.toLocaleString("en-NG")} ${g.unit}`;

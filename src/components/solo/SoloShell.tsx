@@ -24,7 +24,7 @@ export type SoloApi<S> = {
   /** Which version is being played: "normal", a difficulty, a career day ("day-4")… */
   mode: string;
   /** Anything else the game needs from the server, such as Mama Put's shop upgrades. */
-  extras?: { owned?: readonly string[]; tutorial?: boolean };
+  extras?: { owned?: readonly string[]; tutorial?: boolean; skin?: string };
   /** For games that hide the frame (full screen): pause and carry on from inside the game. */
   pause?: () => void;
   resume?: () => void;

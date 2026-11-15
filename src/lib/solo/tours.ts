@@ -17,9 +17,9 @@ export const SOLO_TOURS: Record<string, TourStep[]> = {
     { title: "Game over", body: ["When the board is full and nothing can join, the game ends.", "Keep your biggest notes in a corner."] },
   ],
   "okada-rush": [
-    { target: "okada-road", title: "Ride", body: ["Your okada keeps moving. Swipe, use the arrows, or tap the buttons to turn."] },
-    { title: "Pick up passengers", body: ["Ride over the red dots to pick people up. Every passenger makes your line longer."] },
-    { target: "okada-keys", title: "Watch the road", body: ["Don't hit the edge, your own passengers, or the danfos and kekes.", "It gets faster the more you carry."] },
+    { target: "okada-road", title: "Ride", body: ["Your okada keeps moving up the road. Swipe left or right (or tap that side) to change lane."] },
+    { title: "Carry passengers", body: ["Someone waving at the kerb? Ride past them in the lane beside that kerb to pick them up.", "Then drop them at their bus stop, in the lane beside it, for the fare."] },
+    { target: "okada-keys", title: "Watch the road", body: ["A stopped danfo, a barrier or a deep pothole ends the ride. Small potholes slow you and cost the tip.", "Agberos and LASTMA wait at the kerb. It gets faster as you go."] },
   ],
   "pump-am": [
     { target: "pump-buttons", title: "Pump the water", body: ["Each button sends a burst of water up on its side.", "The left pump steers rings towards the left peg, the right pump towards the right peg."] },

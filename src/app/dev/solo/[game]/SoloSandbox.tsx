@@ -6,6 +6,7 @@ import { playSound } from "@/lib/sound";
 import { formatScore, soloGame } from "@/lib/solo/catalog";
 import type { SoloApi } from "@/components/solo/SoloShell";
 import { UPGRADES } from "@/lib/solo/games/mama";
+import { GEAR } from "@/lib/solo/games/okada";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- each game types its own state
 type AnyApi = SoloApi<any>;
@@ -15,6 +16,7 @@ const games: Record<string, React.ComponentType<{ api: AnyApi }>> = {
   "catch-am": dynamic(() => import("@/components/solo/games/CatchAm").then((m) => m.CatchAm), { ssr: false }),
   "mosquito-wahala": dynamic(() => import("@/components/solo/games/MosquitoWahala").then((m) => m.MosquitoWahala), { ssr: false }),
   "mama-put": dynamic(() => import("@/components/solo/games/MamaPut").then((m) => m.MamaPut), { ssr: false }),
+  "okada-rush": dynamic(() => import("@/components/solo/games/OkadaRush").then((m) => m.OkadaRush), { ssr: false }),
   "bash-am": dynamic(() => import("@/components/solo/games/BashAm").then((m) => m.BashAm), { ssr: false }),
 };
 
@@ -27,12 +29,14 @@ export function SoloSandbox({ gameId }: { gameId: string }) {
   // ?mode=hard or ?mode=day-12 tries a difficulty or career day.
   const q = typeof window === "undefined" ? new URLSearchParams() : new URLSearchParams(window.location.search);
   const mode = q.get("mode") ?? "normal";
-  // ?shop=fan,tv or ?shop=all tries Mama Put's upgrades.
+  // ?shop=fan,tv or ?shop=all tries Mama Put's upgrades (or Okada Rush's gear); ?skin=skin-gold a bike colour.
   const shop = q.get("shop") ?? "";
   const tut = q.get("tutorial") === "1";
+  const skin = q.get("skin") ?? undefined;
+  const everything = gameId === "okada-rush" ? GEAR.map((g) => g.id) : UPGRADES.map((u) => u.id);
   const api = useMemo<AnyApi>(
-    () => ({ seed: `sandbox-${round}`, mode, extras: { owned: shop === "all" ? UPGRADES.map((u) => u.id) : shop.split(",").filter(Boolean), tutorial: tut }, saved: null, paused, save: () => {}, end: (s) => setScore(s), sound: (n) => playSound(n), target: null }),
-    [round, paused, mode, shop, tut],
+    () => ({ seed: `sandbox-${round}`, mode, extras: { owned: shop === "all" ? everything : shop.split(",").filter(Boolean), tutorial: tut, skin }, saved: null, paused, save: () => {}, end: (s) => setScore(s), sound: (n) => playSound(n), target: null }),
+    [round, paused, mode, shop, tut, skin, everything],
   );
   const Game = games[gameId];
   return (
