@@ -7,15 +7,14 @@ import { Icon } from "@/design/icons";
 import { Modal } from "@/design/Modal";
 import { toast } from "@/design/toast";
 import { cn } from "@/lib/cn";
-import { AREAS, DAYS, DIFFICULTIES, DIFFICULTY_NAME, FREE_CAREER_MODES, ITEM_NAME, UPGRADES, careerDay, dayOpen, newOnDay, upgradePrice, vibeWeight, type Difficulty, type UpgradeId } from "@/lib/solo/games/mama";
+import { AREAS, DAYS, DIFFICULTIES, DIFFICULTY_NAME, FREE_CAREER_MODES, ITEM_NAME, KITCHENS, careerDay, dayOpen, newOnDay, upgradePrice, upgradesFor, vibeWeight, type Difficulty, type UpgradeId } from "@/lib/solo/games/mama";
 import type { MamaCareer } from "@/lib/solo/mama-server";
 import { buyMamaUpgrade } from "@/lib/solo/shop-actions";
+import { src, upgradePic } from "./looks";
 
-const ART = "/games/mama-put/";
 /** Each area's colour on the map. */
 const AREA_LOOK = ["#2f8a86", "#c08410", "#d9521f", "#6b4b9a", "#1c3f78"] as const;
 const AREA_NOTE = ["Free to play, as much as you like", "", "", "", "The big leagues"] as const;
-const UPGRADE_PIC: Record<UpgradeId, string> = { fan: "up-fan", chairs: "up-chairs", radio: "up-radio", tv: "up-tv", generator: "up-generator", paint: "up-bunting", "big-pan": "up-pan", "non-stick": "pan-ready", "tip-jar": "up-tipjar" };
 const naira = (n: number) => `₦${n.toLocaleString("en-NG")}`;
 const DIFF_ABOUT: Record<Difficulty, string> = { easy: "Patient customers, smaller orders", normal: "The lunch rush you know", hard: "Short tempers, big orders" };
 
@@ -38,8 +37,10 @@ export function MamaHome({ career }: { career: MamaCareer }) {
   const reached = Math.max(0, ...days.filter(open).map((d) => Math.floor((d - 1) / 6)));
   const [area, setArea] = useState(reached);
   const areaOwned = owned[area] ?? [];
-  const boost = Math.round(UPGRADES.filter((u) => areaOwned.includes(u.id)).reduce((t, u) => t + u.patience, 0) * vibeWeight(area * 6 + 1) * 100);
-  const maxBoost = Math.round(UPGRADES.reduce((t, u) => t + u.patience, 0) * vibeWeight(area * 6 + 1) * 100);
+  // Each restaurant's own version of every upgrade.
+  const ups = upgradesFor(area);
+  const boost = Math.round(ups.filter((u) => areaOwned.includes(u.id)).reduce((t, u) => t + u.patience, 0) * vibeWeight(area * 6 + 1) * 100);
+  const maxBoost = Math.round(ups.reduce((t, u) => t + u.patience, 0) * vibeWeight(area * 6 + 1) * 100);
 
   async function buy(id: UpgradeId) {
     setBuying(id);
@@ -51,7 +52,7 @@ export function MamaHome({ career }: { career: MamaCareer }) {
     setBought(id);
   }
 
-  const boughtUp = bought ? UPGRADES.find((u) => u.id === bought)! : null;
+  const boughtUp = bought ? ups.find((u) => u.id === bought)! : null;
   return (
     <div className="mx-auto max-w-[460px]">
       <div className="mt-5">
@@ -168,7 +169,7 @@ export function MamaHome({ career }: { career: MamaCareer }) {
       {/* The shop */}
       <section aria-labelledby="mp-shop-h" className="mt-7">
         <div className="flex items-baseline justify-between px-0.5">
-          <h2 id="mp-shop-h" className="display text-[1.35rem]">Your buka</h2>
+          <h2 id="mp-shop-h" className="display text-[1.35rem]">{area ? KITCHENS[area]!.name : "Your buka"}</h2>
           <span className="text-[0.8rem] font-semibold text-muted">Upgrades help in the career</span>
         </div>
         <div className="mt-2 flex items-center justify-between rounded-[20px] bg-[#2a1a10] px-4 py-3.5 text-white">
@@ -205,7 +206,7 @@ export function MamaHome({ career }: { career: MamaCareer }) {
           <div key={kind}>
             <h3 className="mb-2 ml-1 mt-4 text-[0.8rem] font-extrabold text-muted">{kind === "vibe" ? "Ambience" : "Kitchen · helps every day"}</h3>
             <ul className="grid grid-cols-3 gap-2">
-              {UPGRADES.filter((u) => u.kind === kind).map((u) => {
+              {ups.filter((u) => u.kind === kind).map((u) => {
                 const have = areaOwned.includes(u.id);
                 const price = upgradePrice(area, u.id);
                 const afford = savings >= price;
@@ -218,12 +219,12 @@ export function MamaHome({ career }: { career: MamaCareer }) {
                     ) : null}
                     <span className="flex h-[60px] items-end justify-center">
                       {/* eslint-disable-next-line @next/next/no-img-element -- tiny local art, already sized */}
-                      <img src={`${ART}${UPGRADE_PIC[u.id]}.webp`} alt="" className="max-h-[60px] max-w-[84px] object-contain" />
+                      <img src={src(upgradePic(area, u.id))} alt="" className="max-h-[60px] max-w-[84px] object-contain" />
                     </span>
                     <b className="display mt-1.5 text-[0.85rem] leading-tight">{u.name}</b>
                     <span className="mt-0.5 min-h-[2.2em] text-[0.68rem] leading-snug text-muted">{u.kind === "vibe" ? `+${Math.round(u.patience * 100)}% patience` : u.about}</span>
                     {have ? (
-                      <span className="mt-1.5 w-full rounded-full bg-[rgba(46,155,87,.14)] py-1.5 text-[0.75rem] font-extrabold text-[#2e7d32]">In your buka</span>
+                      <span className="mt-1.5 w-full rounded-full bg-[rgba(46,155,87,.14)] py-1.5 text-[0.75rem] font-extrabold text-[#2e7d32]">{area ? "Bought" : "In your buka"}</span>
                     ) : (
                       <button
                         type="button"
@@ -244,11 +245,11 @@ export function MamaHome({ career }: { career: MamaCareer }) {
         <p className="mt-3 text-center text-[0.75rem] text-muted">Quick rushes use a standard buka for everyone, so their leaderboards stay fair.</p>
       </section>
 
-      <Modal open={!!boughtUp} onClose={() => setBought(null)} title={boughtUp ? (boughtUp.id === "tv" ? "The match is on!" : `New in your buka: ${boughtUp.name.toLowerCase()}`) : ""}>
+      <Modal open={!!boughtUp} onClose={() => setBought(null)} title={boughtUp ? (boughtUp.id === "tv" ? "The match is on!" : `New in ${area ? KITCHENS[area]!.name : "your buka"}: ${boughtUp.name.toLowerCase()}`) : ""}>
         {boughtUp ? (
           <div className="text-center">
             {/* eslint-disable-next-line @next/next/no-img-element -- tiny local art */}
-            <img src={`${ART}${UPGRADE_PIC[boughtUp.id]}.webp`} alt="" className="mx-auto h-28 object-contain" />
+            <img src={src(upgradePic(area, boughtUp.id))} alt="" className="mx-auto h-28 object-contain" />
             <p className="mt-3 text-muted">{boughtUp.about}</p>
             {boughtUp.kind === "vibe" ? (
               <p className="mt-3 inline-block rounded-full bg-[rgba(46,155,87,.14)] px-3.5 py-1.5 text-[0.85rem] font-extrabold text-[#2e7d32]">
@@ -257,7 +258,7 @@ export function MamaHome({ career }: { career: MamaCareer }) {
             ) : null}
             <div className="mt-5 flex flex-col gap-2">
               <Link prefetch={false} href={`/solo/mama-put?mode=day-${area === nextArea ? next : area * 6 + 1}`} className="inline-flex h-14 items-center justify-center rounded-full bg-fg font-semibold text-bg">
-                See it in your buka
+                See it in {area ? KITCHENS[area]!.name : "your buka"}
               </Link>
               <Button size="lg" variant="ghost" onClick={() => setBought(null)}>
                 Keep shopping

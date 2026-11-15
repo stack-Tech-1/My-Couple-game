@@ -13,6 +13,7 @@ import {
   gasLeft,
   gasMax,
   gasPrice,
+  kitchenOf,
   newMama,
   rulesOf,
   rushTime,
@@ -23,140 +24,30 @@ import {
   tutorialStep,
   waiting,
   type Customer,
-  type Item,
   type MamaState,
 } from "@/lib/solo/games/mama";
 import type { SoloApi } from "../SoloShell";
+import { DRINKS, bubblePic, cookPic, fuelPic, lookOf, picturesFor, platePic, ratio, src, type Look, type Station } from "../mama/looks";
 
 /**
  * Mama Put, played sideways: the restaurant across the top, the counter with four places, and
  * the kitchen in two rows across the front. Drawn with the painted art in /public/games/mama-put
- * (made by scripts/art). The rules live in lib/solo/games/mama; this draws them and turns taps
+ * (made by scripts/art); each area's restaurant has its own look (mama/looks.ts). The rules live in lib/solo/games/mama; this draws them and turns taps
  * into moves.
  *
  * On a phone it asks to go full screen and turn sideways (Android locks to landscape; an iPhone
  * held upright gets a "turn your phone" screen, and the game waits).
  */
-const ART = "/games/mama-put/";
-const src = (name: string) => `${ART}${name}.webp`;
 const W = 800;
 const H = 400;
 
-/** Where everything goes on the 800 × 400 stage. One table, so new scene art is a quick re-fit. */
+/** Where the customers stand, and how tall they are. Everything else is in the area's look. */
 const L = {
   spotX: [110, 300, 500, 690] as const,
-  customerBottom: 210,
   customerHeight: 152,
   bubbleY: 6,
-  /** The signboard's middle, from the scene art. */
-  sign: [382, 52] as const,
-  /** The counter's back edge: the counter is drawn again from here down, over the customers. */
-  counterTop: 173,
-  plateY: 197,
-  /** Where food sits on the two kitchen shelves. */
-  shelves: [287, 361] as const,
-};
-
-/** Width ÷ height of each picture, so they keep their shape. */
-const RATIO: Record<string, number> = {
-  bin: 0.759,
-  coin: 1.108,
-  counter: 3.859,
-  wall: 2.313,
-  stove: 2.5,
-  plate: 1.429,
-  "mama-happy": 1.031,
-  "pan-burnt": 1.122,
-  "pan-empty": 1.294,
-  "pan-frying": 1.294,
-  "pan-raw": 1.294,
-  "pan-ready": 1.279,
-  "st-beef": 1.811,
-  "st-chicken": 1.729,
-  "st-drink": 1.198,
-  "st-eba": 1.156,
-  "st-egusi": 1.25,
-  "st-fish": 1.84,
-  "st-jollof": 1.1,
-  "st-moin": 1.173,
-  "st-rice": 1.377,
-  "st-stew": 1.299,
-  "p-beef": 1.297,
-  "p-chicken": 1.352,
-  "p-dodo": 1.333,
-  "p-drink": 0.379,
-  "p-eba": 1.412,
-  "p-egusi": 1.433,
-  "p-fish": 1.455,
-  "p-jollof": 1.433,
-  "p-moin": 1.352,
-  "p-rice": 1.433,
-  "p-stew": 1.412,
-  "f-beef": 1.116,
-  "f-chicken": 1.328,
-  "f-dodo": 1.481,
-  "f-eba": 1.116,
-  "f-egusi": 1.262,
-  "f-fish": 1.711,
-  "f-jollof": 1.426,
-  "f-moin": 1.167,
-  "f-stew": 1.481,
-  "stove-off": 1.31,
-  "stove-oil": 1.299,
-  "stove-raw": 1.293,
-  "stove-frying": 1.293,
-  "stove-ready": 1.299,
-  "stove-burnt": 1.299,
-  gas: 0.759,
-  "gas-new": 0.797,
-  scene: 2,
-  "up-bunting": 3.1,
-  "up-chairs": 1.594,
-  "up-fan": 0.58,
-  "up-generator": 1.261,
-  "up-pan": 1.899,
-  "up-plant": 1,
-  "up-radio": 1.04,
-  "up-tipjar": 0.723,
-  "up-tv": 1.563,
-};
-const CUSTOMER_RATIO: Record<string, number> = {
-  "aunty-angry": 0.643,
-  "aunty-happy": 0.723,
-  "aunty-wait": 0.678,
-  "baba-angry": 0.751,
-  "baba-happy": 0.789,
-  "baba-wait": 0.737,
-  "corper-angry": 0.635,
-  "corper-happy": 0.742,
-  "corper-wait": 0.693,
-  "fila-angry": 0.631,
-  "fila-happy": 0.712,
-  "fila-wait": 0.672,
-  "oga-angry": 0.676,
-  "oga-happy": 0.801,
-  "oga-wait": 0.737,
-  "student-angry": 0.66,
-  "student-happy": 0.702,
-  "student-wait": 0.693,
 };
 const PEOPLE = ["aunty", "fila", "corper", "student", "oga", "baba"] as const;
-
-/** Upgrades on the wall, behind the customers: [upgrade, picture, centre x, bottom y, width]. */
-const DECOR_BACK: [string, string, number, number, number][] = [
-  ["paint", "up-bunting", 120, 30, 120],
-  ["paint", "up-bunting", 660, 30, 120],
-  ["tv", "up-tv", 54, 118, 66],
-  ["generator", "up-generator", 742, 146, 44],
-  ["chairs", "up-chairs", 36, 176, 56],
-];
-/** Upgrades on the counter, facing the customers. */
-const DECOR_COUNTER: [string, string, number, number, number][] = [
-  ["fan", "up-fan", 22, 202, 30],
-  ["radio", "up-radio", 400, 206, 36],
-  ["tip-jar", "up-tipjar", 210, 210, 20],
-  ["paint", "up-plant", 785, 210, 28],
-];
 
 /** A picture placed by its bottom-centre point, at a given width. */
 function Pic({
@@ -174,7 +65,7 @@ function Pic({
   className?: string;
   style?: CSSProperties;
 }) {
-  const h = w / (RATIO[name] ?? 1);
+  const h = w / ratio(name);
   return (
     <image
       href={src(name)}
@@ -188,32 +79,6 @@ function Pic({
   );
 }
 
-/** The kitchen: [what, picture, centre x, bottom y, width, label]. */
-type Station = [
-  Item | "fry" | "bin" | "gas",
-  string,
-  number,
-  number,
-  number,
-  string,
-];
-const STATIONS: Station[] = [
-  ["jollof", "st-jollof", 56, L.shelves[0], 62, "Jollof"],
-  ["rice", "st-rice", 150, L.shelves[0], 72, "White rice"],
-  ["stew", "st-stew", 246, L.shelves[0], 66, "Stew"],
-  ["egusi", "st-egusi", 338, L.shelves[0], 62, "Egusi"],
-  ["beef", "st-beef", 438, L.shelves[0], 84, "Beef"],
-  ["chicken", "st-chicken", 536, L.shelves[0], 82, "Chicken"],
-  ["fish", "st-fish", 634, L.shelves[0], 84, "Fish"],
-  ["bin", "bin", 742, L.shelves[0], 38, "Bin plate"],
-  // The stove stands on the floor in front of the lower shelf, clear of the labels above.
-  ["fry", "", 70, 397, 80, "Dodo"],
-  ["gas", "gas", 168, L.shelves[1], 40, "Gas"],
-  ["eba", "st-eba", 264, L.shelves[1], 68, "Eba"],
-  ["moin", "st-moin", 362, L.shelves[1], 70, "Moin moin"],
-  ["drink", "st-drink", 462, L.shelves[1], 70, "Cold drinks"],
-];
-const STEAMING = new Set(["jollof", "rice", "stew", "egusi"]);
 
 function mood(c: Customer): "happy" | "wait" | "angry" {
   if (c.leaving) return c.leaving.paid > 0 ? "happy" : "angry";
@@ -233,19 +98,12 @@ function cast(spots: MamaState["spots"]): string[] {
   });
 }
 
-/** The stove with the pan on it: off, hot oil, raw plantain, frying, golden, burnt. */
-const stovePic = (stage: MamaState["fry"]["stage"], t: number) =>
-  stage === "idle"
-    ? "stove-off"
-    : stage === "frying"
-      ? t < 0.5
-        ? "stove-oil"
-        : t < 1.5
-          ? "stove-raw"
-          : "stove-frying"
-      : stage === "ready"
-        ? "stove-ready"
-        : "stove-burnt";
+
+const cap = (w: string) => w.charAt(0).toUpperCase() + w.slice(1);
+/** A width that fits a picture inside a w × h box. */
+const fit = (name: string, w: number, h: number) => Math.min(w, h * ratio(name));
+/** How tall an area's cooker stands (off, without its steam). */
+const cookTop = (look: Look) => look.stations.find(([s]) => s === "fry")![4] / ratio(`${look.pre}cook-0`);
 
 type Fx = {
   id: number;
@@ -343,6 +201,14 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
   hold.current = !started || portrait;
   const rules = rulesOf(s);
   const owned = new Set<string>(rules.owned ?? []);
+  const look = lookOf(rules.area);
+  const kitchen = kitchenOf(rules);
+  const cook = kitchen.cook;
+  const cookName = ITEM_NAME[cook];
+  const fuel = look.fuel;
+  const STATIONS = look.stations;
+  const lookRef = useRef(look);
+  lookRef.current = look;
 
   useEffect(() => {
     if (!isPhone()) setStarted(true);
@@ -389,11 +255,7 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
 
   // Load every picture up front, so faces and pans change without a flicker.
   useEffect(() => {
-    const names = [
-      ...Object.keys(RATIO),
-      ...Object.keys(CUSTOMER_RATIO).map((k) => `cust-${k}`),
-    ];
-    for (const n of names) new Image().src = src(n);
+    for (const n of picturesFor(lookRef.current)) new Image().src = src(n);
   }, []);
 
   const commit = (next: MamaState) => {
@@ -423,17 +285,18 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
         a.sound("tick");
       if (next.fry.stage === "burnt" && before.fry.stage === "ready") {
         a.sound("lose");
-        setSaid("The dodo burnt.");
+        setSaid(`The ${ITEM_NAME[kitchenOf(next.cfg).cook].toLowerCase()} burnt.`);
       }
       if (gasLeft(next) <= 0 && gasLeft(before) > 0) {
         a.sound("lose");
-        setSaid("The gas has finished. Buy a new cylinder to fry again.");
+        const fl = lookRef.current.fuel;
+        setSaid(`The ${fl.name} has finished. Buy a new ${fl.unit} to cook again.`);
         effect(
           {
             kind: "word",
             x: 206,
             y: 330,
-            text: "Gas don finish!",
+            text: `${lookRef.current.fuel.name === "gas" ? "Gas" : "Charcoal"} don finish!`,
             color: "#b8261a",
           },
           1800,
@@ -495,16 +358,16 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
           kind: "word",
           x: 206,
           y: 330,
-          text: `New gas: -₦${gasPrice(cur).toLocaleString("en-NG")}`,
+          text: `New ${fuel.name}: -₦${gasPrice(cur).toLocaleString("en-NG")}`,
           color: "#1f5fa8",
         });
-        setSaid(`New gas cylinder for ₦${gasPrice(cur)}.`);
+        setSaid(`New ${fuel.name} ${fuel.unit} for ₦${gasPrice(cur)}.`);
       } else if (gasLeft(cur) >= gasMax(cur)) {
         effect({
           kind: "word",
           x: 206,
           y: 330,
-          text: "Gas is still full",
+          text: `${cap(fuel.name)} is still full`,
           color: "#2a1d17",
         });
       } else {
@@ -513,7 +376,7 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
           kind: "word",
           x: 206,
           y: 330,
-          text: `Need ₦${gasPrice(cur).toLocaleString("en-NG")} for gas`,
+          text: `Need ₦${gasPrice(cur).toLocaleString("en-NG")} for ${fuel.name}`,
           color: "#b8261a",
         });
       }
@@ -527,14 +390,14 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
       return;
     }
     if (what === "fry") {
-      if (cur.fry.stage === "ready") return use("dodo");
+      if (cur.fry.stage === "ready") return use(cook);
       if (gasLeft(cur) <= 0) {
         a.sound("tap");
         effect({
           kind: "word",
           x: 92,
           y: 330,
-          text: "No gas! Buy a cylinder",
+          text: `No ${fuel.name}! Buy a ${fuel.unit}`,
           color: "#b8261a",
         });
         return;
@@ -543,7 +406,7 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
       if (next !== cur) {
         a.sound("roll");
         commit(next);
-        setSaid("Dodo frying.");
+        setSaid(`${cookName} ${look.doing.toLowerCase()}.`);
       }
       return;
     }
@@ -554,7 +417,7 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
           kind: "word",
           x: 92,
           y: 330,
-          text: "Fry the dodo first",
+          text: `${cap(look.verb)} the ${cookName.toLowerCase()} first`,
           color: "#b8261a",
         });
       a.sound("tap");
@@ -590,7 +453,7 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
           text: `₦${r.tip} tip, sharp sharp!`,
           color: "#b0730a",
         });
-      effect({ kind: "coins", x: L.spotX[i]!, y: L.plateY }, 1000);
+      effect({ kind: "coins", x: L.spotX[i]!, y: look.plateY }, 1000);
       setSaid(
         `Served. ₦${r.paid + r.tip}${r.tip ? `, with a ₦${r.tip} tip` : ""}.`,
       );
@@ -668,22 +531,22 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
 
           {/* The restaurant: one wide scene, with the name painted on its signboard. */}
           <clipPath id="mp-front">
-            <rect x="0" y={L.counterTop} width={W} height={H - L.counterTop} />
+            <rect x="0" y={look.counterTop} width={W} height={H - look.counterTop} />
           </clipPath>
-          <image href={src("scene")} x={0} y={0} width={W} height={H} />
+          <image href={src(`${look.pre}scene`)} x={0} y={0} width={W} height={H} />
           <text
-            x={L.sign[0]}
-            y={L.sign[1]}
+            x={look.sign[0]}
+            y={look.sign[1]}
             textAnchor="middle"
             fontFamily="Fraunces, serif"
             fontStyle="italic"
             fontWeight="900"
             fontSize="30"
-            fill="#c43a22"
+            fill={look.signInk}
           >
-            Mama Put
+            {kitchen.name}
           </text>
-          {DECOR_BACK.filter(([id]) => owned.has(id)).map(
+          {look.back.filter(([id]) => owned.has(id)).map(
             ([id, pic, x, bottom, w]) => (
               <Pic
                 key={`${pic}-${x}`}
@@ -710,7 +573,7 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
             const m = mood(c);
             const key = `${who[i]}-${m}`;
             const h = L.customerHeight;
-            const w = h * (CUSTOMER_RATIO[key] ?? 0.7);
+            const w = h * (ratio(`cust-${key}`) || 0.7);
             const cls = c.leaving
               ? c.leaving.paid
                 ? "mp-cheer"
@@ -726,7 +589,7 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
                   key={m}
                   href={src(`cust-${key}`)}
                   x={-w / 2}
-                  y={L.customerBottom - h}
+                  y={look.customerBottom - h}
                   width={w}
                   height={h}
                   className={cls}
@@ -738,14 +601,14 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
 
           {/* The counter and kitchen again, in front of the customers, then what's on the counter. */}
           <image
-            href={src("scene")}
+            href={src(`${look.pre}scene`)}
             x={0}
             y={0}
             width={W}
             height={H}
             clipPath="url(#mp-front)"
           />
-          {DECOR_COUNTER.filter(([id]) => owned.has(id)).map(
+          {look.counter.filter(([id]) => owned.has(id)).map(
             ([id, pic, x, bottom, w]) => (
               <Pic
                 key={pic}
@@ -791,10 +654,10 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
                 {c.order.map((it, k) => (
                   <Pic
                     key={it}
-                    name={`p-${it}`}
+                    name={bubblePic(look, it)}
                     x={x + 20 + (k % 3) * 28}
                     bottom={y + 26 + Math.floor(k / 3) * 22}
-                    w={it === "drink" ? 8 : 26}
+                    w={fit(bubblePic(look, it), 26, 22)}
                   />
                 ))}
                 <rect
@@ -849,7 +712,7 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
                   >
                     <rect
                       x={x - 50}
-                      y={L.plateY - 30}
+                      y={look.plateY - 30}
                       width="100"
                       height="58"
                       fill="transparent"
@@ -857,7 +720,7 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
                     {sel ? (
                       <ellipse
                         cx={x}
-                        cy={L.plateY}
+                        cy={look.plateY}
                         rx="47"
                         ry="21"
                         fill="none"
@@ -866,33 +729,33 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
                         strokeDasharray="7 4"
                       />
                     ) : null}
-                    <Pic name="plate" x={x} bottom={L.plateY + 27} w={80} />
+                    <Pic name={`${look.pre}plate`} x={x} bottom={look.plateY + 27} w={80} />
                     {p.map((it, k) =>
-                      it === "rice" ? (
+                      it === "rice" && !look.pre ? (
                         <Pic
                           key={it}
                           name="p-rice"
                           x={x + spots[k]![0]!}
-                          bottom={L.plateY + spots[k]![1]! + 14}
+                          bottom={look.plateY + spots[k]![1]! + 14}
                           w={38}
                           className="mp-drop"
                         />
-                      ) : it === "drink" ? (
+                      ) : DRINKS.has(it) ? (
                         <Pic
                           key={it}
-                          name="p-drink"
+                          name={bubblePic(look, it)}
                           x={x + 38}
-                          bottom={L.plateY + 18}
-                          w={13}
+                          bottom={look.plateY + 18}
+                          w={fit(bubblePic(look, it), 22, 34)}
                           className="mp-drop"
                         />
                       ) : (
                         <Pic
                           key={it}
-                          name={`f-${it}`}
+                          name={platePic(look, it)}
                           x={x + spots[k]![0]!}
-                          bottom={L.plateY + spots[k]![1]! + 13}
-                          w={34}
+                          bottom={look.plateY + spots[k]![1]! + 13}
+                          w={fit(platePic(look, it), 34, 30)}
                           className="mp-drop"
                         />
                       ),
@@ -900,7 +763,7 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
                     {step?.kind === "plate" && i === 0 ? (
                       <ellipse
                         cx={x}
-                        cy={L.plateY}
+                        cy={look.plateY}
                         rx="54"
                         ry="27"
                         fill="none"
@@ -923,7 +786,7 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
                       {/* On the counter, just right of the plate. */}
                       <rect
                         x={x + 42}
-                        y={L.plateY - 11}
+                        y={look.plateY - 11}
                         width="50"
                         height="22"
                         rx="11"
@@ -931,7 +794,7 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
                       />
                       <text
                         x={x + 67}
-                        y={L.plateY + 4}
+                        y={look.plateY + 4}
                         textAnchor="middle"
                         fontFamily="Manrope, sans-serif"
                         fontWeight="800"
@@ -943,7 +806,7 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
                       {step?.kind === "serve" && i === 0 ? (
                         <rect
                           x={x + 36}
-                          y={L.plateY - 17}
+                          y={look.plateY - 17}
                           width="62"
                           height="34"
                           rx="17"
@@ -969,12 +832,13 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
                 {what === "fry" ? (
                   <>
                     <Pic
-                      name={stovePic(s.fry.stage, s.fry.t)}
+                      name={cookPic(look, s.fry)}
                       x={x}
                       bottom={bottom}
                       w={w * (owned.has("big-pan") ? 1.08 : 1)}
                     />
-                    {(s.fry.stage === "frying" || s.fry.stage === "ready") &&
+                    {!look.pre &&
+                    (s.fry.stage === "frying" || s.fry.stage === "ready") &&
                     gasLeft(s) > 0 ? (
                       <g className="mp-sizzle" pointerEvents="none">
                         {[-18, -6, 6, 18].map((dx, k) => (
@@ -993,9 +857,9 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
                     ) : null}
                     {s.fry.stage === "ready" ? (
                       <ellipse
-                        cx={x - 9}
-                        cy={bottom - 45}
-                        rx="26"
+                        cx={look.pre ? x : x - 9}
+                        cy={bottom - (look.pre ? cookTop(look) * 0.86 : 45)}
+                        rx={look.pre ? w * 0.36 : 26}
                         ry="10"
                         fill="none"
                         stroke="#f6c453"
@@ -1003,7 +867,7 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
                         className="mp-ready"
                       />
                     ) : null}
-                    {s.fry.stage === "burnt" ? (
+                    {s.fry.stage === "burnt" && !look.pre ? (
                       <g
                         className="mp-steam"
                         fill="none"
@@ -1024,13 +888,13 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
                     ) : null}
                   </>
                 ) : what === "gas" ? (
-                  <GasCylinder x={x} bottom={bottom} level={gas} />
+                  <GasCylinder look={look} x={x} bottom={bottom} level={gas} />
                 ) : (
                   <Pic name={pic} x={x} bottom={bottom} w={w} />
                 )}
               </g>
-              {STEAMING.has(what)
-                ? steam(x - 2, bottom - w / (RATIO[pic] ?? 1) + 4)
+              {look.steaming.has(what)
+                ? steam(x - 2, bottom - w / ratio(pic) + 4)
                 : null}
               {pointAt?.[0] === what ? (
                 <rect
@@ -1051,7 +915,7 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
             <g key={`label-${what}`} pointerEvents="none">
               <text
                 x={x}
-                y={what === "fry" ? bottom - 66 : bottom + (bottom === L.shelves[0] ? 12 : 16)}
+                y={what === "fry" ? bottom - (look.pre ? cookTop(look) + 6 : 66) : bottom + (bottom === look.shelves[0] ? 12 : 16)}
                 textAnchor="middle"
                 fontFamily="Manrope, sans-serif"
                 fontWeight="800"
@@ -1068,18 +932,18 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
               >
                 {what === "fry"
                   ? s.fry.stage === "idle"
-                    ? "Tap to fry dodo"
+                    ? `Tap to ${look.verb} ${cookName.toLowerCase()}`
                     : s.fry.stage === "frying"
                       ? gasLeft(s) > 0
-                        ? "Frying…"
-                        : "No gas!"
+                        ? `${look.doing}…`
+                        : `No ${fuel.name}!`
                       : s.fry.stage === "ready"
-                        ? "Dodo ready: tap to dish"
-                        : "Burnt! Tap to fry again"
+                        ? `${cookName} ready${(s.fry.n ?? 1) > 1 ? ` ×${s.fry.n}` : ""}: tap to dish`
+                        : `Burnt! Tap to ${look.verb} again`
                   : what === "gas"
                     ? gas <= 0
-                      ? `Buy gas ₦${gasPrice(s).toLocaleString("en-NG")}`
-                      : "Gas"
+                      ? `Buy ${fuel.name} ₦${gasPrice(s).toLocaleString("en-NG")}`
+                      : cap(fuel.name)
                     : label}
               </text>
             </g>
@@ -1087,7 +951,7 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
           {STATIONS.map(([what, , x, bottom, w, label]) => {
             const b =
               what === "fry"
-                ? { x: x - w / 2 - 6, y: bottom - 76, w: w + 12, h: 78 }
+                ? { x: x - w / 2 - 6, y: bottom - (look.pre ? cookTop(look) + 10 : 76), w: w + 12, h: look.pre ? cookTop(look) + 12 : 78 }
                 : { x: x - w / 2 - 5, y: bottom - 62, w: w + 10, h: 80 };
             return (
               <rect
@@ -1103,12 +967,12 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
                 aria-label={
                   what === "fry"
                     ? s.fry.stage === "ready"
-                      ? "Dish the dodo"
-                      : "Fry dodo"
+                      ? `Dish the ${cookName.toLowerCase()}`
+                      : `${cap(look.verb)} ${cookName.toLowerCase()}`
                     : what === "bin"
                       ? "Bin the plate"
                       : what === "gas"
-                        ? `Gas, ${Math.round(gas * 100)}% left. Buy a new cylinder for ₦${gasPrice(s)}`
+                        ? `${cap(fuel.name)}, ${Math.round(gas * 100)}% left. Buy a new ${fuel.unit} for ₦${gasPrice(s)}`
                         : `Add ${label}`
                 }
                 onClick={() => use(what)}
@@ -1127,7 +991,7 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
               <Pic
                 name="mama-happy"
                 x={W - 92}
-                bottom={L.counterTop + 4}
+                bottom={look.counterTop + 4}
                 w={150}
               />
               <g filter="url(#mp-ds)">
@@ -1329,19 +1193,22 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
       {!full ? (
         <p className="mt-2 text-center text-[0.8rem] text-muted">
           Tap a plate, then the food to dish it. Serve it to the person in
-          front. Fry dodo before you need it, and watch the gas.
+          front. {cap(look.verb)} the {cookName.toLowerCase()} before you need
+          it, and watch the {fuel.name}.
         </p>
       ) : null}
     </div>
   );
 }
 
-/** The gas cylinder, with a gauge: green, then amber, then red and empty. */
+/** The fuel (a gas cylinder, or a sack of charcoal), with a gauge: green, then amber, then red and empty. */
 function GasCylinder({
+  look,
   x,
   bottom,
   level,
 }: {
+  look: Look;
   x: number;
   bottom: number;
   level: number;
@@ -1352,14 +1219,14 @@ function GasCylinder({
   return (
     <g className={level <= 0.2 ? "mp-warn" : undefined}>
       <Pic
-        name={fresh ? "gas-new" : "gas"}
+        name={fuelPic(look.pre, look.fuel, fresh)}
         x={x}
         bottom={bottom}
-        w={fresh ? 42 : 40}
+        w={look.fuel.width * (fresh && look.fuel.pic === "gas" ? 1.05 : 1)}
       />
       {/* The gauge. */}
       <rect
-        x={x + 23}
+        x={x + look.fuel.width / 2 + 3}
         y={bottom - 52}
         width="6"
         height="46"
@@ -1367,7 +1234,7 @@ function GasCylinder({
         fill="rgba(0,0,0,.25)"
       />
       <rect
-        x={x + 23}
+        x={x + look.fuel.width / 2 + 3}
         y={bottom - 6 - 46 * Math.max(0, level)}
         width="6"
         height={46 * Math.max(0, level)}
