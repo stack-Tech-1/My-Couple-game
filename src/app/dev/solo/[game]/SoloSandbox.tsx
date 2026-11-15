@@ -35,7 +35,7 @@ export function SoloSandbox({ gameId }: { gameId: string }) {
   const skin = q.get("skin") ?? undefined;
   const everything = gameId === "okada-rush" ? GEAR.map((g) => g.id) : UPGRADES.map((u) => u.id);
   const api = useMemo<AnyApi>(
-    () => ({ seed: `sandbox-${round}`, mode, extras: { owned: shop === "all" ? everything : shop.split(",").filter(Boolean), tutorial: tut, skin }, saved: null, paused, save: () => {}, end: (s) => setScore(s), sound: (n) => playSound(n), target: null }),
+    () => ({ seed: `sandbox-${round}`, mode, extras: { owned: shop === "all" ? everything : shop.split(",").filter(Boolean), tutorial: tut, skin }, saved: null, paused, save: () => {}, end: (s) => setScore(s), sound: (n) => playSound(n), soundOn: true, target: null }),
     [round, paused, mode, shop, tut, skin, everything],
   );
   const Game = games[gameId];

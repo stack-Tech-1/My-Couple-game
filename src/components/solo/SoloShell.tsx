@@ -36,6 +36,8 @@ export type SoloApi<S> = {
   /** The game is over: save the score. */
   end: (score: number, meta?: Record<string, number | string | boolean>) => void;
   sound: (n: SoundName) => void;
+  /** The member's sound switch, for games with their own sound (recordings, music). */
+  soundOn: boolean;
   /** Challenges: the score to beat. */
   target: number | null;
 };
@@ -205,6 +207,7 @@ export function SoloShell<S>({
     resume: () => setUserPaused(false),
     target: run?.target ?? null,
     sound: (n) => soundOn && playSound(n),
+    soundOn,
     save: (state) => {
       lastState.current = state;
       if (Date.now() - lastWrite.current > 1500) {

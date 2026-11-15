@@ -27,6 +27,13 @@ import {
   type MamaState,
 } from "@/lib/solo/games/mama";
 import type { SoloApi } from "../SoloShell";
+import { GameAudio, musicPreferred, type LoopHandle } from "@/lib/game-audio";
+
+/** Each restaurant's music and its cooker's sound. */
+const MUSIC = ["mp-music-yaba", "mp-music-ikeja", "mp-music-surulere", "mp-music-lekki", "mp-music-vi"];
+const COOKING = ["mp-sizzle", "mp-amala", "mp-grill", "mp-deepfry", "mp-simmer"];
+const SOUNDS = [...COOKING, "mp-oil-drop", "mp-burnt", "mp-gas-out", "mp-gas-new", "mp-charcoal", "mp-scoop", "mp-plate", "mp-bin", "mp-coins", "mp-bell", "mp-star", "mp-street"];
+const VOICES = ["mp-hello", "mp-wait", "mp-angry", "mp-wrong", "mp-happy", "mp-tip", "mama-welcome", "mama-well-done", "mama-burnt"].flatMap((g) => [`v-${g}`, ...[1, 2, 3].map((k) => `v-${g}-${k}`)]);
 import { DRINKS, bubblePic, cookPic, fuelPic, lookOf, picturesFor, platePic, ratio, src, type Look, type Station } from "../mama/looks";
 
 /**
@@ -199,6 +206,32 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
   const [full, setFull] = useState(false);
   const hold = useRef(true);
   hold.current = !started || portrait;
+  const audio = useRef<GameAudio | null>(null);
+  const cooking = useRef<LoopHandle | null>(null);
+  const street = useRef<LoopHandle | null>(null);
+  const [music, setMusic] = useState(true);
+  useEffect(() => {
+    const au = new GameAudio(api.soundOn);
+    audio.current = au;
+    au.preload([...SOUNDS, ...VOICES]);
+    setMusic(musicPreferred());
+    return () => au.dispose();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one mixer for the life of the rush
+  }, []);
+  // The rush starts: the restaurant's music and the street outside.
+  useEffect(() => {
+    const au = audio.current;
+    if (!au || !started || state.current.over || street.current) return;
+    const area = rulesOf(state.current).area ?? 0;
+    au.music(MUSIC[area] ?? MUSIC[0]!, 0.28);
+    street.current = au.loop("mp-street", { volume: 0.22 });
+    if (state.current.tut) au.voice("mama-welcome", 0);
+  }, [started]);
+  useEffect(() => {
+    audio.current?.pauseMusic(api.paused || portrait);
+    street.current?.setVolume(api.paused || portrait ? 0 : 0.22);
+    cooking.current?.setVolume(api.paused || portrait ? 0 : 0.6);
+  }, [api.paused, portrait]);
   const rules = rulesOf(s);
   const owned = new Set<string>(rules.owned ?? []);
   const look = lookOf(rules.area);
@@ -280,15 +313,17 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
       const a = apiRef.current;
       if (a.paused || hold.current || state.current.over) return;
       const before = state.current;
+      const au = audio.current;
       const next = tick(a.seed, before, dt);
       if (next.fry.stage === "ready" && before.fry.stage === "frying")
-        a.sound("tick");
+        au?.sfx("mp-bell", { volume: 0.5 });
       if (next.fry.stage === "burnt" && before.fry.stage === "ready") {
-        a.sound("lose");
+        au?.sfx("mp-burnt");
+        if (!rulesOf(next).area) au?.voice("mama-burnt", 3);
         setSaid(`The ${ITEM_NAME[kitchenOf(next.cfg).cook].toLowerCase()} burnt.`);
       }
       if (gasLeft(next) <= 0 && gasLeft(before) > 0) {
-        a.sound("lose");
+        au?.sfx("mp-gas-out");
         const fl = lookRef.current.fuel;
         setSaid(`The ${fl.name} has finished. Buy a new ${fl.unit} to cook again.`);
         effect(
@@ -304,13 +339,14 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
       }
       next.spots.forEach((c, i) => {
         if (c && !before.spots[i]) {
-          a.sound("invite");
+          au?.sfx("mp-bell", { volume: 0.7 });
+          au?.voice("mp-hello", 6, 0.8);
           setSaid(
             `A customer at place ${i + 1} wants ${c.order.map((x) => ITEM_NAME[x]).join(", ")}.`,
           );
         }
         if (c?.leaving && !before.spots[i]?.leaving && c.leaving.paid === 0) {
-          a.sound("lose");
+          au?.voice("mp-angry", 3);
           effect({
             kind: "word",
             x: L.spotX[i]!,
@@ -320,6 +356,17 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
           });
         }
       });
+      const flame = (next.fry.stage === "frying" || next.fry.stage === "ready") && gasLeft(next) > 0;
+      if (au && flame && !cooking.current) cooking.current = au.loop(COOKING[rulesOf(next).area ?? 0] ?? COOKING[0]!, { volume: 0.6 });
+      if (!flame && cooking.current) {
+        cooking.current.stop();
+        cooking.current = null;
+      }
+      next.spots.forEach((c, i) => {
+        const was = before.spots[i];
+        if (au && c && was && !c.leaving && was.patience / was.max > 0.35 && c.patience / c.max <= 0.35) au.voice("mp-wait", 5);
+      });
+      if (au && stars(next.money, rulesOf(next)) > stars(before.money, rulesOf(before))) au.sfx("mp-star");
       commit(next);
     }, 100);
     return () => clearInterval(id);
@@ -331,7 +378,10 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
       ended.current = true;
       leaveFull();
       const st = stars(s.money, rulesOf(s));
-      api.sound(st >= 2 ? "win" : "lose");
+      audio.current?.stopLoops();
+      audio.current?.music(null);
+      audio.current?.sfx(st >= 2 ? "mp-star" : "mp-gas-out");
+      if (st >= 2) audio.current?.voice("mama-well-done", 0);
       api.end(s.money, {
         served: s.served,
         lost: s.lost,
@@ -352,7 +402,7 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
     if (what === "gas") {
       const r = buyGas(cur);
       if (r.ok) {
-        a.sound("win");
+        audio.current?.sfx(rulesOf(cur).area === 2 ? "mp-charcoal" : "mp-gas-new");
         commit(r.state);
         effect({
           kind: "word",
@@ -371,7 +421,7 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
           color: "#2a1d17",
         });
       } else {
-        a.sound("tap");
+        audio.current?.sfx("tap");
         effect({
           kind: "word",
           x: 206,
@@ -384,7 +434,7 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
     }
     if (what === "bin") {
       if (!cur.plates[cur.selected]!.length) return;
-      a.sound("drop");
+      audio.current?.sfx("mp-bin");
       commit(bin(cur));
       setSaid("Plate cleared.");
       return;
@@ -392,7 +442,7 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
     if (what === "fry") {
       if (cur.fry.stage === "ready") return use(cook);
       if (gasLeft(cur) <= 0) {
-        a.sound("tap");
+        audio.current?.sfx("tap");
         effect({
           kind: "word",
           x: 92,
@@ -404,7 +454,7 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
       }
       const next = fry(cur);
       if (next !== cur) {
-        a.sound("roll");
+        if (cur.fry.stage === "idle" && (cook === "dodo" || cook === "puff-puff")) audio.current?.sfx("mp-oil-drop", { volume: 0.8 });
         commit(next);
         setSaid(`${cookName} ${look.doing.toLowerCase()}.`);
       }
@@ -420,10 +470,10 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
           text: `${cap(look.verb)} the ${cookName.toLowerCase()} first`,
           color: "#b8261a",
         });
-      a.sound("tap");
+      audio.current?.sfx("tap");
       return;
     }
-    a.sound("flip");
+    audio.current?.sfx(DRINKS.has(what) ? "mp-plate" : "mp-scoop", { volume: 0.8 });
     navigator.vibrate?.(10);
     commit(r.state);
     setSaid(`${ITEM_NAME[what]} on plate ${cur.selected + 1}.`);
@@ -436,7 +486,8 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
     if (r.state === state.current) return;
     commit(r.state);
     if (r.right) {
-      a.sound("win");
+      audio.current?.sfx("mp-coins");
+      audio.current?.voice(r.tip >= r.paid * 0.2 ? "mp-tip" : "mp-happy", 2);
       navigator.vibrate?.(20);
       effect({
         kind: "money",
@@ -458,7 +509,7 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
         `Served. ₦${r.paid + r.tip}${r.tip ? `, with a ₦${r.tip} tip` : ""}.`,
       );
     } else {
-      a.sound("lose");
+      audio.current?.voice("mp-wrong", 1);
       effect({
         kind: "word",
         x: L.spotX[i]!,
@@ -1087,6 +1138,18 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
               <span className="text-[#e3a417]">{"★".repeat(st)}</span>
               <span className="opacity-30">{"★".repeat(3 - st)}</span>
             </p>
+            <button
+              type="button"
+              onClick={() => {
+                setMusic((m) => !m);
+                audio.current?.setMusic(!music);
+              }}
+              aria-pressed={music}
+              aria-label={music ? "Music on. Turn it off" : "Music off. Turn it on"}
+              className={`pointer-events-auto rounded-full bg-[rgba(255,250,242,.92)] px-2.5 py-0.5 text-[0.85rem] font-bold text-[#2a1d17] shadow ${music ? "" : "opacity-50 line-through"}`}
+            >
+              ♪
+            </button>
             {full && api.pause ? (
               <button
                 type="button"

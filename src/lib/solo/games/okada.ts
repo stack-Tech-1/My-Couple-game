@@ -214,6 +214,8 @@ export type OkadaEvent =
   | { kind: "lastma"; paid: number }
   | { kind: "km"; paid: number }
   | { kind: "blocked" }
+  /** A danfo or keke ahead has pulled up to load. */
+  | { kind: "brake"; lane: number }
   | { kind: "crash"; into: Kind }
   | { kind: "finish" };
 
@@ -323,6 +325,7 @@ export function tick(seed: string, s0: OkadaState, dt: number): { state: OkadaSt
     let { stopT } = t;
     if (stopT != null) stopT = stopT - dt > 0 ? stopT - dt : undefined;
     else if ((t.kind === "danfo" || t.kind === "keke") && t.lane !== 1 && t.y - s.y > 14 && t.y - s.y < 22 && rng.next() < dt * 0.25 && !closesRoad(s, t)) stopT = 1.5 + rng.next() * 2;
+    if (stopT && !t.stopT) events.push({ kind: "brake", lane: t.lane });
     return { ...t, stopT, y: t.y + (stopT ? 0 : t.v * dt) };
   });
   s.cursor = rng.cursor();

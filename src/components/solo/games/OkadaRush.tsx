@@ -4,6 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import { BIKE_LEN, LANES, ROUTES, SIZE, fareStop, isTraffic, newOkada, okadaConfig, progress, stars, steer, stopName, tick, type Kind, type OkadaEvent, type OkadaState, type Thing } from "@/lib/solo/games/okada";
 import type { SoloApi } from "../SoloShell";
 import { RATIO } from "./okada-art";
+import { GameAudio, musicPreferred, type LoopHandle } from "@/lib/game-audio";
+
+/** Every Okada Rush sound, loaded when the ride opens. */
+const SOUNDS = ["ok-engine", "ok-idle", "ok-start", "ok-horn", "ok-pothole", "ok-splash", "ok-sand", "ok-crash", "ok-whistle", "ok-pass", "ok-brakes", "ok-cash", "ok-street", "ok-bridge", "ok-night", "mp-star"];
+const VOICES = ["ok-wave", "ok-on", "ok-late", "ok-bump", "ok-paid", "ok-missed", "agbero", "lastma", "conductor", "rider-crash", "rider-go", "rider-horn"].flatMap((g) => [`v-${g}`, ...[1, 2, 3].map((k) => `v-${g}-${k}`)]);
 
 /**
  * Okada Rush: the road seen from above, scrolling down while the okada rides up it. Drawn on a
@@ -384,6 +389,29 @@ export function OkadaRush({ api }: { api: SoloApi<OkadaState> }) {
   apiRef.current = api;
   const touch = useRef<{ x: number; y: number; t: number } | null>(null);
   const shake = useRef(0);
+  // Sound: the engine and the street keep going; everything else is a one-off.
+  const audio = useRef<GameAudio | null>(null);
+  const engine = useRef<LoopHandle | null>(null);
+  const street = useRef<LoopHandle | null>(null);
+  const [music, setMusic] = useState(true);
+  useEffect(() => {
+    const au = new GameAudio(api.soundOn);
+    audio.current = au;
+    au.preload([...SOUNDS, ...VOICES]);
+    setMusic(musicPreferred());
+    return () => au.dispose();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one mixer for the life of the ride
+  }, []);
+  // "Go!": the okada starts, the street comes alive.
+  useEffect(() => {
+    const au = audio.current;
+    if (count > 0 || !au || state.current.over || engine.current) return;
+    au.sfx("ok-start", { volume: 0.8 });
+    au.voice("rider-go", 0, 0.9);
+    engine.current = au.loop("ok-engine", { volume: 0.5, rate: 0.8 });
+    street.current = au.loop(road === 2 ? "ok-bridge" : road === 4 ? "ok-night" : "ok-street", { volume: 0.3 });
+    au.music("ok-music-ride", 0.16);
+  }, [count, road]);
 
   // Ready, steady, go.
   useEffect(() => {
@@ -401,62 +429,77 @@ export function OkadaRush({ api }: { api: SoloApi<OkadaState> }) {
   };
 
   const react = (e: OkadaEvent, at: OkadaState) => {
-    const a = apiRef.current;
+    const au = audio.current;
     const bx = laneX(at.x);
     switch (e.kind) {
+      case "brake":
+        // A danfo pulling up: brakes, and its conductor shouting for passengers.
+        au?.sfx("ok-brakes", { volume: 0.6 });
+        au?.voice("conductor", 9, 0.7);
+        break;
       case "pick":
-        a.sound("invite");
+        au?.sfx("ok-cash", { volume: 0.4 });
+        au?.voice("ok-on", 3);
         pop(`${e.stop}, abeg!`, "#1c1416", bx, BIKE_Y - 70);
         setSaid(`Passenger on. Drop them at ${e.stop}.`);
         break;
       case "drop":
         PAID.set(e.stopId, { look: e.look, until: performance.now() / 1000 + 1.8 });
-        a.sound("win");
+        au?.sfx("ok-cash");
+        au?.voice("ok-paid", 2);
         navigator.vibrate?.(20);
         pop(`+${naira(e.paid + e.tip)}`, "#2e7d32", bx, BIKE_Y - 70, true);
         if (e.tip) pop(`${naira(e.tip)} tip, smooth ride!`, "#b0730a", bx, BIKE_Y - 40);
         setSaid(`Dropped at ${e.stop}. ${naira(e.paid + e.tip)}.`);
         break;
       case "missed":
-        a.sound("lose");
+        au?.voice("ok-missed", 2);
         pop("Oga, you pass my stop!", "#b8261a", bx, BIKE_Y - 70);
         setSaid(`Missed ${e.stop}. Half fare, ${naira(e.paid)}.`);
         break;
       case "bump":
-        a.sound("drop");
+        au?.sfx("ok-pothole");
+        if (at.fare) setTimeout(() => audio.current?.voice("ok-bump", 6), 350);
         navigator.vibrate?.(40);
         shake.current = 0.3;
         pop(e.saved ? "Spare tyre saved you!" : "Gbam!", "#b8261a", bx, BIKE_Y - 60);
         break;
       case "slow":
-        a.sound("tap");
+        au?.sfx(e.what === "puddle" ? "ok-splash" : e.what === "sand" ? "ok-sand" : "ok-pothole", { volume: 0.7 });
         break;
       case "agbero":
-        a.sound("lose");
+        au?.voice("agbero", 3);
         pop(`Agbero: -${naira(e.paid)}`, "#b8261a", bx, BIKE_Y - 70);
         setSaid(`An agbero took ${naira(e.paid)}.`);
         break;
       case "lastma":
-        a.sound("lose");
+        au?.sfx("ok-whistle");
+        setTimeout(() => audio.current?.voice("lastma", 3), 500);
         pop(`LASTMA! -${naira(e.paid)}`, "#b8261a", bx, BIKE_Y - 70);
         setSaid(`LASTMA stopped you: ${naira(e.paid)}.`);
         break;
       case "km":
-        a.sound("flip");
+        au?.sfx("mp-star");
         pop(`1 km! +${naira(e.paid)}`, "#2e7d32", bx, BIKE_Y - 70, true);
         break;
       case "blocked":
-        a.sound("tap");
+        au?.sfx("ok-horn");
+        au?.voice("rider-horn", 12, 0.8);
         pop("Pim pim!", "#1c1416", bx, BIKE_Y - 50);
         break;
       case "crash":
-        a.sound("lose");
+        au?.sfx("ok-crash");
+        au?.voice("rider-crash", 0);
+        au?.stopLoops();
+        au?.music(null);
         navigator.vibrate?.([60, 40, 90]);
         shake.current = 0.6;
         setSaid("Crash! The ride is over.");
         break;
       case "finish":
-        a.sound("win");
+        au?.sfx("mp-star");
+        au?.stopLoops();
+        au?.music(null);
         setSaid("End of the route!");
         break;
     }
@@ -481,12 +524,21 @@ export function OkadaRush({ api }: { api: SoloApi<OkadaState> }) {
           for (const e of r.events) react(e, r.state);
           if (r.state.over) break;
         }
+        const cur = state.current;
+        engine.current?.setRate(cur.held > 0 ? 0.6 : 0.7 + 0.75 * Math.min(1, cur.v / cur.cfg.vmax));
+        engine.current?.setVolume(0.5);
+        const au = audio.current;
+        if (au && !cur.fare && cur.things.some((t) => t.kind === "passenger" && !t.done && t.y - cur.y > 8 && t.y - cur.y < 20)) au.voice("ok-wave", 7, 0.75);
+        if (au && cur.fare && cur.stuck) au.voice("ok-late", 8);
         saved += dt;
         if (saved > 1 || state.current.over) {
           saved = 0;
           setS(state.current);
         }
-      } else acc = 0;
+      } else {
+        acc = 0;
+        if (a.paused) engine.current?.setVolume(0);
+      }
       shake.current = Math.max(0, shake.current - dt);
       const cv = canvas.current;
       const ctx = cv?.getContext("2d");
@@ -501,6 +553,11 @@ export function OkadaRush({ api }: { api: SoloApi<OkadaState> }) {
     return () => cancelAnimationFrame(raf);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- one loop for the life of the ride
   }, []);
+
+  useEffect(() => {
+    audio.current?.pauseMusic(api.paused);
+    street.current?.setVolume(api.paused ? 0 : 0.3);
+  }, [api.paused]);
 
   // A sharp canvas on any screen.
   useEffect(() => {
@@ -558,6 +615,18 @@ export function OkadaRush({ api }: { api: SoloApi<OkadaState> }) {
             </span>
           ) : null}
         </p>
+        <button
+          type="button"
+          onClick={() => {
+            setMusic((m) => !m);
+            audio.current?.setMusic(!music);
+          }}
+          aria-pressed={music}
+          aria-label={music ? "Music on. Turn it off" : "Music off. Turn it on"}
+          className={`glass ml-auto mr-2 h-9 w-9 shrink-0 rounded-full text-[1rem] ${music ? "" : "opacity-45 line-through"}`}
+        >
+          ♪
+        </button>
         <p className="text-right text-[0.8rem] font-semibold leading-tight text-muted">
           {ROUTES[road] && /^route-/.test(mode) ? ROUTES[road] : "Free Ride"}
           <br />
