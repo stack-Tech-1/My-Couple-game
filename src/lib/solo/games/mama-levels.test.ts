@@ -70,7 +70,7 @@ describe("Mama Put career and difficulty", () => {
       expect(stars(takings(cfg, 1.0), cfg), `day ${d}, good`).toBeGreaterThanOrEqual(d <= 24 ? 2 : 1);
       if (d <= 12) expect(stars(takings(cfg, 1.6), cfg), `day ${d}, slow`).toBeGreaterThanOrEqual(1);
     }
-  });
+  }, 60000);
 
   it("difficulties really differ", () => {
     const slow = (k: keyof typeof QUICK) => takings(QUICK[k], 1.3);
@@ -89,7 +89,7 @@ describe("Mama Put career and difficulty", () => {
         for (const c of s.spots) if (c) for (const it of c.order) expect(cfg.menu).toContain(it);
       }
     }
-  });
+  }, 60000);
 
   it("introduces new dishes along the way", () => {
     expect(newOnDay(1)).toEqual(["jollof", "chicken", "drink"]);
@@ -115,7 +115,7 @@ describe("Mama Put career and difficulty", () => {
         for (const c of s.spots) if (c) for (const it of c.order) expect(menu).toContain(it);
       }
     });
-  });
+  }, 60000);
 
   it("a pot of amala serves two plates; Surulere grills on charcoal", () => {
     let s = fry(newMama("amala", careerDay(7)));

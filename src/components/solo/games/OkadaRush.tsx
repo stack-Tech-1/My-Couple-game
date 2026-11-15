@@ -14,7 +14,7 @@ const W = 360;
 const H = 640;
 /** Pixels per metre, the road's left edge, a lane's width, and where the okada sits on screen. */
 const PX = 20;
-const LANE_W = 84;
+const LANE_W = 96;
 const ROAD_X = (W - LANE_W * LANES) / 2;
 const BIKE_Y = 540;
 const laneX = (l: number) => ROAD_X + (l + 0.5) * LANE_W;
@@ -44,6 +44,9 @@ const LOOK: Partial<Record<Kind, { fill: string; w: number; roof?: string }>> = 
 const PEOPLE = ["#e8563a", "#2f62b5", "#7a3fa8", "#d9a400", "#3f8a5c", "#ece4d6"];
 
 type Fx = { id: number; text: string; color: string; x: number; y: number; big?: boolean };
+
+/** Passengers just dropped, standing at their stop with the fare: stop id → who, and until when. */
+const PAID = new Map<number, { look: number; until: number }>();
 
 const imgs = new Map<string, HTMLImageElement>();
 /** A painted picture, once it has loaded (null until then, or if there isn't one). */
@@ -108,6 +111,7 @@ function draw(c: CanvasRenderingContext2D, s: OkadaState, road: number, skin: st
     }
   }
 
+  roadside(c, s, road, sy);
   // Everything on the road and at the kerb, furthest first.
   const things = [...s.things].sort((a, b) => b.y - a.y);
   for (const t of things) {
@@ -120,13 +124,17 @@ function draw(c: CanvasRenderingContext2D, s: OkadaState, road: number, skin: st
 
   // The okada, sliding between lanes, wobbling after a pothole.
   const bx = laneX(s.x) + (s.slow > 0 ? Math.sin(time * 40) * 3 : 0);
-  const pic = sprite(`okada-${skin}${s.fare ? "-p" : ""}`) ?? sprite(`okada${s.fare ? "-p" : ""}`);
-  const bh = BIKE_LEN * PX * 1.6;
+  const lean = s.lane < s.x - 0.04 ? "-l" : s.lane > s.x + 0.04 ? "-r" : "";
+  // Coloured bikes come without a passenger or a lean: those use the red one's pictures.
+  const coloured = skin !== "red" && !s.fare && RATIO[`okada-${skin}`] ? `okada-${skin}` : null;
+  const name = coloured ?? `okada${s.fare ? "-p" : ""}${lean}`;
+  const pic = sprite(name);
+  const bh = 76;
   if (pic) {
-    const bw = bh * (RATIO[`okada${s.fare ? "-p" : ""}`] ?? 0.45);
+    const bw = bh * (RATIO[name] ?? 0.48);
     c.save();
     c.translate(bx, BIKE_Y - bh / 2);
-    c.rotate((s.lane - s.x) * 0.25);
+    if (coloured) c.rotate((s.lane - s.x) * 0.22);
     c.drawImage(pic, -bw / 2, -bh / 2, bw, bh);
     c.restore();
   } else {
@@ -160,19 +168,52 @@ function draw(c: CanvasRenderingContext2D, s: OkadaState, road: number, skin: st
 }
 
 function drawThing(c: CanvasRenderingContext2D, t: Thing, x: number, yt: number, yb: number, s: OkadaState, time: number) {
-  const pic = sprite(t.kind === "passenger" ? `passenger-${t.look ?? 0}` : t.kind);
+  if (t.kind === "passenger" && t.taken) return;
+  const name = t.kind === "passenger" ? `passenger-${(t.look ?? 0) % 6}` : t.kind;
+  const pic = sprite(name);
   const kerbX = t.lane === 0 ? ROAD_X - 26 : W - ROAD_X + 26;
   if (pic) {
-    const r = RATIO[t.kind === "passenger" ? `passenger-${t.look ?? 0}` : t.kind] ?? 1;
-    if (isTraffic(t.kind) || ["pothole", "deep", "puddle", "cone", "sand", "barrier"].includes(t.kind)) {
+    const r = RATIO[name] ?? 1;
+    if (isTraffic(t.kind)) {
+      // Drawn to its real length.
       const h = yb - yt;
-      const w = Math.min(LANE_W * 0.95, h * r);
-      c.drawImage(pic, x - w / 2, yt, w, w / r);
+      c.drawImage(pic, x - (h * r) / 2, yt, h * r, h);
+      if (t.stopT) brakeLights(c, x, yb, (h * r) / 2 - 6);
+    } else if (HAZARD_W[t.kind]) {
+      const w = HAZARD_W[t.kind]!;
+      c.drawImage(pic, x - w / 2, (yt + yb) / 2 - w / r / 2, w, w / r);
+    } else if (t.kind === "stop") {
+      const mine = s.fare?.stopId === t.id;
+      const w = 64;
+      const sx = t.lane === 0 ? 30 : W - 30;
+      if (mine) {
+        c.beginPath();
+        c.ellipse(sx, yb - w / 2, w * 0.62, w * 0.62, 0, 0, Math.PI * 2);
+        c.fillStyle = `rgba(46,155,87,${0.35 + 0.15 * Math.sin(time * 6)})`;
+        c.fill();
+      }
+      c.drawImage(pic, sx - w / 2, yb - w / r, w, w / r);
+      nameTag(c, stopName(s, t), sx, yb - w / r - 4, t.lane === 0 ? "left" : "right", mine);
+      const paid = PAID.get(t.id);
+      const who = paid && time < paid.until ? sprite(`paid-${paid.look % 6}`) : null;
+      if (who) {
+        const ph = 52;
+        const pr = RATIO[`paid-${paid!.look % 6}`] ?? 0.75;
+        c.drawImage(who, (t.lane === 0 ? sx + 22 : sx - 22) - (ph * pr) / 2, yb - ph, ph * pr, ph);
+      }
     } else {
-      const h = t.kind === "stop" ? 92 : 58;
-      c.drawImage(pic, kerbX - (h * r) / 2, yb - h, h * r, h);
+      // People: passengers on the pavement, agberos and LASTMA at the kerb's edge of the road.
+      const h = t.kind === "passenger" ? 54 : 50;
+      const px = t.kind === "passenger" ? (t.lane === 0 ? 20 : W - 20) : t.lane === 0 ? ROAD_X + 16 : W - ROAD_X - 16;
+      const bob = t.kind === "passenger" && !t.done ? Math.sin(time * 8 + t.id) * 1.5 : 0;
+      if (t.kind === "passenger" && !t.done && !s.fare) {
+        c.beginPath();
+        c.ellipse(px, yb - 8, 24, 10, 0, 0, Math.PI * 2);
+        c.fillStyle = `rgba(242,183,5,${0.45 + 0.2 * Math.sin(time * 6)})`;
+        c.fill();
+      }
+      c.drawImage(pic, px - (h * r) / 2, yb - h + bob, h * r, h);
     }
-    if (t.stopT && isTraffic(t.kind)) brakeLights(c, x, yb, LANE_W * 0.4);
     return;
   }
   const look = LOOK[t.kind];
@@ -270,6 +311,52 @@ function drawThing(c: CanvasRenderingContext2D, t: Thing, x: number, yt: number,
   }
 }
 
+/** How wide road hazards are drawn (their length on the road is the rules' business). */
+const HAZARD_W: Partial<Record<Kind, number>> = { pothole: 46, deep: 60, puddle: 62, cone: 28, sand: 56, barrier: 84 };
+
+/** A bus stop's name on a little sign, kept on screen. */
+function nameTag(c: CanvasRenderingContext2D, text: string, x: number, y: number, side: "left" | "right", mine: boolean) {
+  c.font = "800 10px Manrope, sans-serif";
+  const w = c.measureText(text).width + 12;
+  const left = side === "left" ? Math.max(2, x - w / 2) : Math.min(W - w - 2, x - w / 2);
+  c.beginPath();
+  c.roundRect(left, y - 15, w, 16, 8);
+  c.fillStyle = mine ? "#2e9b57" : "rgba(28,20,22,.82)";
+  c.fill();
+  c.fillStyle = "#fff";
+  c.textAlign = "left";
+  c.fillText(text, left + 6, y - 3.5);
+}
+
+/** Roadside life on the pavements, the same every time you pass a spot. */
+const PROPS: readonly (readonly string[])[] = [
+  ["kiosk", "mallam", "tyres", "fruit", "streetlight", "generator"],
+  ["kiosk", "streetlight", "generator", "tyres", "mallam"],
+  [],
+  ["palm", "streetlight", "fruit", "palm"],
+  ["palm"],
+];
+function roadside(c: CanvasRenderingContext2D, s: OkadaState, road: number, sy: (wy: number) => number) {
+  const list = PROPS[road] ?? [];
+  if (!list.length) return;
+  const gap = 18;
+  for (let k = Math.floor((s.y - 12) / gap); k * gap < s.y + 34; k++) {
+    const h = Math.abs(Math.sin(k * 12.9898) * 43758.5453) % 1;
+    if (h < 0.45) continue;
+    const side = h < 0.72 ? 0 : 2;
+    const wy = k * gap + (h * 97) % 8;
+    // Leave room for bus stops and people at the kerb.
+    if (s.things.some((t) => (t.kind === "stop" || t.kind === "passenger") && t.lane === side && Math.abs(t.y - wy) < 6)) continue;
+    const name = list[Math.floor(h * 1000) % list.length]!;
+    const pic = sprite(name);
+    if (!pic) continue;
+    const r = RATIO[name] ?? 1;
+    const w = name === "streetlight" ? 22 : 34;
+    const x = side === 0 ? 17 : W - 17;
+    c.drawImage(pic, x - w / 2, sy(wy) - w / r, w, w / r);
+  }
+}
+
 function brakeLights(c: CanvasRenderingContext2D, x: number, yb: number, half: number) {
   c.fillStyle = "#ff3a2a";
   c.shadowColor = "#ff3a2a";
@@ -323,6 +410,7 @@ export function OkadaRush({ api }: { api: SoloApi<OkadaState> }) {
         setSaid(`Passenger on. Drop them at ${e.stop}.`);
         break;
       case "drop":
+        PAID.set(e.stopId, { look: e.look, until: performance.now() / 1000 + 1.8 });
         a.sound("win");
         navigator.vibrate?.(20);
         pop(`+${naira(e.paid + e.tip)}`, "#2e7d32", bx, BIKE_Y - 70, true);

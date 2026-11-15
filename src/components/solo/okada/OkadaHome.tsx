@@ -12,6 +12,7 @@ import { buyOkadaGear } from "@/lib/solo/shop-actions";
 const naira = (n: number) => `₦${n.toLocaleString("en-NG")}`;
 const SKIN_COLOUR: Record<SkinId, string> = { "skin-red": "#d23a2b", "skin-blue": "#2f62b5", "skin-black": "#2a2526", "skin-gold": "#d9a400", "skin-green": "linear-gradient(90deg,#2e8b57 50%,#f4f1ea 50%)", "skin-pink": "#e86aa6" };
 const SKIN_KEY = "amah:okada:skin";
+const ART = "/games/okada/";
 
 /** Okada Rush's home: your rank, the five routes, Free Ride, and the garage. */
 export function OkadaHome({ career }: { career: OkadaCareer }) {
@@ -64,17 +65,20 @@ export function OkadaHome({ career }: { career: OkadaCareer }) {
 
   return (
     <div className="mx-auto max-w-[460px]">
-      <div className="mt-5">
-        <h1 className="display text-[2.2rem] leading-none">Okada Rush</h1>
-        <p className="mt-1.5 text-muted">Carry Lagos to work, one route at a time.</p>
+      <div className="mt-5 flex items-end gap-2">
+        <div className="min-w-0 flex-1 pb-3">
+          <h1 className="display text-[2.2rem] leading-none">Okada Rush</h1>
+          <p className="mt-1.5 text-muted">Carry Lagos to work, one route at a time.</p>
+        </div>
+        {/* eslint-disable-next-line @next/next/no-img-element -- local art, already sized */}
+        <img src={`${ART}hero.webp`} alt="" className="-mb-2 h-[150px] w-auto shrink-0 drop-shadow-[0_10px_14px_rgba(28,20,22,.35)]" />
       </div>
 
       {/* Rank */}
       <section aria-labelledby="ok-rank-h" className="mt-5 rounded-[20px] bg-[#1f1b1d] px-4 py-3.5 text-white">
         <div className="flex items-center gap-3">
-          <span aria-hidden className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#f2b705] font-display text-[1.3rem] font-black text-[#1f1b1d]">
-            {rank.index + 1}
-          </span>
+          {/* eslint-disable-next-line @next/next/no-img-element -- local art, already sized */}
+          <img src={`${ART}badge-${rank.index + 1}.webp`} alt="" className="h-14 w-14 shrink-0" />
           <span className="min-w-0 flex-1">
             <span className="text-[0.75rem] text-[#cfc6bf]">Your rank</span>
             <b id="ok-rank-h" className="display block text-[1.35rem] leading-tight">
@@ -92,7 +96,9 @@ export function OkadaHome({ career }: { career: OkadaCareer }) {
         <p className="mt-1.5 text-[0.75rem] text-[#cfc6bf]">{rank.next ? `${Math.max(0, Math.round((rank.next.km - career.km) * 10) / 10)} km more to ${rank.next.name}.` : "The top of the park. Every rider knows your name."}</p>
         <ol className="mt-2 flex justify-between text-[0.6rem] font-bold text-[#8f8580]" aria-label="Ranks">
           {RANKS.map((r, i) => (
-            <li key={r.name} className={cn(i <= rank.index && "text-[#f2b705]")}>
+            <li key={r.name} className={cn("flex flex-col items-center gap-0.5", i <= rank.index && "text-[#f2b705]")}>
+              {/* eslint-disable-next-line @next/next/no-img-element -- local art, already sized */}
+              <img src={`${ART}badge-${i + 1}.webp`} alt="" className={cn("h-7 w-7", i > rank.index && "opacity-35 grayscale")} />
               {r.name}
             </li>
           ))}
@@ -182,7 +188,9 @@ export function OkadaHome({ career }: { career: OkadaCareer }) {
             const have = gear.includes(g.id);
             const afford = savings >= g.price;
             return (
-              <li key={g.id} className="glass flex flex-col rounded-[18px] px-3 py-2.5">
+              <li key={g.id} className="glass relative flex flex-col rounded-[18px] px-3 py-2.5">
+                {/* eslint-disable-next-line @next/next/no-img-element -- local art, already sized */}
+                <img src={`${ART}g-${g.id}.webp`} alt="" className="mx-auto mb-1 h-[52px] w-auto object-contain" />
                 <b className="display text-[0.95rem] leading-tight">{g.name}</b>
                 <span className="mt-0.5 min-h-[2.4em] text-[0.72rem] leading-snug text-muted">{g.about}</span>
                 {have ? (

@@ -51,6 +51,8 @@ export type Thing = {
   look?: number;
   /** Already dealt with (passed, paid, picked up). */
   done?: boolean;
+  /** A passenger now on the okada. */
+  taken?: boolean;
 };
 
 /** Bus stops, named on the signs and in the passengers' requests. */
@@ -204,7 +206,7 @@ export type OkadaState = {
 /** What happened in a tick, for sounds and pop-ups. */
 export type OkadaEvent =
   | { kind: "pick"; stop: string }
-  | { kind: "drop"; paid: number; tip: number; stop: string }
+  | { kind: "drop"; paid: number; tip: number; stop: string; stopId: number; look: number }
   | { kind: "missed"; paid: number; stop: string }
   | { kind: "bump"; deep: boolean; saved: boolean }
   | { kind: "slow"; what: Kind }
@@ -363,6 +365,7 @@ export function tick(seed: string, s0: OkadaState, dt: number): { state: OkadaSt
         const stop = nextStopFor(s, t);
         if (stop) {
           s.fare = { stopId: stop.id, stop: stopName(s, stop), look: t.look ?? 0, from: s.y, at: s.time, bumps: 0, late: 0 };
+          t.taken = true;
           events.push({ kind: "pick", stop: s.fare.stop });
         }
       } else if (t.kind === "stop" && s.fare?.stopId === t.id) {
@@ -373,7 +376,7 @@ export function tick(seed: string, s0: OkadaState, dt: number): { state: OkadaSt
         s.money += base + tip;
         s.served++;
         s.fare = null;
-        events.push({ kind: "drop", paid: base, tip, stop: f.stop });
+        events.push({ kind: "drop", paid: base, tip, stop: f.stop, stopId: t.id, look: f.look });
       } else if (t.kind === "agbero") {
         const paid = Math.min(s.money, 200);
         s.money -= paid;
