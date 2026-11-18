@@ -14,6 +14,8 @@ import { DAYS, FREE_CAREER_MODES, dayOpen } from "./games/mama";
 import { mamaDayBest } from "./mama-server";
 import { ROUTES, routeOpen } from "./games/okada";
 import { okadaRouteBest } from "./okada-server";
+import { LEVELS, levelOpen } from "./games/zobo";
+import { zoboLevelCleared } from "./zobo-server";
 
 async function limited(uid: string, action: string, max: number, windowSeconds: number) {
   const { data } = await supabaseAdmin().rpc("server_rate_limit", { uid, action, max_hits: max, window_seconds: windowSeconds });
@@ -62,14 +64,26 @@ export async function startRun(raw: unknown): Promise<StartResult> {
     const before = n > 1 ? await okadaRouteBest(user.id, n - 1) : null;
     if (!routeOpen(n, () => before ?? undefined)) return { ok: false, error: `Get a star on ${ROUTES[n - 2]} first.`, blocked: true };
   }
-  // Without Plus, each game twice a day. Challenges are always open, and so is Mama Put's Yaba.
+  // Zobo Sort: levels open in order, by finishing the one before.
+  const zoboLevel = p.data.gameId === "zobo-sort" ? /^lvl-(\d{1,3})$/.exec(p.data.mode) : null;
+  if (zoboLevel) {
+    const n = Number(zoboLevel[1]);
+    if (n < 1 || n > LEVELS) return { ok: false, error: "There's no such level.", blocked: true };
+    const before = n > 1 ? await zoboLevelCleared(user.id, n - 1) : true;
+    if (!levelOpen(n, () => before)) return { ok: false, error: `Finish level ${n - 1} first.`, blocked: true };
+  }
+  // Without Plus, each game twice a day (Zobo Sort, one level a day). Challenges are always open, and so is Mama Put's Yaba.
   let left: number | null = null;
   const freeMode = p.data.gameId === "mama-put" && (FREE_CAREER_MODES as readonly string[]).includes(p.data.mode);
   if (!p.data.challenge && !daily && !freeMode) {
     const plays = await soloFreePlays(user.id, p.data.gameId);
     if (plays.limited) {
-      if (plays.left <= 0) return { ok: false, error: `That's today's ${FREE_PLAYS_PER_DAY} free games. It opens again ${untilText(plays.resetsAt)}.`, resetsAt: plays.resetsAt };
-      left = plays.left - 1;
+      const retry = !!plays.modes?.includes(p.data.mode);
+      if (plays.left <= 0 && !retry) {
+        const what = p.data.gameId === "zobo-sort" ? "free level" : `${FREE_PLAYS_PER_DAY} free games`;
+        return { ok: false, error: `That's today's ${what}. It opens again ${untilText(plays.resetsAt)}.`, resetsAt: plays.resetsAt };
+      }
+      left = retry ? plays.left : plays.left - 1;
     }
   }
 

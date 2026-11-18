@@ -7,6 +7,8 @@ import type { ActionResult } from "@/lib/room/types";
 import { AREAS, isUpgrade, upgradePrice, type UpgradeId } from "./games/mama";
 import { mamaOwned } from "./mama-server";
 import { GEAR, SKINS, isGear, isSkin } from "./games/okada";
+import { randomBytes } from "node:crypto";
+import { HELPERS, lookPrice, type HelperId } from "./games/zobo";
 
 const buyInput = z.object({ area: z.number().int().min(0).max(AREAS.length - 1), item: z.string().max(30) });
 
@@ -40,5 +42,34 @@ export async function buyOkadaGear(raw: unknown): Promise<ActionResult<{ savings
     if (error.message.includes("already owned")) return { ok: false, error: "You already have that." };
     return { ok: false, error: "Couldn't buy it. Try again?" };
   }
+  return { ok: true, data: { savings: Number(data) } };
+}
+
+/** Buy a Zobo Sort bottle or shelf look. The price comes from here, never the phone. */
+export async function buyZoboLook(raw: unknown): Promise<ActionResult<{ savings: number }>> {
+  const p = z.object({ item: z.string().max(30) }).safeParse(raw);
+  const item = p.success ? p.data.item : "";
+  const price = lookPrice(item);
+  if (price == null) return { ok: false, error: "The stall doesn't sell that." };
+  const user = await getUser();
+  if (!user) return { ok: false, error: "Sign in to shop." };
+  const { data, error } = await supabaseAdmin().rpc("solo_shop_buy", { p_user: user.id, p_game: "zobo-sort", p_area: 0, p_item: item, p_price: price });
+  if (error) {
+    if (error.message.includes("not enough savings")) return { ok: false, error: "Not enough savings yet. A few more levels!" };
+    if (error.message.includes("already owned")) return { ok: false, error: "You already have that." };
+    return { ok: false, error: "Couldn't buy it. Try again?" };
+  }
+  return { ok: true, data: { savings: Number(data) } };
+}
+
+/** Pay for a hint or an extra bottle. Each one is its own purchase, so they can be bought again. */
+export async function buyZoboHelper(raw: unknown): Promise<ActionResult<{ savings: number }>> {
+  const p = z.object({ kind: z.enum(Object.keys(HELPERS) as [HelperId, ...HelperId[]]) }).safeParse(raw);
+  if (!p.success) return { ok: false, error: "The stall doesn't sell that." };
+  const user = await getUser();
+  if (!user) return { ok: false, error: "Sign in to shop." };
+  const item = `${p.data.kind}-${randomBytes(9).toString("hex")}`;
+  const { data, error } = await supabaseAdmin().rpc("solo_shop_buy", { p_user: user.id, p_game: "zobo-sort", p_area: 1, p_item: item, p_price: HELPERS[p.data.kind].price });
+  if (error) return { ok: false, error: error.message.includes("not enough savings") ? "Not enough savings yet. A few more levels!" : "Couldn't buy it. Try again?" };
   return { ok: true, data: { savings: Number(data) } };
 }

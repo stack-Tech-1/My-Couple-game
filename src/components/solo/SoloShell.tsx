@@ -24,7 +24,7 @@ export type SoloApi<S> = {
   /** Which version is being played: "normal", a difficulty, a career day ("day-4")… */
   mode: string;
   /** Anything else the game needs from the server, such as Mama Put's shop upgrades. */
-  extras?: { owned?: readonly string[]; tutorial?: boolean; skin?: string };
+  extras?: { owned?: readonly string[]; tutorial?: boolean; skin?: string; savings?: number };
   /** For games that hide the frame (full screen): pause and carry on from inside the game. */
   pause?: () => void;
   resume?: () => void;
@@ -72,6 +72,8 @@ export function SoloShell<S>({
   toured = false,
   extras,
   doneView,
+  outNote,
+  posterHeadline,
   children,
 }: {
   gameId: string;
@@ -88,7 +90,11 @@ export function SoloShell<S>({
   toured?: boolean;
   extras?: SoloApi<S>["extras"];
   /** A game's own finish screen (Mama Put's career day), in place of the score and buttons. */
-  doneView?: (r: { score: number; best: number; newBest: boolean; again: () => void; share: () => void }) => ReactNode;
+  doneView?: (r: { score: number; best: number; newBest: boolean; left: number | null; again: () => void; share: () => void }) => ReactNode;
+  /** What the waiting screen says when today's free plays are used. */
+  outNote?: string;
+  /** The line on the share poster, in place of the score. */
+  posterHeadline?: (score: number) => string;
   children: (api: SoloApi<S>) => ReactNode;
 }) {
   const game = soloGame(gameId)!;
@@ -185,7 +191,11 @@ export function SoloShell<S>({
   }, [gameId, mode, fixedSeed, challenge]);
 
   // First load: offer to carry on a game saved on this phone, unless this is a challenge.
+  // Only ever once: a second start would restart the game under the player's fingers.
+  const arrived = useRef(false);
   useEffect(() => {
+    if (arrived.current) return;
+    arrived.current = true;
     const s = challenge ? null : readSave<S>(key);
     if (s && (!fixedSeed || s.seed === fixedSeed)) {
       setRun({ runId: s.runId, seed: s.seed, target: s.target });
@@ -209,6 +219,7 @@ export function SoloShell<S>({
     sound: (n) => soundOn && playSound(n),
     soundOn,
     save: (state) => {
+      if (phase !== "playing") return;
       lastState.current = state;
       if (Date.now() - lastWrite.current > 1500) {
         lastWrite.current = Date.now();
@@ -219,6 +230,8 @@ export function SoloShell<S>({
       if (phase !== "playing" || !run) return;
       const ms = playedMs();
       setPhase("done");
+      // Finished: nothing to carry on from, even when the page closes after this.
+      lastState.current = null;
       try {
         localStorage.removeItem(key);
       } catch {
@@ -315,7 +328,7 @@ export function SoloShell<S>({
       {phase === "done" ? (
         <section aria-live="polite" aria-labelledby="solo-result-h" className="glass mt-5 rounded-[26px] p-5 text-center">
           {result && doneView ? (
-            doneView({ score: result.score, best: result.best, newBest: result.newBest, again: () => void begin(), share: () => void share() })
+            doneView({ score: result.score, best: result.best, newBest: result.newBest, left: run?.left ?? null, again: () => void begin(), share: () => void share() })
           ) : result ? (
             <>
               <p id="solo-result-h" className="display text-[2.4rem] leading-none">{formatScore(game, result.score)}</p>
@@ -360,7 +373,7 @@ export function SoloShell<S>({
       ) : null}
 
       {phase === "out" && resetsAt ? (
-        <OutOfPlays gameName={game.name} resetsAt={resetsAt} plusHref={limits.plusHref} openNow={limits.openNow.filter((o) => o.href !== `/solo/${gameId}`)} onReopen={reopen} />
+        <OutOfPlays gameName={game.name} note={outNote} resetsAt={resetsAt} plusHref={limits.plusHref} openNow={limits.openNow.filter((o) => o.href !== `/solo/${gameId}`)} onReopen={reopen} />
       ) : null}
 
       {touring ? <SoloTour gameId={gameId} onDone={endTour} /> : null}
@@ -373,7 +386,7 @@ export function SoloShell<S>({
             data={{
               people: [limits.me ?? { name: myName, motif: "fig", hue: 12 }],
               level: null,
-              headline: result.newBest ? `New best: ${formatScore(game, result.score)}` : formatScore(game, result.score),
+              headline: posterHeadline?.(result.score) ?? (result.newBest ? `New best: ${formatScore(game, result.score)}` : formatScore(game, result.score)),
               stats: [
                 { value: formatScore(game, result.score), label: `in ${game.name}` },
                 ...(result.best !== result.score ? [{ value: formatScore(game, result.best), label: "my best" }] : []),

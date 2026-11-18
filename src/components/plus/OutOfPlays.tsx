@@ -19,7 +19,7 @@ const two = (n: number) => String(n).padStart(2, "0");
  * Today's free plays are used up. Never a dead end: when it opens again (ticking down to
  * Lagos midnight), Plus for unlimited play, and what's still open right now.
  */
-export function OutOfPlays({ gameName, resetsAt, plusHref, openNow, onReopen }: { gameName: string; resetsAt: string; plusHref: string | null; openNow: OpenNow[]; onReopen?: () => void }) {
+export function OutOfPlays({ gameName, note, resetsAt, plusHref, openNow, onReopen }: { gameName: string; note?: string; resetsAt: string; plusHref: string | null; openNow: OpenNow[]; onReopen?: () => void }) {
   const [t, setT] = useState(() => left(resetsAt));
   useEffect(() => {
     const id = setInterval(() => {
@@ -36,7 +36,7 @@ export function OutOfPlays({ gameName, resetsAt, plusHref, openNow, onReopen }: 
   return (
     <section aria-labelledby="oop-h" className="glass mt-6 overflow-hidden rounded-[26px]">
       <div className="px-5 pb-5 pt-6 text-center">
-        <p className="text-[0.85rem] font-bold text-muted">That&apos;s today&apos;s {FREE_PLAYS_PER_DAY} free games of {gameName}</p>
+        <p className="text-[0.85rem] font-bold text-muted">{note ?? `That's today's ${FREE_PLAYS_PER_DAY} free games of ${gameName}`}</p>
         <h2 id="oop-h" className="display mt-2 text-[1.9rem] leading-tight">It opens again at midnight</h2>
         <p className="mt-4 flex items-end justify-center gap-1.5 font-semibold tabular-nums" role="timer" aria-label={`${t.h} hours ${t.m} minutes left`}>
           {[

@@ -33,8 +33,8 @@ export const SOLO_TOURS: Record<string, TourStep[]> = {
   ],
   "zobo-sort": [
     { target: "zobo-shelf", title: "Pour and sort", body: ["Tap a bottle to pick it up, then tap another to pour into it.", "You can pour onto the same drink, or into an empty bottle."] },
-    { title: "One drink a bottle", body: ["Finish when every bottle holds just one drink.", "Each level adds another drink."] },
-    { target: "zobo-undo", title: "Made a mess?", body: ["Undo takes back a pour (five a level). Restart deals the level again."] },
+    { title: "One drink a bottle", body: ["Finish when every bottle holds just one drink.", "Use few pours for three stars. Each stall adds a new twist."] },
+    { target: "zobo-undo", title: "Made a mess?", body: ["Undo takes back a pour (five a level), and it counts as a pour. Restart begins the level again.", "Stuck? Spend your takings on a hint or an extra bottle."] },
   ],
   "catch-am": [
     { target: "catch-market", title: "Catch the food", body: ["Puff-puff and akara fall from the stalls. Drag your basket under them."] },

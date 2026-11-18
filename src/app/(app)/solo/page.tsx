@@ -8,13 +8,13 @@ import { soloContext } from "@/lib/solo/context";
 import { incomingChallenges, myBests } from "@/lib/solo/server";
 import { getGameFlags } from "@/lib/games/flags.server";
 import { soloFreePlaysAll } from "@/lib/plus/limits";
-import { FREE_PLAYS_PER_DAY } from "@/lib/plus/plans";
+import { freePlaysFor } from "@/lib/plus/plans";
 
 export default async function SoloHome() {
   const ctx = await soloContext();
   const [bests, challenges, flags, plays] = await Promise.all([myBests(ctx.user.id), incomingChallenges(ctx.user.id), getGameFlags(), soloFreePlaysAll(ctx.user.id)]);
   // Without Plus: each game twice a day. A used-up game says so on its card.
-  const usedUp = (id: string) => plays.limited && id !== "oro" && (plays.used[id] ?? 0) >= FREE_PLAYS_PER_DAY;
+  const usedUp = (id: string) => plays.limited && id !== "oro" && (plays.used[id] ?? 0) >= freePlaysFor(id);
   const tagFor = (id: string, otherwise?: string) => (usedUp(id) ? "Back at midnight" : otherwise);
   const live = SOLO_GAMES.filter((g) => !flags.off.includes(g.id));
   const bestOf = (id: string, mode = "normal") => bests.find((b) => b.gameId === id && b.mode === mode);
@@ -40,7 +40,7 @@ export default async function SoloHome() {
             <span className="text-[0.85rem] font-extrabold">Free</span>
           </div>
           <p className="mt-1.5 font-semibold">Quick games, no partner needed. Beat your best, then beat your friends.</p>
-          {plays.limited ? <p className="mt-1 text-[0.85rem] font-semibold opacity-80">Every game is free twice a day. Challenges and today&apos;s word are always open.</p> : null}
+          {plays.limited ? <p className="mt-1 text-[0.85rem] font-semibold opacity-80">Every game is free twice a day, and Zobo Sort gives one free level a day. Challenges and today&apos;s word are always open.</p> : null}
         </div>
       </div>
 

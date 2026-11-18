@@ -2,7 +2,7 @@ import "server-only";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { soloGame } from "@/lib/solo/catalog";
 import { FREE_CAREER_MODES } from "@/lib/solo/games/mama";
-import { FREE_PLAYS_PER_DAY, countsAsPlay, lagosDayBounds, type FreePlays } from "./plans";
+import { FREE_PLAYS_PER_DAY, countsAsPlay, freePlaysFor, lagosDayBounds, type FreePlays } from "./plans";
 import { lackingPlus, plusLive } from "./server";
 
 const open = (resetsAt: string): FreePlays => ({ limited: false, used: 0, left: Infinity, resetsAt });
@@ -45,7 +45,13 @@ export async function soloFreePlays(userId: string, gameId: string, at = Date.no
     .not("mode", "like", "d-%")
     .gte("started_at", start)
     .limit(200);
-  return counted((data ?? []).filter((r) => !freeSoloMode(gameId, r.mode as string)).length, end);
+  const modes = (data ?? []).map((r) => r.mode as string).filter((m) => !freeSoloMode(gameId, m));
+  // Zobo Sort counts different levels, so trying the same level again costs nothing.
+  if (gameId === "zobo-sort") {
+    const levels = [...new Set(modes)];
+    return { limited: true, used: levels.length, left: Math.max(0, freePlaysFor(gameId) - levels.length), resetsAt: end, modes: levels };
+  }
+  return counted(modes.length, end);
 }
 
 /** Every Solo game's plays today for one person, in one read (for the Solo home). */
@@ -54,7 +60,12 @@ export async function soloFreePlaysAll(userId: string, at = Date.now()): Promise
   if (!(await plusLive()) || !(await lackingPlus([userId])).length) return { limited: false, used: {}, resetsAt: end };
   const { data } = await supabaseAdmin().from("solo_runs").select("game_id, mode").eq("user_id", userId).is("challenge_id", null).not("mode", "like", "d-%").gte("started_at", start).limit(500);
   const used: Record<string, number> = {};
-  for (const r of data ?? []) if (!freeSoloMode(r.game_id as string, r.mode as string)) used[r.game_id as string] = (used[r.game_id as string] ?? 0) + 1;
+  const zoboLevels = new Set<string>();
+  for (const r of data ?? []) {
+    if (r.game_id === "zobo-sort") zoboLevels.add(r.mode as string);
+    else if (!freeSoloMode(r.game_id as string, r.mode as string)) used[r.game_id as string] = (used[r.game_id as string] ?? 0) + 1;
+  }
+  if (zoboLevels.size) used["zobo-sort"] = zoboLevels.size;
   return { limited: true, used, resetsAt: end };
 }
 

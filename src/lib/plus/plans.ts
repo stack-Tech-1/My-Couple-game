@@ -36,6 +36,8 @@ export const FREE_LIMITS = { photos: 5, sealedNotes: 3, friendRooms: 1 } as cons
  * where anyone has Plus has no limits; a free friend room plays two at a time.
  */
 export const FREE_PLAYS_PER_DAY = 2;
+/** Zobo Sort is rationed by level: one new level a day without Plus, and retrying it is fine. */
+export const freePlaysFor = (gameId: string) => (gameId === "zobo-sort" ? 1 : FREE_PLAYS_PER_DAY);
 export const FREE_MAX_PLAYERS = 2;
 /** Free and unlimited: these are daily rituals and keepsakes, not games to ration. */
 export const UNLIMITED_FREE = new Set(["daily-question", "love-notes", "memory-lane"]);
@@ -58,7 +60,7 @@ export function untilText(iso: string, now = Date.now()): string {
 }
 
 /** What's left today for one game. `limited` is false when Plus lifts the limit. */
-export type FreePlays = { limited: boolean; used: number; left: number; resetsAt: string };
+export type FreePlays = { limited: boolean; used: number; left: number; resetsAt: string; /** Zobo Sort: the levels started today. */ modes?: string[] };
 
 export const TRIAL_DAYS = 7;
 

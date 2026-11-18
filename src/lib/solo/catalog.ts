@@ -119,10 +119,10 @@ export const SOLO_GAMES: SoloGame[] = [
     tagline: "Pour until every bottle holds one drink.",
     kind: "puzzle",
     free: true,
-    unit: "points",
+    unit: "naira",
     look: { bg: "#8f1d40", ink: "#a02a4e", motif: "digi", accent: "#e9b13c" },
-    // A level is worth its number × 100, plus a little for a tidy solve.
-    cap: () => 50000,
+    // The most a level pays: level 100 with three stars is ₦4,400.
+    cap: () => 5000,
   },
   {
     id: "catch-am",
@@ -196,7 +196,7 @@ export type BotLevel = (typeof BOT_LEVELS)[number]["id"];
 /** How a score reads to people. */
 export function formatScore(g: SoloGame, score: number): string {
   if (g.id === "reflex") return `${score} ms`;
-  if (g.id === "mama-put" || g.id === "okada-rush") return `₦${score.toLocaleString("en-NG")}`;
+  if (g.id === "mama-put" || g.id === "okada-rush" || g.id === "zobo-sort") return `₦${score.toLocaleString("en-NG")}`;
   if (g.id === "oro") return score === 7 ? "Not solved" : `${score}/6`;
   if (g.kind === "bot") return score ? "Won" : "Lost";
   return `${score.toLocaleString("en-NG")} ${g.unit}`;

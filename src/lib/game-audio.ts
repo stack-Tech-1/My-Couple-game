@@ -259,8 +259,35 @@ function burst(ac: AudioContext, out: AudioNode, d: number, freq: number, v: num
 
 function standIn(ac: AudioContext, out: AudioNode, name: string, o: Opts) {
   const v = o.volume ?? 1;
-  const key = name.replace(/^(mp|ok)-/, "");
+  const key = name.replace(/^(mp|ok|zs)-/, "");
   switch (key) {
+    case "pick":
+      tone(ac, out, 2350, 0, 0.09, "sine", 0.06 * v);
+      tone(ac, out, 3120, 0.015, 0.07, "sine", 0.035 * v);
+      return;
+    case "put":
+      tone(ac, out, 1500, 0, 0.07, "sine", 0.05 * v, 1250);
+      return;
+    case "wrong":
+      tone(ac, out, 190, 0, 0.16, "triangle", 0.1 * v, 130);
+      return;
+    case "cork":
+      tone(ac, out, 620, 0, 0.09, "sine", 0.13 * v, 240);
+      [1046, 1318, 1760].forEach((f, i) => tone(ac, out, f, 0.1 + i * 0.07, 0.24, "sine", 0.06 * v));
+      return;
+    case "crate":
+      [0, 0.09, 0.2].forEach((t, i) => tone(ac, out, 150 - i * 20, t, 0.1, "square", 0.05 * v, 80));
+      burst(ac, out, 0.35, 1400, 0.08 * v);
+      return;
+    case "reveal":
+      tone(ac, out, 880, 0, 0.2, "sine", 0.035 * v, 1320);
+      return;
+    case "hint":
+      [988, 1318].forEach((f, i) => tone(ac, out, f, i * 0.09, 0.2, "sine", 0.06 * v));
+      return;
+    case "win":
+      [659, 784, 988, 1318, 1568].forEach((f, i) => tone(ac, out, f, i * 0.1, 0.42, "triangle", 0.07 * v));
+      return;
     case "coins":
     case "cash":
       [1318, 1568, 2093].forEach((f, i) => tone(ac, out, f, i * 0.06, 0.18, "triangle", 0.07 * v));
@@ -321,7 +348,34 @@ function standIn(ac: AudioContext, out: AudioNode, name: string, o: Opts) {
 
 /** Continuous stand-ins: an engine that revs, oil that sizzles, a pot that bubbles. Ambience stays silent. */
 function standInLoop(ac: AudioContext, out: AudioNode, name: string, rate: number) {
-  const key = name.replace(/^(mp|ok)-/, "");
+  const key = name.replace(/^(mp|ok|zs)-/, "");
+  if (key === "pour") {
+    // Running liquid: filtered noise that rises in pitch as the bottle fills, with a soft glug.
+    const s = ac.createBufferSource();
+    s.buffer = noise(ac);
+    s.loop = true;
+    const f = ac.createBiquadFilter();
+    f.type = "bandpass";
+    f.Q.value = 2.4;
+    f.frequency.value = 760 * rate;
+    const g = ac.createGain();
+    g.gain.value = 0.2;
+    const lfo = ac.createOscillator();
+    const lg = ac.createGain();
+    lfo.frequency.value = 9;
+    lg.gain.value = 0.08;
+    lfo.connect(lg).connect(g.gain);
+    s.connect(f).connect(g).connect(out);
+    s.start();
+    lfo.start();
+    return {
+      setRate: (r: number) => f.frequency.setTargetAtTime(760 * r, ac.currentTime, 0.05),
+      stop: () => {
+        s.stop();
+        lfo.stop();
+      },
+    };
+  }
   if (key === "engine" || key === "idle") {
     const o = ac.createOscillator();
     o.type = "sawtooth";

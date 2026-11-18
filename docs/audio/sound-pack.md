@@ -1,10 +1,10 @@
-# Sound pack: Mama Put and Okada Rush
+# Sound pack: Mama Put, Okada Rush and Zobo Sort
 
 Three kinds of sound, from three places:
 
 | Kind | Where it comes from | How many |
 |---|---|---|
-| Sound effects (sizzle, horn, crash…) | **ElevenLabs Sound Effects** (AI) | 30 |
+| Sound effects (sizzle, horn, pouring…) | **ElevenLabs Sound Effects** (AI) | 39 |
 | Background music | **Suno** (AI) | 7 |
 | Voices (customers, passengers, agbero, LASTMA) | **You and your friends**, recorded on a phone | 34 lines |
 
@@ -52,6 +52,20 @@ Save everything into a new folder next to `game images`, called **`game sounds`*
 | `mp-bell` | 0.6 | A small brass counter bell, one ding |
 | `mp-star` | 1.2 | A short bright magical chime, rising, for winning a star |
 | `mp-street` (loop) | 20 | Busy outdoor Lagos street food stall, people chatting in the distance, faint traffic and horns far away, no clear words, no music |
+
+### Zobo Sort (file names start `zs-`)
+
+| File | Seconds | Prompt |
+|---|---|---|
+| `zs-pour` (loop) | 3 | Cold drink poured steadily from a glass bottle into another glass bottle, close-up liquid stream with soft glugging, constant flow, no voices, no music |
+| `zs-pick` | 0.4 | A glass bottle lifted off a wooden shelf, one light glass clink |
+| `zs-put` | 0.4 | A glass bottle set down gently on a wooden shelf, soft tap |
+| `zs-wrong` | 0.5 | A dull muted wooden thud, a gentle refusal sound |
+| `zs-cork` | 0.8 | A cork pressed into a full glass bottle with a satisfying pop, then a tiny bright sparkle |
+| `zs-crate` | 1.2 | A small wooden crate being pried open, nails creaking and planks clattering down |
+| `zs-reveal` | 0.6 | A soft airy shimmer, a cloth lifted off something |
+| `zs-hint` | 0.7 | Two soft bright chimes, a helpful little idea sound |
+| `zs-win` | 2 | A short joyful marimba and shekere flourish for finishing a puzzle level, no voices |
 
 ### Okada Rush (file names start `ok-`)
 

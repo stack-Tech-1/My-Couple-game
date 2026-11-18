@@ -17,6 +17,9 @@ import { mamaCareer } from "@/lib/solo/mama-server";
 import { OkadaHome } from "@/components/solo/okada/OkadaHome";
 import { okadaCareer } from "@/lib/solo/okada-server";
 import { ROUTES, ROUTE_ABOUT, isSkin, routeOpen } from "@/lib/solo/games/okada";
+import { ZoboHome } from "@/components/solo/zobo/ZoboHome";
+import { zoboCareer } from "@/lib/solo/zobo-server";
+import { STALLS, levelOfMode, levelOpen, stallOf } from "@/lib/solo/games/zobo";
 import { AREAS, DAYS, DIFFICULTIES, DIFFICULTY_NAME, ITEM_NAME, areaIndex, dayOpen, newOnDay, type Difficulty } from "@/lib/solo/games/mama";
 
 export async function generateMetadata({ params }: { params: Promise<{ game: string }> }): Promise<Metadata> {
@@ -59,6 +62,8 @@ export default async function SoloGamePage({ params, searchParams }: { params: P
     body = await mamaPutBody(ctx.user.id, modeParam, common, ctx.rooms);
   } else if (game.id === "okada-rush" && !daily && !common.challenge) {
     body = await okadaBody(ctx.user.id, modeParam, skin, common, ctx.rooms);
+  } else if (game.id === "zobo-sort" && !common.challenge) {
+    body = await zoboBody(ctx.user.id, modeParam, common);
   } else if (game.kind === "bot") {
     body = <BotScreen gameId={game.id} base={game.base!} myName={ctx.profile.display_name} soundOn={ctx.soundOn} toured={toured} />;
   } else {
@@ -117,6 +122,22 @@ async function mamaPutBody(userId: string, mode: string | undefined, common: { m
       <MamaHome career={career} />
       <SoloBoards gameId="mama-put" rooms={rooms} me={userId} />
     </>
+  );
+}
+
+/** Zobo Sort: the five stalls and the shop, or a chosen level. */
+async function zoboBody(userId: string, mode: string | undefined, common: { myName: string; soundOn: boolean; toured: boolean; challenge: string | null }) {
+  const career = await zoboCareer(userId);
+  const level = mode ? levelOfMode(mode) : null;
+  if (!level) return <ZoboHome career={career} />;
+  if (!levelOpen(level, (n) => career.levelStars[n - 1]! > 0)) redirect("/solo/zobo-sort");
+  const stall = STALLS[stallOf(level)]!;
+  return (
+    <ArcadeScreen
+      gameId="zobo-sort"
+      {...common}
+      play={{ mode: `lvl-${level}`, owned: career.looks, savings: career.savings, zobo: { level, totalStars: career.totalStars, levelStars: career.levelStars[level - 1]! }, title: `Level ${level}`, tagline: `${stall.name}. ${stall.about}` }}
+    />
   );
 }
 

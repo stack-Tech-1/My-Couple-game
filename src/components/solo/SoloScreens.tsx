@@ -13,6 +13,8 @@ import type { FixPicture } from "./games/FixAm";
 import { Credit } from "./Credit";
 import { MamaDayDone } from "./mama/MamaDayDone";
 import { OkadaRouteDone } from "./okada/OkadaRouteDone";
+import { ZoboLevelDone } from "./zobo/ZoboLevelDone";
+import { rankFor, starsOfTakings } from "@/lib/solo/games/zobo";
 
 // Each game is its own download, fetched only when you open it.
 const loading = () => <p className="py-16 text-center text-muted">Setting up…</p>;
@@ -42,11 +44,14 @@ export function ArcadeScreen({
   gameId: string;
   daily?: { mode: string; seed: string } | null;
   /** A chosen version (Mama Put's difficulty or career day, an Okada Rush route) and what it needs, such as upgrades. */
-  play?: { mode: string; title: string; tagline: string; owned?: readonly string[]; tutorial?: boolean; careerDay?: number; route?: number; skin?: string } | null;
+  play?: { mode: string; title: string; tagline: string; owned?: readonly string[]; tutorial?: boolean; careerDay?: number; route?: number; skin?: string; savings?: number; zobo?: { level: number; totalStars: number; levelStars: number } } | null;
 }) {
   const game = soloGame(gameId)!;
   const careerDay = play?.careerDay;
   const route = play?.route;
+  const zobo = play?.zobo;
+  // The stars this level adds to the career, for the rank on the finish screen and the poster.
+  const zoboTotal = (score: number) => (zobo ? zobo.totalStars + Math.max(0, starsOfTakings(zobo.level, score) - zobo.levelStars) : 0);
   return (
     <SoloShell<AnySaved>
       gameId={gameId}
@@ -55,7 +60,14 @@ export function ArcadeScreen({
       challenge={c.challenge}
       toured={c.toured}
       {...(daily ? { mode: daily.mode, seed: daily.seed, backHref: "/room" } : {})}
-      {...(play ? { mode: play.mode, backHref: `/solo/${gameId}`, extras: { owned: play.owned ?? [], tutorial: play.tutorial, skin: play.skin } } : {})}
+      {...(play ? { mode: play.mode, backHref: `/solo/${gameId}`, extras: { owned: play.owned ?? [], tutorial: play.tutorial, skin: play.skin, savings: play.savings } } : {})}
+      {...(gameId === "zobo-sort" ? { outNote: "That's today's free level of Zobo Sort" } : {})}
+      {...(zobo
+        ? {
+            posterHeadline: (score: number) => `${rankFor(zoboTotal(score)).name}, level ${zobo.level}`,
+            doneView: (r: { score: number; newBest: boolean; left: number | null; again: () => void; share: () => void }) => <ZoboLevelDone level={zobo.level} score={r.score} totalBefore={zobo.totalStars} totalAfter={zoboTotal(r.score)} left={r.left} again={r.again} share={r.share} />,
+          }
+        : {})}
       {...(careerDay ? { doneView: (r: { score: number; newBest: boolean; again: () => void; share: () => void }) => <MamaDayDone day={careerDay} score={r.score} newBest={r.newBest} again={r.again} share={r.share} /> } : {})}
       {...(route ? { doneView: (r: { score: number; newBest: boolean; again: () => void; share: () => void }) => <OkadaRouteDone route={route} score={r.score} newBest={r.newBest} again={r.again} share={r.share} /> } : {})}
       header={<Title name={daily ? `Today's game: ${game.name}` : (play?.title ?? game.name)} tagline={daily ? "The same level for everyone today. You get one go." : (play?.tagline ?? game.tagline)} />}
