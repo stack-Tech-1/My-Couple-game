@@ -33,7 +33,11 @@ export type CatchState = {
 };
 export type CatchEvents = { caught: { kind: ItemKind; x: number; points: number }[]; missed: number; burned: boolean };
 
-export const multiplier = (combo: number) => Math.min(5, 1 + Math.floor(combo / 3));
+/** The last game's numbers, kept for the finish screen (which only gets the score). */
+export type CatchLast = { caught: number; gold: number; bestCombo: number; seed: string };
+export const CATCH_LAST = "amah:catch:last";
+
+export const multiplier =(combo: number) => Math.min(5, 1 + Math.floor(combo / 3));
 
 /** How hard it is after `t` seconds: gap between items, fall speed, and the share of peppers. */
 export function pace(t: number) {

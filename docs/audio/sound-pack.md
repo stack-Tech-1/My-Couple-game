@@ -1,10 +1,10 @@
-# Sound pack: Mama Put, Okada Rush, Zobo Sort, Mosquito Wahala, Bash Am and Pump Am
+# Sound pack: Mama Put, Okada Rush, Zobo Sort, Mosquito Wahala, Bash Am, Pump Am and Catch Am
 
 Three kinds of sound, from three places:
 
 | Kind | Where it comes from | How many |
 |---|---|---|
-| Sound effects (sizzle, horn, pouring, buzzing, breaking…) | **ElevenLabs Sound Effects** (AI) | 81 |
+| Sound effects (sizzle, horn, pouring, buzzing, breaking…) | **ElevenLabs Sound Effects** (AI) | 88 |
 | Background music | **Suno** (AI) | 7 |
 | Voices (customers, passengers, agbero, LASTMA, a bitten sleeper, a danfo conductor) | **You and your friends**, recorded on a phone | 37 lines |
 
@@ -127,6 +127,18 @@ One short voice line, recorded on a phone like the others: `v-ba-danfo` ("Oshodi
 | `pa-tick` | 0.2 | One short clock tick, crisp and quiet |
 | `pa-win` | 2 | A short joyful marimba and shekere flourish with bubbly water sparkle, no voices |
 | `pa-lose` | 1.5 | A short gentle descending marimba phrase with a soft bubble, no voices |
+
+### Catch Am (file names start `ca-`)
+
+| File | Seconds | Prompt |
+|---|---|---|
+| `ca-catch` | 0.3 | A soft fried dough ball dropping into a woven straw basket, a light muffled thump |
+| `ca-gold` | 0.8 | A bright magical sparkle with a coin chime, cheerful, no voices |
+| `ca-pepper` | 0.8 | A hot pepper hitting a sizzling pan, a sharp hiss with a little cough of smoke |
+| `ca-miss` | 0.3 | Something small and soft falling onto dry sand, a dull little thud |
+| `ca-combo` | 0.5 | A short rising two-note talking drum phrase, upbeat, no voices |
+| `ca-faster` | 0.8 | A market trader's short sharp whistle, two quick blasts |
+| `ca-lose` | 1.5 | A short sad descending marimba phrase, no voices |
 
 ### Okada Rush (file names start `ok-`)
 

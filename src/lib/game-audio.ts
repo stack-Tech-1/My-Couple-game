@@ -268,8 +268,28 @@ function burst(ac: AudioContext, out: AudioNode, d: number, freq: number, v: num
 
 function standIn(ac: AudioContext, out: AudioNode, name: string, o: Opts) {
   const v = o.volume ?? 1;
-  const key = name.replace(/^(mp|ok|zs|mq|ba|pa)-/, "");
+  const key = name.replace(/^(mp|ok|zs|mq|ba|pa|ca)-/, "");
   switch (key) {
+    case "catch":
+      // Something soft landing in a woven basket.
+      tone(ac, out, 260 * (o.rate ?? 1), 0, 0.1, "sine", 0.16 * v, 150 * (o.rate ?? 1));
+      burst(ac, out, 0.07, 1400, 0.1 * v);
+      return;
+    case "gold":
+      [1568, 2093, 2637, 3136].forEach((f, i) => tone(ac, out, f, i * 0.05, 0.3, "sine", 0.06 * v));
+      return;
+    case "pepper":
+      burst(ac, out, 0.7, 4200, 0.18 * v, "highpass");
+      tone(ac, out, 420, 0, 0.35, "sawtooth", 0.05 * v, 160);
+      return;
+    case "miss":
+      tone(ac, out, 120, 0, 0.12, "sine", 0.12 * v, 70);
+      burst(ac, out, 0.15, 900, 0.06 * v);
+      return;
+    case "faster":
+      tone(ac, out, 1800, 0, 0.12, "sine", 0.06 * v, 2600);
+      tone(ac, out, 2600, 0.16, 0.22, "sine", 0.06 * v);
+      return;
     case "pump":
       // A squeeze of water through a nozzle: a low gush with a bubble rising out of it.
       burst(ac, out, 0.32, 520 * (o.rate ?? 1), 0.26 * v);
@@ -483,7 +503,7 @@ function standIn(ac: AudioContext, out: AudioNode, name: string, o: Opts) {
 
 /** Continuous stand-ins: an engine that revs, oil that sizzles, a pot that bubbles. Ambience stays silent. */
 function standInLoop(ac: AudioContext, out: AudioNode, name: string, rate: number) {
-  const key = name.replace(/^(mp|ok|zs|mq|ba|pa)-/, "");
+  const key = name.replace(/^(mp|ok|zs|mq|ba|pa|ca)-/, "");
   if (key === "flame") {
     const s = ac.createBufferSource();
     s.buffer = noise(ac);
