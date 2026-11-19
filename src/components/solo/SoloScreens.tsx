@@ -20,6 +20,7 @@ import { rankFor as bashRank, starsOfTakings as bashStars } from "@/lib/solo/gam
 import { MosquitoNightDone } from "./mosquito/MosquitoNightDone";
 import { PumpDoneTop, pumpPoster } from "./pump/PumpDoneTop";
 import { CatchDoneTop, catchPoster } from "./catch/CatchDoneTop";
+import { BlendDoneTop, blendPoster } from "./blend/BlendDoneTop";
 import { rankFor as mosquitoRank, starsOfTakings as mosquitoStars } from "@/lib/solo/games/mosquito";
 
 // Each game is its own download, fetched only when you open it.
@@ -93,6 +94,7 @@ export function ArcadeScreen({
             doneView: (r: { score: number; left: number | null; again: () => void; share: () => void }) => <MosquitoNightDone night={mosquito.night} score={r.score} totalBefore={mosquito.totalStars} totalAfter={mosquitoTotal(r.score)} left={r.left} again={r.again} share={r.share} />,
           }
         : {})}
+      {...(gameId === "blend-am" ? { doneTop: (r: { newBest: boolean }) => <BlendDoneTop newBest={r.newBest} />, posterHeadline: (score: number) => blendPoster() ?? `${score.toLocaleString("en-NG")} points` } : {})}
       {...(gameId === "catch-am" ? { doneTop: (r: { newBest: boolean }) => <CatchDoneTop newBest={r.newBest} />, posterHeadline: (score: number) => catchPoster() ?? `${score.toLocaleString("en-NG")} points` } : {})}
       {...(gameId === "pump-am" ? { doneTop: (r: { score: number }) => <PumpDoneTop score={r.score} />, posterHeadline: pumpPoster } : {})}
       {...(careerDay ? { doneView: (r: { score: number; newBest: boolean; again: () => void; share: () => void }) => <MamaDayDone day={careerDay} score={r.score} newBest={r.newBest} again={r.again} share={r.share} /> } : {})}

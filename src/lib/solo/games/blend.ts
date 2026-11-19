@@ -37,7 +37,11 @@ const SHAPES: Cell[][] = [
   [[0, 0], [1, 1]],
   [[0, 1], [1, 0]],
 ];
-export const COLORS = ["#2a4a8a", "#e8563a", "#3f8a5c", "#e9b13c", "#7a3a6a", "#1d6870"];
+/** The last game's numbers, kept for the finish screen (which only gets the score). */
+export type BlendLast = { lines: number; bestCombo: number };
+export const BLEND_LAST = "amah:blend:last";
+
+export const COLORS =["#2a4a8a", "#e8563a", "#3f8a5c", "#e9b13c", "#7a3a6a", "#1d6870"];
 
 export type BlendState = {
   board: number[]; // 0 empty, else colour index + 1

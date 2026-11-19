@@ -7,9 +7,9 @@ import { soloGame } from "./catalog";
  */
 export const SOLO_TOURS: Record<string, TourStep[]> = {
   "blend-am": [
-    { target: "blend-tray", title: "Your pieces", body: ["You get three pieces at a time.", "Drag one onto the board, or tap it and then tap where it goes."] },
-    { target: "blend-board", title: "Clear lines", body: ["Fill a whole row or column and it clears.", "Clear more than one at once, or a few turns running, for bonus points."] },
-    { title: "Game over", body: ["When none of your pieces fit anywhere, the game ends.", "Leave room for the big ones."] },
+    { target: "blend-tray", title: "Your fabric", body: ["You get three patches at a time.", "Drag one onto the table, or tap it and then tap where it goes."] },
+    { target: "blend-board", title: "Sew a line", body: ["Fill a whole row or column and it gets sewn up and cleared.", "Sew more than one at once, or a few turns running, for bonus points."] },
+    { title: "Game over", body: ["When none of your patches fit anywhere, the game ends.", "Leave room for the big ones."] },
   ],
   ajo: [
     { target: "ajo-board", title: "Slide the notes", body: ["Swipe (or use the arrow keys) and every note slides that way.", "A new ₦5 or ₦10 lands after each move."] },

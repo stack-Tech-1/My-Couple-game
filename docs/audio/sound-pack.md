@@ -1,10 +1,10 @@
-# Sound pack: Mama Put, Okada Rush, Zobo Sort, Mosquito Wahala, Bash Am, Pump Am and Catch Am
+# Sound pack: Mama Put, Okada Rush, Zobo Sort, Mosquito Wahala, Bash Am, Pump Am, Catch Am and Blend Am
 
 Three kinds of sound, from three places:
 
 | Kind | Where it comes from | How many |
 |---|---|---|
-| Sound effects (sizzle, horn, pouring, buzzing, breaking…) | **ElevenLabs Sound Effects** (AI) | 88 |
+| Sound effects (sizzle, horn, pouring, buzzing, breaking…) | **ElevenLabs Sound Effects** (AI) | 94 |
 | Background music | **Suno** (AI) | 7 |
 | Voices (customers, passengers, agbero, LASTMA, a bitten sleeper, a danfo conductor) | **You and your friends**, recorded on a phone | 37 lines |
 
@@ -139,6 +139,17 @@ One short voice line, recorded on a phone like the others: `v-ba-danfo` ("Oshodi
 | `ca-combo` | 0.5 | A short rising two-note talking drum phrase, upbeat, no voices |
 | `ca-faster` | 0.8 | A market trader's short sharp whistle, two quick blasts |
 | `ca-lose` | 1.5 | A short sad descending marimba phrase, no voices |
+
+### Blend Am (file names start `bl-`)
+
+| File | Seconds | Prompt |
+|---|---|---|
+| `bl-pick` | 0.3 | A small piece of cotton fabric picked up off a table, a soft quick rustle |
+| `bl-place` | 0.3 | A folded piece of cloth patted down flat on a wooden table, a soft muffled pat |
+| `bl-sew` | 0.6 | An old hand-crank sewing machine running a short fast seam, quick rhythmic clatter, no voices |
+| `bl-combo` | 0.5 | A short bright rising two-note kalimba phrase, cheerful, no voices |
+| `bl-snip` | 0.4 | Big tailor's scissors closing twice, two crisp metal snips |
+| `bl-lose` | 1.5 | A short gentle descending kalimba phrase, a little sad, no voices |
 
 ### Okada Rush (file names start `ok-`)
 

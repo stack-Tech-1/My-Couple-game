@@ -268,8 +268,22 @@ function burst(ac: AudioContext, out: AudioNode, d: number, freq: number, v: num
 
 function standIn(ac: AudioContext, out: AudioNode, name: string, o: Opts) {
   const v = o.volume ?? 1;
-  const key = name.replace(/^(mp|ok|zs|mq|ba|pa|ca)-/, "");
+  const key = name.replace(/^(mp|ok|zs|mq|ba|pa|ca|bl)-/, "");
   switch (key) {
+    case "place":
+      // Cloth patted down on wood.
+      burst(ac, out, 0.09, 900 * (o.rate ?? 1), 0.16 * v);
+      tone(ac, out, 150 * (o.rate ?? 1), 0, 0.08, "sine", 0.12 * v, 100);
+      return;
+    case "sew":
+      // A sewing machine's quick run: a buzz with a fast tick on it.
+      for (let i = 0; i < 9; i++) tone(ac, out, 95 * (o.rate ?? 1), i * 0.045, 0.04, "square", 0.05 * v);
+      burst(ac, out, 0.42, 2400, 0.06 * v, "bandpass");
+      return;
+    case "snip":
+      burst(ac, out, 0.05, 6000, 0.22 * v, "highpass");
+      setTimeout(() => burst(ac, out, 0.06, 5200, 0.2 * v, "highpass"), 110);
+      return;
     case "catch":
       // Something soft landing in a woven basket.
       tone(ac, out, 260 * (o.rate ?? 1), 0, 0.1, "sine", 0.16 * v, 150 * (o.rate ?? 1));
@@ -503,7 +517,7 @@ function standIn(ac: AudioContext, out: AudioNode, name: string, o: Opts) {
 
 /** Continuous stand-ins: an engine that revs, oil that sizzles, a pot that bubbles. Ambience stays silent. */
 function standInLoop(ac: AudioContext, out: AudioNode, name: string, rate: number) {
-  const key = name.replace(/^(mp|ok|zs|mq|ba|pa|ca)-/, "");
+  const key = name.replace(/^(mp|ok|zs|mq|ba|pa|ca|bl)-/, "");
   if (key === "flame") {
     const s = ac.createBufferSource();
     s.buffer = noise(ac);
