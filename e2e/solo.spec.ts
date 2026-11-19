@@ -3,11 +3,11 @@ import { admin, cleanup, onboardedUser, pairedRoom, signInPath } from "./helpers
 
 /** Reflex Training: five rounds of "wait for gold, then tap". Returns once the result shows. */
 async function playReflex(page: Page) {
-  const pad = page.getByRole("button", { name: /Tap to start|Round \d of 5|Wait for gold|Tap!|Too early/ });
+  const pad = page.locator('[data-tour="reflex-pad"]');
   for (let round = 0; round < 5; round++) {
-    await pad.click(); // start the round
-    await expect(page.getByRole("button", { name: "Tap!" })).toBeVisible({ timeout: 10_000 });
-    await page.getByRole("button", { name: "Tap!" }).click();
+    await pad.click(); // the striker runs in
+    await expect(page.getByRole("button", { name: "Dive!" })).toBeVisible({ timeout: 10_000 });
+    await page.getByRole("button", { name: "Dive!" }).click();
   }
   await expect(page.locator("#solo-result-h")).toContainText("ms");
 }

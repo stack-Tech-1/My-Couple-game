@@ -268,8 +268,29 @@ function burst(ac: AudioContext, out: AudioNode, d: number, freq: number, v: num
 
 function standIn(ac: AudioContext, out: AudioNode, name: string, o: Opts) {
   const v = o.volume ?? 1;
-  const key = name.replace(/^(mp|ok|zs|mq|ba|pa|ca|bl)-/, "");
+  const key = name.replace(/^(mp|ok|zs|mq|ba|pa|ca|bl|rx)-/, "");
   switch (key) {
+    case "studs":
+      [0, 0.12, 0.24, 0.36, 0.48].forEach((t) => setTimeout(() => burst(ac, out, 0.05, 1800, 0.09 * v), t * 1000));
+      return;
+    case "dummy":
+      burst(ac, out, 0.08, 1500, 0.08 * v);
+      return;
+    case "kick":
+      tone(ac, out, 120, 0, 0.12, "sine", 0.35 * v, 55);
+      burst(ac, out, 0.06, 2600, 0.18 * v);
+      return;
+    case "save":
+      burst(ac, out, 0.1, 3000, 0.3 * v);
+      tone(ac, out, 220, 0, 0.1, "triangle", 0.12 * v, 140);
+      return;
+    case "roar":
+      burst(ac, out, 1.6, 1300, 0.22 * v);
+      return;
+    case "goal":
+      burst(ac, out, 0.35, 4200, 0.12 * v, "highpass");
+      tone(ac, out, 330, 0.25, 0.8, "sawtooth", 0.05 * v, 150);
+      return;
     case "place":
       // Cloth patted down on wood.
       burst(ac, out, 0.09, 900 * (o.rate ?? 1), 0.16 * v);
@@ -517,7 +538,21 @@ function standIn(ac: AudioContext, out: AudioNode, name: string, o: Opts) {
 
 /** Continuous stand-ins: an engine that revs, oil that sizzles, a pot that bubbles. Ambience stays silent. */
 function standInLoop(ac: AudioContext, out: AudioNode, name: string, rate: number) {
-  const key = name.replace(/^(mp|ok|zs|mq|ba|pa|ca|bl)-/, "");
+  const key = name.replace(/^(mp|ok|zs|mq|ba|pa|ca|bl|rx)-/, "");
+  if (key === "crowd") {
+    // A stadium murmur: low, wide noise.
+    const s = ac.createBufferSource();
+    s.buffer = noise(ac);
+    s.loop = true;
+    const f = ac.createBiquadFilter();
+    f.type = "lowpass";
+    f.frequency.value = 700;
+    const g = ac.createGain();
+    g.gain.value = 0.12;
+    s.connect(f).connect(g).connect(out);
+    s.start();
+    return { setRate: () => {}, stop: () => s.stop() };
+  }
   if (key === "flame") {
     const s = ac.createBufferSource();
     s.buffer = noise(ac);

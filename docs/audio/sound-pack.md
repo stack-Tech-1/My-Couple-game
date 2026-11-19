@@ -1,10 +1,10 @@
-# Sound pack: Mama Put, Okada Rush, Zobo Sort, Mosquito Wahala, Bash Am, Pump Am, Catch Am and Blend Am
+# Sound pack: Mama Put, Okada Rush, Zobo Sort, Mosquito Wahala, Bash Am, Pump Am, Catch Am, Blend Am and Reflex Training
 
 Three kinds of sound, from three places:
 
 | Kind | Where it comes from | How many |
 |---|---|---|
-| Sound effects (sizzle, horn, pouring, buzzing, breaking…) | **ElevenLabs Sound Effects** (AI) | 94 |
+| Sound effects (sizzle, horn, pouring, buzzing, breaking…) | **ElevenLabs Sound Effects** (AI) | 102 |
 | Background music | **Suno** (AI) | 7 |
 | Voices (customers, passengers, agbero, LASTMA, a bitten sleeper, a danfo conductor) | **You and your friends**, recorded on a phone | 37 lines |
 
@@ -150,6 +150,19 @@ One short voice line, recorded on a phone like the others: `v-ba-danfo` ("Oshodi
 | `bl-combo` | 0.5 | A short bright rising two-note kalimba phrase, cheerful, no voices |
 | `bl-snip` | 0.4 | Big tailor's scissors closing twice, two crisp metal snips |
 | `bl-lose` | 1.5 | A short gentle descending kalimba phrase, a little sad, no voices |
+
+### Reflex Training (file names start `rx-`)
+
+| File | Seconds | Prompt |
+|---|---|---|
+| `rx-crowd` (loop) | 10 | A football stadium crowd at night waiting for a penalty, a low tense murmur, distant drums, no clear words, no music |
+| `rx-studs` | 0.7 | A footballer's boots running a few quick steps on grass, studs thudding |
+| `rx-dummy` | 0.3 | A quick scuff of a boot on grass, a feint step |
+| `rx-kick` | 0.4 | A football struck hard with a boot, one sharp thump |
+| `rx-save` | 0.4 | A goalkeeper's gloves slapping a football away, a loud leathery smack |
+| `rx-roar` | 2 | A big stadium crowd roaring and cheering for a great save, no clear words |
+| `rx-goal` | 1.5 | A football swishing into a net, then a stadium crowd groaning |
+| `rx-whistle` | 0.8 | A referee's whistle, one sharp short blast |
 
 ### Okada Rush (file names start `ok-`)
 

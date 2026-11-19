@@ -52,9 +52,9 @@ export const SOLO_TOURS: Record<string, TourStep[]> = {
     { title: "Mind the dodo", body: ["Dodo has to be fried first: tap the pan, wait, then tap it again to dish.", "Leave it too long and it burns.", "Wrong plate? They leave without paying. Bin it and start again."] },
   ],
   reflex: [
-    { target: "reflex-pad", title: "Wait for gold", body: ["Tap to start a round. The circle goes dark red.", "When it turns gold, tap as fast as you can."] },
-    { title: "No jumping", body: ["Tap before it turns gold and that round starts again."] },
-    { target: "reflex-times", title: "Your score", body: ["Five rounds. Your score is your average time.", "Lower is better."] },
+    { target: "reflex-pad", title: "You're in goal", body: ["Tap to start a kick. The striker runs in to the ball.", "The moment he strikes it, tap to dive."] },
+    { title: "Don't buy the dummy", body: ["He'll fake a few times first. Dive before the kick and that kick is taken again."] },
+    { target: "reflex-times", title: "Your score", body: ["Five kicks. Your score is your average time, and under 300 ms is a save.", "Lower is better."] },
   ],
   "fix-am": [
     { target: "fixam-board", title: "Slide the tiles", body: ["The picture is cut up and mixed. One square is empty.", "Tap a tile next to the gap to slide it in."] },
