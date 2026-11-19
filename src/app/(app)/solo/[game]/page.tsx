@@ -23,6 +23,9 @@ import { STALLS, levelOfMode, levelOpen, stallOf } from "@/lib/solo/games/zobo";
 import { MosquitoHome } from "@/components/solo/mosquito/MosquitoHome";
 import { mosquitoCareer } from "@/lib/solo/mosquito-server";
 import { ROOMS, nightOfMode, nightOpen, nightSpec } from "@/lib/solo/games/mosquito";
+import { BashHome } from "@/components/solo/bash/BashHome";
+import { bashCareer } from "@/lib/solo/bash-server";
+import { SITES, isBossWall, siteOf, wallOfMode, wallOpen } from "@/lib/solo/games/bashwall";
 import { AREAS, DAYS, DIFFICULTIES, DIFFICULTY_NAME, ITEM_NAME, areaIndex, dayOpen, newOnDay, type Difficulty } from "@/lib/solo/games/mama";
 
 export async function generateMetadata({ params }: { params: Promise<{ game: string }> }): Promise<Metadata> {
@@ -69,6 +72,8 @@ export default async function SoloGamePage({ params, searchParams }: { params: P
     body = await zoboBody(ctx.user.id, modeParam, common);
   } else if (game.id === "mosquito-wahala" && !daily && !common.challenge) {
     body = await mosquitoBody(ctx.user.id, modeParam, common, ctx.rooms);
+  } else if (game.id === "bash-am" && !daily && !common.challenge) {
+    body = await bashBody(ctx.user.id, modeParam, common, ctx.rooms);
   } else if (game.kind === "bot") {
     body = <BotScreen gameId={game.id} base={game.base!} myName={ctx.profile.display_name} soundOn={ctx.soundOn} toured={toured} />;
   } else {
@@ -174,6 +179,37 @@ async function mosquitoBody(userId: string, mode: string | undefined, common: { 
     <>
       <MosquitoHome career={career} />
       <SoloBoards gameId="mosquito-wahala" rooms={rooms} me={userId} />
+    </>
+  );
+}
+
+/** Bash Am: the sites and your street, or a chosen wall, or Endless Street. */
+async function bashBody(userId: string, mode: string | undefined, common: { myName: string; soundOn: boolean; toured: boolean; challenge: string | null }, rooms: Parameters<typeof SoloBoards>[0]["rooms"]) {
+  const career = await bashCareer(userId);
+  const wall = mode ? wallOfMode(mode) : null;
+  if (wall) {
+    if (!wallOpen(wall, (n) => career.wallStars[n - 1]! > 0)) redirect("/solo/bash-am");
+    const site = SITES[siteOf(wall)]!;
+    return (
+      <ArcadeScreen
+        gameId="bash-am"
+        {...common}
+        play={{ mode: `wall-${wall}`, owned: career.built, bash: { wall, totalStars: career.totalStars, wallStars: career.wallStars[wall - 1]! }, title: `Wall ${wall}`, tagline: isBossWall(wall) ? `${site.name}. Today: ${site.boss}.` : `${site.name}. ${site.about}` }}
+      />
+    );
+  }
+  if (mode === "normal") {
+    return (
+      <>
+        <ArcadeScreen gameId="bash-am" {...common} play={{ mode: "normal", title: "Endless Street", tagline: "Street after street, with no buildings to help. How far can you go?" }} />
+        <SoloBoards gameId="bash-am" rooms={rooms} me={userId} />
+      </>
+    );
+  }
+  return (
+    <>
+      <BashHome career={career} />
+      <SoloBoards gameId="bash-am" rooms={rooms} me={userId} />
     </>
   );
 }

@@ -268,8 +268,66 @@ function burst(ac: AudioContext, out: AudioNode, d: number, freq: number, v: num
 
 function standIn(ac: AudioContext, out: AudioNode, name: string, o: Opts) {
   const v = o.volume ?? 1;
-  const key = name.replace(/^(mp|ok|zs|mq)-/, "");
+  const key = name.replace(/^(mp|ok|zs|mq|ba)-/, "");
   switch (key) {
+    case "brick":
+      burst(ac, out, 0.16, 1700, 0.2 * v);
+      tone(ac, out, 170, 0, 0.09, "triangle", 0.1 * v, 90);
+      return;
+    case "block":
+      tone(ac, out, 240, 0, 0.1, "square", 0.05 * v, 150);
+      return;
+    case "wood":
+      tone(ac, out, 420, 0, 0.09, "triangle", 0.13 * v, 180);
+      burst(ac, out, 0.08, 2600, 0.09 * v);
+      return;
+    case "glass":
+      [2640, 3320, 4180].forEach((f, i) => tone(ac, out, f, i * 0.025, 0.2, "sine", 0.05 * v));
+      burst(ac, out, 0.22, 6000, 0.1 * v, "highpass");
+      return;
+    case "rock":
+      tone(ac, out, 130, 0, 0.1, "square", 0.07 * v, 80);
+      return;
+    case "steel":
+      [510, 1340].forEach((f) => tone(ac, out, f, 0, 0.32, "triangle", 0.06 * v));
+      return;
+    case "bounce":
+      tone(ac, out, 700, 0, 0.04, "sine", 0.025 * v);
+      return;
+    case "plank":
+      tone(ac, out, 300, 0, 0.09, "triangle", 0.12 * v, 200);
+      return;
+    case "combo":
+      tone(ac, out, 620 * (o.rate ?? 1), 0, 0.16, "sine", 0.06 * v);
+      return;
+    case "fire":
+      burst(ac, out, 0.9, 900, 0.28 * v);
+      tone(ac, out, 150, 0, 0.8, "sawtooth", 0.08 * v, 420);
+      return;
+    case "blast":
+      burst(ac, out, 0.9, 1100, 0.42 * v);
+      tone(ac, out, 90, 0, 0.6, "sine", 0.3 * v, 34);
+      return;
+    case "danfo":
+      tone(ac, out, 410, 0, 0.16, "square", 0.05 * v);
+      tone(ac, out, 330, 0.2, 0.24, "square", 0.05 * v);
+      return;
+    case "capsule":
+      [880, 1175].forEach((f, i) => tone(ac, out, f, i * 0.07, 0.18, "triangle", 0.07 * v));
+      return;
+    case "shard":
+      tone(ac, out, 1900, 0, 0.2, "sawtooth", 0.035 * v, 700);
+      return;
+    case "drop":
+      tone(ac, out, 330, 0, 0.42, "triangle", 0.1 * v, 95);
+      return;
+    case "floor":
+      tone(ac, out, 210, 0, 0.14, "triangle", 0.14 * v, 340);
+      return;
+    case "clear":
+      burst(ac, out, 1.2, 700, 0.22 * v);
+      [523, 659, 784, 1046].forEach((f, i) => tone(ac, out, f, 0.35 + i * 0.1, 0.42, "triangle", 0.07 * v));
+      return;
     case "splat":
       burst(ac, out, 0.09, 1500, 0.2 * v);
       tone(ac, out, 240, 0, 0.08, "sine", 0.14 * v, 90);
@@ -412,7 +470,20 @@ function standIn(ac: AudioContext, out: AudioNode, name: string, o: Opts) {
 
 /** Continuous stand-ins: an engine that revs, oil that sizzles, a pot that bubbles. Ambience stays silent. */
 function standInLoop(ac: AudioContext, out: AudioNode, name: string, rate: number) {
-  const key = name.replace(/^(mp|ok|zs|mq)-/, "");
+  const key = name.replace(/^(mp|ok|zs|mq|ba)-/, "");
+  if (key === "flame") {
+    const s = ac.createBufferSource();
+    s.buffer = noise(ac);
+    s.loop = true;
+    const f = ac.createBiquadFilter();
+    f.type = "lowpass";
+    f.frequency.value = 620;
+    const g = ac.createGain();
+    g.gain.value = 0.22;
+    s.connect(f).connect(g).connect(out);
+    s.start();
+    return { setRate: () => {}, stop: () => s.stop() };
+  }
   if (key === "buzz") {
     // A thin whine that wavers, like the one by your ear at 2am.
     const o = ac.createOscillator();

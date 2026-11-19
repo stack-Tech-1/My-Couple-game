@@ -29,7 +29,7 @@ export const SOLO_TOURS: Record<string, TourStep[]> = {
   "bash-am": [
     { target: "bash-wall", title: "Break the wall", body: ["Tap to launch the ball. Every brick it hits breaks.", "Dark bricks are tough: they take two hits."] },
     { target: "bash-plank", title: "Keep it up", body: ["Drag anywhere to move your plank. Where the ball lands on it decides the angle.", "Drop it and you lose a ball. Three balls, then it's over."] },
-    { title: "Capsules and combos", body: ["Gold capsules fall from some bricks: GEN widens your plank, SLOW calms the ball, +1 is an extra ball.", "Break bricks one after another without touching the plank for a bigger combo."] },
+    { title: "Capsules and combos", body: ["Gold capsules fall from some bricks: GEN widens your plank, SLOW calms the ball, +1 is an extra ball.", "Break 8 bricks in a row without touching the plank and, on career walls, the ball catches fire."] },
   ],
   "zobo-sort": [
     { target: "zobo-shelf", title: "Pour and sort", body: ["Tap a bottle to pick it up, then tap another to pour into it.", "You can pour onto the same drink, or into an empty bottle."] },

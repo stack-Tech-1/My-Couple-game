@@ -12,9 +12,9 @@ const dayNumber = (day: string) => Math.floor(Date.parse(`${day}T00:00:00Z`) / 8
 
 /**
  * Solo games that play the same for everyone given the same seed. (Zobo Sort keeps your level on
- * your phone, so it can't be a shared daily.)
+ * your phone, so it can't be a shared daily. Bash Am needs Plus, so it can't be everyone's game.)
  */
-export const DAILY_GAMES = ["mama-put", "pump-am", "catch-am", "bash-am", "okada-rush", "mosquito-wahala", "blend-am", "ajo"] as const;
+export const DAILY_GAMES = ["mama-put", "pump-am", "catch-am", "okada-rush", "mosquito-wahala", "blend-am", "ajo"] as const;
 
 export type TodaysGame = { gameId: string; day: string; mode: string; seed: string };
 export function todaysGame(at = Date.now()): TodaysGame {

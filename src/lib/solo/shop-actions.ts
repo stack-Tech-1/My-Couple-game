@@ -10,6 +10,8 @@ import { GEAR, SKINS, isGear, isSkin } from "./games/okada";
 import { randomBytes } from "node:crypto";
 import { HELPERS, lookPrice, type HelperId } from "./games/zobo";
 import { GEAR as MOSQUITO_GEAR, isGear as isMosquitoGear } from "./games/mosquito";
+import { BUILDINGS, isBuilding } from "./games/bashwall";
+import { soloFreePlays } from "@/lib/plus/limits";
 
 const buyInput = z.object({ area: z.number().int().min(0).max(AREAS.length - 1), item: z.string().max(30) });
 
@@ -75,6 +77,23 @@ export async function buyMosquitoGear(raw: unknown): Promise<ActionResult<{ savi
     if (error.message.includes("not enough savings")) return { ok: false, error: "Not enough savings yet. A few more nights!" };
     if (error.message.includes("already owned")) return { ok: false, error: "You already have that." };
     return { ok: false, error: "Couldn't buy it. Try again?" };
+  }
+  return { ok: true, data: { savings: Number(data) } };
+}
+
+/** Put up a building on your Bash Am street. The price comes from here, never the phone. */
+export async function buyBashBuilding(raw: unknown): Promise<ActionResult<{ savings: number }>> {
+  const p = z.object({ item: z.string().max(30) }).safeParse(raw);
+  const item = p.success ? p.data.item : "";
+  if (!isBuilding(item)) return { ok: false, error: "That building isn't on the plan." };
+  const user = await getUser();
+  if (!user) return { ok: false, error: "Sign in to build." };
+  if ((await soloFreePlays(user.id, "bash-am")).limited) return { ok: false, error: "Bash Am comes with Amah Plus." };
+  const { data, error } = await supabaseAdmin().rpc("solo_shop_buy", { p_user: user.id, p_game: "bash-am", p_area: 0, p_item: item, p_price: BUILDINGS.find((b) => b.id === item)!.price });
+  if (error) {
+    if (error.message.includes("not enough savings")) return { ok: false, error: "Not enough savings yet. A few more walls!" };
+    if (error.message.includes("already owned")) return { ok: false, error: "You've already built that." };
+    return { ok: false, error: "Couldn't build it. Try again?" };
   }
   return { ok: true, data: { savings: Number(data) } };
 }

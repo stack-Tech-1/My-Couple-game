@@ -36,8 +36,10 @@ export const FREE_LIMITS = { photos: 5, sealedNotes: 3, friendRooms: 1 } as cons
  * where anyone has Plus has no limits; a free friend room plays two at a time.
  */
 export const FREE_PLAYS_PER_DAY = 2;
+/** Solo games with no free plays at all: they need Plus, even from a challenge link. */
+export const isPlusOnlySolo = (gameId: string) => gameId === "bash-am";
 /** Zobo Sort is rationed by level: one new level a day without Plus, and retrying it is fine. */
-export const freePlaysFor = (gameId: string) => (gameId === "zobo-sort" ? 1 : FREE_PLAYS_PER_DAY);
+export const freePlaysFor = (gameId: string) => (isPlusOnlySolo(gameId) ? 0 : gameId === "zobo-sort" ? 1 : FREE_PLAYS_PER_DAY);
 export const FREE_MAX_PLAYERS = 2;
 /** Free and unlimited: these are daily rituals and keepsakes, not games to ration. */
 export const UNLIMITED_FREE = new Set(["daily-question", "love-notes", "memory-lane"]);

@@ -15,6 +15,8 @@ import { MamaDayDone } from "./mama/MamaDayDone";
 import { OkadaRouteDone } from "./okada/OkadaRouteDone";
 import { ZoboLevelDone } from "./zobo/ZoboLevelDone";
 import { rankFor, starsOfTakings } from "@/lib/solo/games/zobo";
+import { BashWallDone } from "./bash/BashWallDone";
+import { rankFor as bashRank, starsOfTakings as bashStars } from "@/lib/solo/games/bashwall";
 import { MosquitoNightDone } from "./mosquito/MosquitoNightDone";
 import { rankFor as mosquitoRank, starsOfTakings as mosquitoStars } from "@/lib/solo/games/mosquito";
 
@@ -26,6 +28,7 @@ const OkadaRush = dynamic(() => import("./games/OkadaRush").then((m) => m.OkadaR
 const ReflexTraining = dynamic(() => import("./games/ReflexTraining").then((m) => m.ReflexTraining), { ssr: false, loading });
 const PumpAm = dynamic(() => import("./games/PumpAm").then((m) => m.PumpAm), { ssr: false, loading });
 const BashAm = dynamic(() => import("./games/BashAm").then((m) => m.BashAm), { ssr: false, loading });
+const BashWall = dynamic(() => import("./games/BashWall").then((m) => m.BashWall), { ssr: false, loading });
 const ZoboSort = dynamic(() => import("./games/ZoboSort").then((m) => m.ZoboSort), { ssr: false, loading });
 const CatchAm = dynamic(() => import("./games/CatchAm").then((m) => m.CatchAm), { ssr: false, loading });
 const MosquitoWahala = dynamic(() => import("./games/MosquitoWahala").then((m) => m.MosquitoWahala), { ssr: false, loading });
@@ -46,7 +49,7 @@ export function ArcadeScreen({
   gameId: string;
   daily?: { mode: string; seed: string } | null;
   /** A chosen version (Mama Put's difficulty or career day, an Okada Rush route) and what it needs, such as upgrades. */
-  play?: { mode: string; title: string; tagline: string; owned?: readonly string[]; tutorial?: boolean; careerDay?: number; route?: number; skin?: string; savings?: number; zobo?: { level: number; totalStars: number; levelStars: number }; mosquito?: { night: number; totalStars: number; nightStars: number } } | null;
+  play?: { mode: string; title: string; tagline: string; owned?: readonly string[]; tutorial?: boolean; careerDay?: number; route?: number; skin?: string; savings?: number; zobo?: { level: number; totalStars: number; levelStars: number }; mosquito?: { night: number; totalStars: number; nightStars: number }; bash?: { wall: number; totalStars: number; wallStars: number } } | null;
 }) {
   const game = soloGame(gameId)!;
   const careerDay = play?.careerDay;
@@ -56,6 +59,8 @@ export function ArcadeScreen({
   const zoboTotal = (score: number) => (zobo ? zobo.totalStars + Math.max(0, starsOfTakings(zobo.level, score) - zobo.levelStars) : 0);
   const mosquito = play?.mosquito;
   const mosquitoTotal = (score: number) => (mosquito ? mosquito.totalStars + Math.max(0, mosquitoStars(mosquito.night, score) - mosquito.nightStars) : 0);
+  const bash = play?.bash;
+  const bashTotal = (score: number) => (bash ? bash.totalStars + Math.max(0, bashStars(bash.wall, score) - bash.wallStars) : 0);
   return (
     <SoloShell<AnySaved>
       gameId={gameId}
@@ -70,6 +75,13 @@ export function ArcadeScreen({
         ? {
             posterHeadline: (score: number) => `${rankFor(zoboTotal(score)).name}, level ${zobo.level}`,
             doneView: (r: { score: number; newBest: boolean; left: number | null; again: () => void; share: () => void }) => <ZoboLevelDone level={zobo.level} score={r.score} totalBefore={zobo.totalStars} totalAfter={zoboTotal(r.score)} left={r.left} again={r.again} share={r.share} />,
+          }
+        : {})}
+      {...(bash
+        ? {
+            posterHeadline: (score: number) => `${bashRank(bashTotal(score)).name}, wall ${bash.wall}`,
+            posterScore: (score: number) => `₦${score.toLocaleString("en-NG")}`,
+            doneView: (r: { score: number; again: () => void; share: () => void }) => <BashWallDone wall={bash.wall} score={r.score} totalBefore={bash.totalStars} totalAfter={bashTotal(r.score)} again={r.again} share={r.share} />,
           }
         : {})}
       {...(mosquito
@@ -93,7 +105,7 @@ export function ArcadeScreen({
         ) : gameId === "pump-am" ? (
           <PumpAm api={api} />
         ) : gameId === "bash-am" ? (
-          <BashAm api={api} />
+          bash ? <BashWall api={api} /> : <BashAm api={api} />
         ) : gameId === "zobo-sort" ? (
           <ZoboSort api={api} />
         ) : gameId === "catch-am" ? (

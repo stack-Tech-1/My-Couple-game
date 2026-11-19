@@ -102,7 +102,7 @@ export function SoloShell<S>({
 }) {
   const game = soloGame(gameId)!;
   const key = KEY(gameId, mode);
-  const [phase, setPhase] = useState<"loading" | "ask" | "playing" | "done" | "out">("loading");
+  const [phase, setPhase] = useState<"loading" | "ask" | "playing" | "done" | "out" | "plus">("loading");
   const [run, setRun] = useState<{ runId: string; seed: string; target: number | null; left?: number | null } | null>(null);
   const [resetsAt, setResetsAt] = useState<string | null>(null);
   const [studio, setStudio] = useState(false);
@@ -172,6 +172,11 @@ export function SoloShell<S>({
     elapsed.current = 0;
     lastState.current = null;
     const r = await startRun({ gameId, mode, ...(fixedSeed ? { seed: fixedSeed } : {}), ...(challenge ? { challenge } : {}) });
+    if (!r.ok && "plusOnly" in r) {
+      // This game comes with Plus: say so, with no countdown, because it won't open at midnight.
+      setPhase("plus");
+      return;
+    }
     if (!r.ok && "resetsAt" in r) {
       // Today's free plays are used up: the waiting screen, not a game.
       setResetsAt(r.resetsAt);
@@ -363,6 +368,23 @@ export function SoloShell<S>({
             <p id="solo-result-h" className="text-muted">Saving your score…</p>
           )}
         </section>
+      ) : null}
+
+      {phase === "plus" ? (
+        <div className="glass mt-6 rounded-[24px] p-6 text-center">
+          <p className="display text-[1.6rem] leading-tight">{game.name} comes with Amah Plus</p>
+          <p className="mt-1 text-muted">Join Plus to play every wall and build your street. Try it free for 7 days.</p>
+          <div className="mt-5 flex flex-col items-center gap-2">
+            {limits.plusHref ? (
+              <Link prefetch={false} href={limits.plusHref} className="inline-flex h-12 items-center rounded-full bg-fg px-6 font-semibold text-bg">
+                Try Amah Plus
+              </Link>
+            ) : null}
+            <Link prefetch={false} href={backHref} className="inline-flex h-11 items-center px-4 font-semibold underline underline-offset-4">
+              Back
+            </Link>
+          </div>
+        </div>
       ) : null}
 
       {phase === "out" && blocked ? (

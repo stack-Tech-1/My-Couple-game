@@ -8,7 +8,7 @@ import type { ActionResult } from "@/lib/room/types";
 import { soloGame } from "./catalog";
 import { settleChallenge } from "./server";
 import { soloFreePlays } from "@/lib/plus/limits";
-import { FREE_PLAYS_PER_DAY, untilText } from "@/lib/plus/plans";
+import { FREE_PLAYS_PER_DAY, isPlusOnlySolo, untilText } from "@/lib/plus/plans";
 import { isDailyMode, todaysGame } from "@/lib/engage/rotation";
 import { DAYS, FREE_CAREER_MODES, dayOpen } from "./games/mama";
 import { mamaDayBest } from "./mama-server";
@@ -18,6 +18,8 @@ import { LEVELS, levelOpen } from "./games/zobo";
 import { zoboLevelCleared } from "./zobo-server";
 import { NIGHTS, nightOpen } from "./games/mosquito";
 import { mosquitoNightCleared } from "./mosquito-server";
+import { WALLS, wallOpen } from "./games/bashwall";
+import { bashWallCleared } from "./bash-server";
 
 async function limited(uid: string, action: string, max: number, windowSeconds: number) {
   const { data } = await supabaseAdmin().rpc("server_rate_limit", { uid, action, max_hits: max, window_seconds: windowSeconds });
@@ -33,7 +35,7 @@ const startInput = z.object({
 });
 
 /** `left`: free plays left today after this one (null when there's no limit). */
-export type StartResult = ActionResult<{ runId: string; seed: string; target: number | null; left: number | null }> | { ok: false; error: string; resetsAt: string } | { ok: false; error: string; blocked: true };
+export type StartResult = ActionResult<{ runId: string; seed: string; target: number | null; left: number | null }> | { ok: false; error: string; resetsAt: string } | { ok: false; error: string; blocked: true } | { ok: false; error: string; plusOnly: true };
 
 /** A start ticket. The only server call when a game begins. */
 export async function startRun(raw: unknown): Promise<StartResult> {
@@ -81,6 +83,18 @@ export async function startRun(raw: unknown): Promise<StartResult> {
     if (n < 1 || n > NIGHTS) return { ok: false, error: "There's no such night.", blocked: true };
     const before = n > 1 ? await mosquitoNightCleared(user.id, n - 1) : true;
     if (!nightOpen(n, () => before)) return { ok: false, error: `Survive night ${n - 1} first.`, blocked: true };
+  }
+  // Bash Am: walls open in order, by clearing the one before.
+  const bashWall = p.data.gameId === "bash-am" ? /^wall-(\d{1,2})$/.exec(p.data.mode) : null;
+  if (bashWall) {
+    const n = Number(bashWall[1]);
+    if (n < 1 || n > WALLS) return { ok: false, error: "There's no such wall.", blocked: true };
+    const before = n > 1 ? await bashWallCleared(user.id, n - 1) : true;
+    if (!wallOpen(n, () => before)) return { ok: false, error: `Clear wall ${n - 1} first.`, blocked: true };
+  }
+  // Bash Am needs Plus for every way in, challenges included.
+  if (isPlusOnlySolo(p.data.gameId) && (await soloFreePlays(user.id, p.data.gameId)).limited) {
+    return { ok: false, error: `${soloGame(p.data.gameId)!.name} comes with Amah Plus.`, plusOnly: true };
   }
   // Without Plus, each game twice a day (Zobo Sort, one level a day). Challenges are always open, and so is Mama Put's Yaba.
   let left: number | null = null;

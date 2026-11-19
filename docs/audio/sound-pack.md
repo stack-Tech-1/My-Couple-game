@@ -1,12 +1,12 @@
-# Sound pack: Mama Put, Okada Rush, Zobo Sort and Mosquito Wahala
+# Sound pack: Mama Put, Okada Rush, Zobo Sort, Mosquito Wahala and Bash Am
 
 Three kinds of sound, from three places:
 
 | Kind | Where it comes from | How many |
 |---|---|---|
-| Sound effects (sizzle, horn, pouring, buzzing…) | **ElevenLabs Sound Effects** (AI) | 58 |
+| Sound effects (sizzle, horn, pouring, buzzing, breaking…) | **ElevenLabs Sound Effects** (AI) | 76 |
 | Background music | **Suno** (AI) | 7 |
-| Voices (customers, passengers, agbero, LASTMA, a bitten sleeper) | **You and your friends**, recorded on a phone | 36 lines |
+| Voices (customers, passengers, agbero, LASTMA, a bitten sleeper, a danfo conductor) | **You and your friends**, recorded on a phone | 37 lines |
 
 Save everything into a new folder next to `game images`, called **`game sounds`**, using the file names below. Name a file exactly as given. MP3, WAV or M4A are all fine: I'll trim, clean, even out the volume and shrink every file.
 
@@ -92,6 +92,31 @@ Save everything into a new folder next to `game images`, called **`game sounds`*
 | `mq-lose` | 1.5 | A short sad descending marimba phrase, no voices |
 
 Two short voice lines, recorded on a phone like the others: `v-mq-ouch` ("Ouch!" or "Ah! This mosquito!") and `v-mq-up-nepa` ("Up NEPA!").
+
+### Bash Am (file names start `ba-`)
+
+| File | Seconds | Prompt |
+|---|---|---|
+| `ba-flame` (loop) | 3 | A steady roaring flame, like a blowtorch close up, no voices, no music |
+| `ba-brick` | 0.5 | A clay brick smashed apart, crumbling chips falling |
+| `ba-block` | 0.3 | A hard knock on a solid concrete block, short and dull |
+| `ba-wood` | 0.5 | A thin wooden market stall board cracking in one hit |
+| `ba-glass` | 0.7 | A pane of glass shattering, bright pieces tinkling down |
+| `ba-rock` | 0.3 | A ball bouncing off solid stone, a short hard clack |
+| `ba-steel` | 0.8 | A heavy hit on a big steel gate, a loud ringing clang |
+| `ba-bounce` | 0.2 | A very soft small ball tap on a wall |
+| `ba-plank` | 0.3 | A ball bouncing off a wooden plank, a warm hollow knock |
+| `ba-combo` | 0.3 | One clean bright marimba note |
+| `ba-fire` | 1.2 | A sudden whoosh of flame bursting alight, a powerful roar |
+| `ba-blast` | 1.5 | A dynamite explosion in a stone quarry, a deep boom and falling rubble |
+| `ba-danfo` | 1.2 | An old Lagos minibus horn, two quick honks on a busy road |
+| `ba-capsule` | 0.6 | A short bright pickup chime, cheerful, no voices |
+| `ba-shard` | 0.4 | A sharp piece of glass striking wood, a thin scrape |
+| `ba-drop` | 0.8 | A ball falling away, a short sad sliding whistle |
+| `ba-floor` | 0.5 | A ball bouncing hard off wet cement, a firm thud |
+| `ba-clear` | 3 | A wall collapsing into rubble with a dust rumble, then a small work crew cheering |
+
+One short voice line, recorded on a phone like the others: `v-ba-danfo` ("Oshodi, Oshodi, enter with your change!").
 
 ### Okada Rush (file names start `ok-`)
 
