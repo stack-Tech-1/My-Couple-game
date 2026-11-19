@@ -1,12 +1,12 @@
-# Sound pack: Mama Put, Okada Rush and Zobo Sort
+# Sound pack: Mama Put, Okada Rush, Zobo Sort and Mosquito Wahala
 
 Three kinds of sound, from three places:
 
 | Kind | Where it comes from | How many |
 |---|---|---|
-| Sound effects (sizzle, horn, pouring…) | **ElevenLabs Sound Effects** (AI) | 39 |
+| Sound effects (sizzle, horn, pouring, buzzing…) | **ElevenLabs Sound Effects** (AI) | 58 |
 | Background music | **Suno** (AI) | 7 |
-| Voices (customers, passengers, agbero, LASTMA) | **You and your friends**, recorded on a phone | 34 lines |
+| Voices (customers, passengers, agbero, LASTMA, a bitten sleeper) | **You and your friends**, recorded on a phone | 36 lines |
 
 Save everything into a new folder next to `game images`, called **`game sounds`**, using the file names below. Name a file exactly as given. MP3, WAV or M4A are all fine: I'll trim, clean, even out the volume and shrink every file.
 
@@ -66,6 +66,32 @@ Save everything into a new folder next to `game images`, called **`game sounds`*
 | `zs-reveal` | 0.6 | A soft airy shimmer, a cloth lifted off something |
 | `zs-hint` | 0.7 | Two soft bright chimes, a helpful little idea sound |
 | `zs-win` | 2 | A short joyful marimba and shekere flourish for finishing a puzzle level, no voices |
+
+### Mosquito Wahala (file names start `mq-`)
+
+| File | Seconds | Prompt |
+|---|---|---|
+| `mq-buzz` (loop) | 3 | A single mosquito whining close to the ear, thin high-pitched steady buzz, no voices, no music |
+| `mq-spray` (loop) | 3 | An aerosol insect spray can held down, steady soft hiss, no voices, no music |
+| `mq-splat` | 0.3 | A tiny wet splat, a small insect being squashed, short and punchy |
+| `mq-puff-hit` | 0.2 | A very soft puff of air hitting something small |
+| `mq-bite` | 0.5 | One quick hand slap on bare skin |
+| `mq-blocked` | 0.4 | A light bounce off a soft mesh net, gentle and bright |
+| `mq-power` | 0.8 | A short bright pickup sparkle, cheerful, no voices |
+| `mq-fog` | 1.5 | A big long blast from an aerosol spray can filling a room |
+| `mq-fog-ready` | 0.6 | Two quick bright chimes, something is ready to use |
+| `mq-light-off` | 1.5 | Power cut in a Nigerian home: a ceiling fan winding down to silence and a soft electric click |
+| `mq-up-nepa` | 2.5 | Power returning in a Lagos neighbourhood: a distant happy crowd cheering from nearby houses, a fan starting up, no music |
+| `mq-boss` | 1.5 | A huge deep menacing insect drone swelling up, no voices |
+| `mq-boss-hit` | 0.2 | A short dull thud on something big and fleshy |
+| `mq-dive` | 1 | A large insect diving fast, buzz rising in pitch and getting closer |
+| `mq-boss-down` | 1.5 | A giant insect collapsing with a falling buzz and a big wet splat |
+| `mq-wave` | 0.7 | A short rising two-note marimba phrase, no voices |
+| `mq-puddle` | 0.4 | A small water drip and a tiny splash in a puddle |
+| `mq-crow` | 2.5 | A rooster crowing once at dawn, in a quiet village morning |
+| `mq-lose` | 1.5 | A short sad descending marimba phrase, no voices |
+
+Two short voice lines, recorded on a phone like the others: `v-mq-ouch` ("Ouch!" or "Ah! This mosquito!") and `v-mq-up-nepa` ("Up NEPA!").
 
 ### Okada Rush (file names start `ok-`)
 

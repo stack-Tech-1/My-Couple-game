@@ -15,6 +15,8 @@ import { MamaDayDone } from "./mama/MamaDayDone";
 import { OkadaRouteDone } from "./okada/OkadaRouteDone";
 import { ZoboLevelDone } from "./zobo/ZoboLevelDone";
 import { rankFor, starsOfTakings } from "@/lib/solo/games/zobo";
+import { MosquitoNightDone } from "./mosquito/MosquitoNightDone";
+import { rankFor as mosquitoRank, starsOfTakings as mosquitoStars } from "@/lib/solo/games/mosquito";
 
 // Each game is its own download, fetched only when you open it.
 const loading = () => <p className="py-16 text-center text-muted">Setting up…</p>;
@@ -44,7 +46,7 @@ export function ArcadeScreen({
   gameId: string;
   daily?: { mode: string; seed: string } | null;
   /** A chosen version (Mama Put's difficulty or career day, an Okada Rush route) and what it needs, such as upgrades. */
-  play?: { mode: string; title: string; tagline: string; owned?: readonly string[]; tutorial?: boolean; careerDay?: number; route?: number; skin?: string; savings?: number; zobo?: { level: number; totalStars: number; levelStars: number } } | null;
+  play?: { mode: string; title: string; tagline: string; owned?: readonly string[]; tutorial?: boolean; careerDay?: number; route?: number; skin?: string; savings?: number; zobo?: { level: number; totalStars: number; levelStars: number }; mosquito?: { night: number; totalStars: number; nightStars: number } } | null;
 }) {
   const game = soloGame(gameId)!;
   const careerDay = play?.careerDay;
@@ -52,6 +54,8 @@ export function ArcadeScreen({
   const zobo = play?.zobo;
   // The stars this level adds to the career, for the rank on the finish screen and the poster.
   const zoboTotal = (score: number) => (zobo ? zobo.totalStars + Math.max(0, starsOfTakings(zobo.level, score) - zobo.levelStars) : 0);
+  const mosquito = play?.mosquito;
+  const mosquitoTotal = (score: number) => (mosquito ? mosquito.totalStars + Math.max(0, mosquitoStars(mosquito.night, score) - mosquito.nightStars) : 0);
   return (
     <SoloShell<AnySaved>
       gameId={gameId}
@@ -66,6 +70,13 @@ export function ArcadeScreen({
         ? {
             posterHeadline: (score: number) => `${rankFor(zoboTotal(score)).name}, level ${zobo.level}`,
             doneView: (r: { score: number; newBest: boolean; left: number | null; again: () => void; share: () => void }) => <ZoboLevelDone level={zobo.level} score={r.score} totalBefore={zobo.totalStars} totalAfter={zoboTotal(r.score)} left={r.left} again={r.again} share={r.share} />,
+          }
+        : {})}
+      {...(mosquito
+        ? {
+            posterHeadline: (score: number) => `${mosquitoRank(mosquitoTotal(score)).name}, night ${mosquito.night}`,
+            posterScore: (score: number) => `₦${score.toLocaleString("en-NG")}`,
+            doneView: (r: { score: number; left: number | null; again: () => void; share: () => void }) => <MosquitoNightDone night={mosquito.night} score={r.score} totalBefore={mosquito.totalStars} totalAfter={mosquitoTotal(r.score)} left={r.left} again={r.again} share={r.share} />,
           }
         : {})}
       {...(careerDay ? { doneView: (r: { score: number; newBest: boolean; again: () => void; share: () => void }) => <MamaDayDone day={careerDay} score={r.score} newBest={r.newBest} again={r.again} share={r.share} /> } : {})}

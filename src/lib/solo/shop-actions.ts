@@ -9,6 +9,7 @@ import { mamaOwned } from "./mama-server";
 import { GEAR, SKINS, isGear, isSkin } from "./games/okada";
 import { randomBytes } from "node:crypto";
 import { HELPERS, lookPrice, type HelperId } from "./games/zobo";
+import { GEAR as MOSQUITO_GEAR, isGear as isMosquitoGear } from "./games/mosquito";
 
 const buyInput = z.object({ area: z.number().int().min(0).max(AREAS.length - 1), item: z.string().max(30) });
 
@@ -56,6 +57,22 @@ export async function buyZoboLook(raw: unknown): Promise<ActionResult<{ savings:
   const { data, error } = await supabaseAdmin().rpc("solo_shop_buy", { p_user: user.id, p_game: "zobo-sort", p_area: 0, p_item: item, p_price: price });
   if (error) {
     if (error.message.includes("not enough savings")) return { ok: false, error: "Not enough savings yet. A few more levels!" };
+    if (error.message.includes("already owned")) return { ok: false, error: "You already have that." };
+    return { ok: false, error: "Couldn't buy it. Try again?" };
+  }
+  return { ok: true, data: { savings: Number(data) } };
+}
+
+/** Buy Mosquito Wahala gear. The price comes from here, never the phone. */
+export async function buyMosquitoGear(raw: unknown): Promise<ActionResult<{ savings: number }>> {
+  const p = z.object({ item: z.string().max(30) }).safeParse(raw);
+  const item = p.success ? p.data.item : "";
+  if (!isMosquitoGear(item)) return { ok: false, error: "The shop doesn't sell that." };
+  const user = await getUser();
+  if (!user) return { ok: false, error: "Sign in to shop." };
+  const { data, error } = await supabaseAdmin().rpc("solo_shop_buy", { p_user: user.id, p_game: "mosquito-wahala", p_area: 0, p_item: item, p_price: MOSQUITO_GEAR.find((g) => g.id === item)!.price });
+  if (error) {
+    if (error.message.includes("not enough savings")) return { ok: false, error: "Not enough savings yet. A few more nights!" };
     if (error.message.includes("already owned")) return { ok: false, error: "You already have that." };
     return { ok: false, error: "Couldn't buy it. Try again?" };
   }

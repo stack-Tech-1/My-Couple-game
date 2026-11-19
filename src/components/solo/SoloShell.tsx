@@ -74,6 +74,7 @@ export function SoloShell<S>({
   doneView,
   outNote,
   posterHeadline,
+  posterScore,
   children,
 }: {
   gameId: string;
@@ -95,6 +96,8 @@ export function SoloShell<S>({
   outNote?: string;
   /** The line on the share poster, in place of the score. */
   posterHeadline?: (score: number) => string;
+  /** How the score reads on the poster, when it isn't the game's usual unit. */
+  posterScore?: (score: number) => string;
   children: (api: SoloApi<S>) => ReactNode;
 }) {
   const game = soloGame(gameId)!;
@@ -382,14 +385,14 @@ export function SoloShell<S>({
         <Modal open={studio} onClose={() => setStudio(false)} title="Your poster" description="Swipe for a style. Made for your WhatsApp status, or anywhere you like.">
           <PosterStudio
             fileName={`amah-${gameId}`}
-            shareText={`I scored ${formatScore(game, result.score)} in ${game.name} on Amah. Beat me:`}
+            shareText={posterHeadline ? `${posterHeadline(result.score)} in ${game.name} on Amah. Beat me:` : `I scored ${formatScore(game, result.score)} in ${game.name} on Amah. Beat me:`}
             data={{
               people: [limits.me ?? { name: myName, motif: "fig", hue: 12 }],
               level: null,
               headline: posterHeadline?.(result.score) ?? (result.newBest ? `New best: ${formatScore(game, result.score)}` : formatScore(game, result.score)),
               stats: [
-                { value: formatScore(game, result.score), label: `in ${game.name}` },
-                ...(result.best !== result.score ? [{ value: formatScore(game, result.best), label: "my best" }] : []),
+                { value: posterScore?.(result.score) ?? formatScore(game, result.score), label: `in ${game.name}` },
+                ...(result.best !== result.score ? [{ value: posterScore?.(result.best) ?? formatScore(game, result.best), label: "my best" }] : []),
                 ...(result.plays > 1 ? [{ value: String(result.plays), label: "games played" }] : []),
               ],
               rivalry: null,

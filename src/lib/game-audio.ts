@@ -18,8 +18,8 @@ import { SOUND_FILES } from "./sound-files";
  * Nothing plays while the member's sound is off.
  */
 type Opts = { volume?: number; rate?: number };
-export type LoopHandle = { setRate(r: number): void; setVolume(v: number): void; stop(): void };
-const NONE: LoopHandle = { setRate() {}, setVolume() {}, stop() {} };
+export type LoopHandle = { setRate(r: number): void; setVolume(v: number): void; /** -1 is the left ear, 1 the right. */ setPan(p: number): void; stop(): void };
+const NONE: LoopHandle = { setRate() {}, setVolume() {}, setPan() {}, stop() {} };
 
 const MUSIC_KEY = "amah:music";
 export const musicPreferred = () => {
@@ -66,6 +66,11 @@ export class GameAudio {
     return this.ac;
   }
 
+  /** Call from a tap: phones keep sound asleep until the player touches the screen. */
+  wake() {
+    this.ctx();
+  }
+
   /** Fetch and decode sounds ahead of time, so the first sizzle isn't late. */
   preload(names: string[]) {
     for (const n of names) if (have(n)) void this.buffer(n);
@@ -108,7 +113,9 @@ export class GameAudio {
     const g = ac.createGain();
     g.gain.value = 0;
     g.gain.setTargetAtTime(o.volume ?? 1, ac.currentTime, 0.08);
-    g.connect(this.out);
+    const panner = typeof ac.createStereoPanner === "function" ? ac.createStereoPanner() : null;
+    if (panner) g.connect(panner).connect(this.out);
+    else g.connect(this.out);
     let rate = o.rate ?? 1;
     let src: AudioBufferSourceNode | null = null;
     let stopped = false;
@@ -131,6 +138,7 @@ export class GameAudio {
         synth?.setRate(r);
       },
       setVolume: (v) => g.gain.setTargetAtTime(v, ac.currentTime, 0.1),
+      setPan: (p) => panner?.pan.setTargetAtTime(Math.max(-1, Math.min(1, p)), ac.currentTime, 0.08),
       stop: () => {
         if (stopped) return;
         stopped = true;
@@ -143,6 +151,7 @@ export class GameAudio {
           }
           synth?.stop();
           g.disconnect();
+          panner?.disconnect();
         }, 400);
         this.loops.delete(h);
       },
@@ -259,8 +268,63 @@ function burst(ac: AudioContext, out: AudioNode, d: number, freq: number, v: num
 
 function standIn(ac: AudioContext, out: AudioNode, name: string, o: Opts) {
   const v = o.volume ?? 1;
-  const key = name.replace(/^(mp|ok|zs)-/, "");
+  const key = name.replace(/^(mp|ok|zs|mq)-/, "");
   switch (key) {
+    case "splat":
+      burst(ac, out, 0.09, 1500, 0.2 * v);
+      tone(ac, out, 240, 0, 0.08, "sine", 0.14 * v, 90);
+      return;
+    case "puff-hit":
+      tone(ac, out, 900, 0, 0.05, "triangle", 0.04 * v, 620);
+      return;
+    case "bite":
+      burst(ac, out, 0.07, 3200, 0.3 * v);
+      tone(ac, out, 520, 0.08, 0.22, "sawtooth", 0.07 * v, 300);
+      return;
+    case "blocked":
+      tone(ac, out, 1250, 0, 0.12, "sine", 0.06 * v, 1700);
+      return;
+    case "power":
+      [784, 1046, 1318].forEach((f, i) => tone(ac, out, f, i * 0.07, 0.22, "triangle", 0.07 * v));
+      return;
+    case "fog":
+      burst(ac, out, 1.1, 5200, 0.2 * v, "highpass");
+      return;
+    case "fog-ready":
+      [1046, 1568].forEach((f, i) => tone(ac, out, f, i * 0.1, 0.2, "sine", 0.06 * v));
+      return;
+    case "light-off":
+      tone(ac, out, 320, 0, 1.1, "sawtooth", 0.05 * v, 45);
+      return;
+    case "up-nepa":
+      [523, 659, 784, 1046].forEach((f, i) => tone(ac, out, f, i * 0.09, 0.4, "triangle", 0.07 * v));
+      burst(ac, out, 1, 2400, 0.05 * v);
+      return;
+    case "boss":
+      tone(ac, out, 110, 0, 1.2, "sawtooth", 0.1 * v, 62);
+      return;
+    case "boss-hit":
+      tone(ac, out, 300, 0, 0.06, "square", 0.03 * v, 190);
+      return;
+    case "dive":
+      tone(ac, out, 900, 0, 0.6, "sawtooth", 0.04 * v, 260);
+      return;
+    case "boss-down":
+      tone(ac, out, 180, 0, 0.9, "sawtooth", 0.1 * v, 40);
+      burst(ac, out, 0.8, 1800, 0.2 * v);
+      return;
+    case "wave":
+      [659, 880].forEach((f, i) => tone(ac, out, f, i * 0.1, 0.25, "sine", 0.06 * v));
+      return;
+    case "puddle":
+      tone(ac, out, 700, 0, 0.14, "sine", 0.07 * v, 1200);
+      return;
+    case "crow":
+      [[640, 0, 0.16, 900], [900, 0.2, 0.18, 1150], [1150, 0.42, 0.65, 620]].forEach(([f, t, d, e]) => tone(ac, out, f!, t!, d!, "sawtooth", 0.06 * v, e));
+      return;
+    case "lose":
+      [392, 330, 262].forEach((f, i) => tone(ac, out, f, i * 0.18, 0.4, "triangle", 0.08 * v));
+      return;
     case "pick":
       tone(ac, out, 2350, 0, 0.09, "sine", 0.06 * v);
       tone(ac, out, 3120, 0.015, 0.07, "sine", 0.035 * v);
@@ -348,7 +412,47 @@ function standIn(ac: AudioContext, out: AudioNode, name: string, o: Opts) {
 
 /** Continuous stand-ins: an engine that revs, oil that sizzles, a pot that bubbles. Ambience stays silent. */
 function standInLoop(ac: AudioContext, out: AudioNode, name: string, rate: number) {
-  const key = name.replace(/^(mp|ok|zs)-/, "");
+  const key = name.replace(/^(mp|ok|zs|mq)-/, "");
+  if (key === "buzz") {
+    // A thin whine that wavers, like the one by your ear at 2am.
+    const o = ac.createOscillator();
+    o.type = "sawtooth";
+    o.frequency.value = 610 * rate;
+    const f = ac.createBiquadFilter();
+    f.type = "bandpass";
+    f.frequency.value = 1500;
+    f.Q.value = 1.2;
+    const g = ac.createGain();
+    g.gain.value = 0.09;
+    const lfo = ac.createOscillator();
+    const lg = ac.createGain();
+    lfo.frequency.value = 7;
+    lg.gain.value = 24;
+    lfo.connect(lg).connect(o.frequency);
+    o.connect(f).connect(g).connect(out);
+    o.start();
+    lfo.start();
+    return {
+      setRate: (r: number) => o.frequency.setTargetAtTime(610 * r, ac.currentTime, 0.1),
+      stop: () => {
+        o.stop();
+        lfo.stop();
+      },
+    };
+  }
+  if (key === "spray") {
+    const s = ac.createBufferSource();
+    s.buffer = noise(ac);
+    s.loop = true;
+    const f = ac.createBiquadFilter();
+    f.type = "highpass";
+    f.frequency.value = 5200;
+    const g = ac.createGain();
+    g.gain.value = 0.07;
+    s.connect(f).connect(g).connect(out);
+    s.start();
+    return { setRate: () => {}, stop: () => s.stop() };
+  }
   if (key === "pour") {
     // Running liquid: filtered noise that rises in pitch as the bottle fills, with a soft glug.
     const s = ac.createBufferSource();

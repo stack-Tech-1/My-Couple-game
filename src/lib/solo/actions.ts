@@ -16,6 +16,8 @@ import { ROUTES, routeOpen } from "./games/okada";
 import { okadaRouteBest } from "./okada-server";
 import { LEVELS, levelOpen } from "./games/zobo";
 import { zoboLevelCleared } from "./zobo-server";
+import { NIGHTS, nightOpen } from "./games/mosquito";
+import { mosquitoNightCleared } from "./mosquito-server";
 
 async function limited(uid: string, action: string, max: number, windowSeconds: number) {
   const { data } = await supabaseAdmin().rpc("server_rate_limit", { uid, action, max_hits: max, window_seconds: windowSeconds });
@@ -71,6 +73,14 @@ export async function startRun(raw: unknown): Promise<StartResult> {
     if (n < 1 || n > LEVELS) return { ok: false, error: "There's no such level.", blocked: true };
     const before = n > 1 ? await zoboLevelCleared(user.id, n - 1) : true;
     if (!levelOpen(n, () => before)) return { ok: false, error: `Finish level ${n - 1} first.`, blocked: true };
+  }
+  // Mosquito Wahala: nights open in order, by surviving the one before.
+  const mosquitoNight = p.data.gameId === "mosquito-wahala" ? /^night-(\d{1,2})$/.exec(p.data.mode) : null;
+  if (mosquitoNight) {
+    const n = Number(mosquitoNight[1]);
+    if (n < 1 || n > NIGHTS) return { ok: false, error: "There's no such night.", blocked: true };
+    const before = n > 1 ? await mosquitoNightCleared(user.id, n - 1) : true;
+    if (!nightOpen(n, () => before)) return { ok: false, error: `Survive night ${n - 1} first.`, blocked: true };
   }
   // Without Plus, each game twice a day (Zobo Sort, one level a day). Challenges are always open, and so is Mama Put's Yaba.
   let left: number | null = null;

@@ -20,6 +20,9 @@ import { ROUTES, ROUTE_ABOUT, isSkin, routeOpen } from "@/lib/solo/games/okada";
 import { ZoboHome } from "@/components/solo/zobo/ZoboHome";
 import { zoboCareer } from "@/lib/solo/zobo-server";
 import { STALLS, levelOfMode, levelOpen, stallOf } from "@/lib/solo/games/zobo";
+import { MosquitoHome } from "@/components/solo/mosquito/MosquitoHome";
+import { mosquitoCareer } from "@/lib/solo/mosquito-server";
+import { ROOMS, nightOfMode, nightOpen, nightSpec } from "@/lib/solo/games/mosquito";
 import { AREAS, DAYS, DIFFICULTIES, DIFFICULTY_NAME, ITEM_NAME, areaIndex, dayOpen, newOnDay, type Difficulty } from "@/lib/solo/games/mama";
 
 export async function generateMetadata({ params }: { params: Promise<{ game: string }> }): Promise<Metadata> {
@@ -64,6 +67,8 @@ export default async function SoloGamePage({ params, searchParams }: { params: P
     body = await okadaBody(ctx.user.id, modeParam, skin, common, ctx.rooms);
   } else if (game.id === "zobo-sort" && !common.challenge) {
     body = await zoboBody(ctx.user.id, modeParam, common);
+  } else if (game.id === "mosquito-wahala" && !daily && !common.challenge) {
+    body = await mosquitoBody(ctx.user.id, modeParam, common, ctx.rooms);
   } else if (game.kind === "bot") {
     body = <BotScreen gameId={game.id} base={game.base!} myName={ctx.profile.display_name} soundOn={ctx.soundOn} toured={toured} />;
   } else {
@@ -138,6 +143,38 @@ async function zoboBody(userId: string, mode: string | undefined, common: { myNa
       {...common}
       play={{ mode: `lvl-${level}`, owned: career.looks, savings: career.savings, zobo: { level, totalStars: career.totalStars, levelStars: career.levelStars[level - 1]! }, title: `Level ${level}`, tagline: `${stall.name}. ${stall.about}` }}
     />
+  );
+}
+
+/** Mosquito Wahala: the rooms and shop, or a chosen night, or All Night. */
+async function mosquitoBody(userId: string, mode: string | undefined, common: { myName: string; soundOn: boolean; toured: boolean; challenge: string | null }, rooms: Parameters<typeof SoloBoards>[0]["rooms"]) {
+  const career = await mosquitoCareer(userId);
+  const night = mode ? nightOfMode(mode) : null;
+  if (night) {
+    if (!nightOpen(night, (n) => career.nightStars[n - 1]! > 0)) redirect("/solo/mosquito-wahala");
+    const spec = nightSpec(night);
+    const room = ROOMS[spec.room]!;
+    return (
+      <ArcadeScreen
+        gameId="mosquito-wahala"
+        {...common}
+        play={{ mode: `night-${night}`, owned: career.gear, mosquito: { night, totalStars: career.totalStars, nightStars: career.nightStars[night - 1]! }, title: `Night ${night}`, tagline: spec.boss ? `${room.name}. Tonight: ${room.boss}.` : `${room.name}. ${room.about}` }}
+      />
+    );
+  }
+  if (mode === "normal") {
+    return (
+      <>
+        <ArcadeScreen gameId="mosquito-wahala" {...common} play={{ mode: "normal", title: "All Night", tagline: "Endless waves and no upgrades. How long can you last?" }} />
+        <SoloBoards gameId="mosquito-wahala" rooms={rooms} me={userId} />
+      </>
+    );
+  }
+  return (
+    <>
+      <MosquitoHome career={career} />
+      <SoloBoards gameId="mosquito-wahala" rooms={rooms} me={userId} />
+    </>
   );
 }
 

@@ -44,7 +44,7 @@ export const SOLO_TOURS: Record<string, TourStep[]> = {
   "mosquito-wahala": [
     { target: "mosquito-room", title: "Protect your sleep", body: ["Mosquitoes zig-zag down towards your bed. Each one that gets there bites you.", "Five bites and the night is over."] },
     { target: "mosquito-can", title: "Spray am", body: ["Drag the can under them. It sprays by itself.", "Big ones take three puffs."] },
-    { title: "Power-ups", body: ["Some mosquitoes drop help: a coil slows them, a net stops bites for a while, and double spray does what it says.", "Each wave is bigger and faster."] },
+    { title: "Power-ups", body: ["Some mosquitoes drop help: a coil slows them, a net stops bites for a while, and double spray does what it says.", "On career nights, kills fill your Big Spray. Tap it when it's full to clear the room."] },
   ],
   "mama-put": [
     { target: "mama-shop", title: "Lunch rush", body: ["Customers come to the counter. Their bubble shows what they want; the ring is their patience.", "You have 90 seconds. Make as much money as you can."] },
