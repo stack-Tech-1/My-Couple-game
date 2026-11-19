@@ -40,28 +40,29 @@ const expect = (file, items, n) => {
   record("pitch", info, out);
 }
 
-// R2. The keeper: ready, diving to our left, diving to our right, ball held up, sitting.
+// R2. The keeper (the transparent redo of the sheet), in reading order: ready, ball held up,
+// diving to our left, diving to our right, sitting.
 {
-  const file = path.join(SRC, "Goalkeeper’s Five Dynamic Poses.png");
+  const file = path.join(SRC, "Comic Goalkeeper Pose Sticker Set.png");
   const it = await cutSheet(file);
   expect(file, it, 5);
-  const names = ["keeper-ready", "keeper-dive-l", "keeper-dive-r", "keeper-hold", "keeper-sit"];
+  const names = ["keeper-ready", "keeper-hold", "keeper-dive-l", "keeper-dive-r", "keeper-sit"];
   for (let k = 0; k < 5; k++) await save(it[k].image, names[k], 360);
 }
 
 // R3. The striker, from behind: standing, running in, striking. (Items 3 to 5 are the balls.)
 {
-  const file = path.join(SRC, "Three-Stage Soccer Kick Sequence.png");
+  const file = path.join(SRC, "Three Dynamic Soccer Striker Poses.png");
   const it = await cutSheet(file);
   expect(file, it, 6);
   const names = ["striker-stand", "striker-run", "striker-kick"];
   for (let k = 0; k < 3; k++) await save(it[k].image, names[k], 420);
 }
 
-// R4. Ball, flying ball (its streaks come apart, so it's the plain ball again and isn't kept),
-// whistle, gloves, flag, the ball in the net.
+// R4. Ball, flying ball (not used: the game draws the flight), whistle, gloves, flag, the ball in
+// the net. This transparent redo keeps the net's squares see-through.
 {
-  const file = path.join(SRC, "Glossy Soccer Icons Grid.png");
+  const file = path.join(SRC, "Soccer Sticker Grid Essentials.png");
   const it = await cutSheet(file);
   expect(file, it, 6);
   await save(it[0].image, "ball", 120);

@@ -77,6 +77,19 @@ describe("Ajo", () => {
     const r = move("a", s, "left")!;
     expect(r.state.tiles[0]).toBe(2);
     expect(r.points).toBe(4);
+    // Where the merge landed, and where the new note came in (an empty square that wasn't before).
+    expect(r.mergedAt).toEqual([0]);
+    expect(r.spawnedAt).not.toBeNull();
+    expect(r.state.tiles[r.spawnedAt!]).toBeGreaterThan(0);
+    expect(r.spawnedAt).not.toBe(0);
+  });
+
+  it("reports merges along the swipe, in board positions", () => {
+    // Bottom row, swiped right: ₦5 ₦5 ₦10 ₦10 makes ₦10 and ₦20 at the right end.
+    const s = { ...newAjo("c"), tiles: [...Array(12).fill(0), 1, 1, 2, 2] };
+    const r = move("c", s, "right")!;
+    expect(r.state.tiles.slice(12)).toEqual(expect.arrayContaining([2, 3]));
+    expect(r.mergedAt.sort()).toEqual([14, 15]);
   });
 
   it("won't count a swipe that moves nothing, and knows when the board is stuck", () => {

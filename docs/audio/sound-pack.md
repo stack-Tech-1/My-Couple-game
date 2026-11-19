@@ -1,10 +1,10 @@
-# Sound pack: Mama Put, Okada Rush, Zobo Sort, Mosquito Wahala, Bash Am, Pump Am, Catch Am, Blend Am and Reflex Training
+# Sound pack: Mama Put, Okada Rush, Zobo Sort, Mosquito Wahala, Bash Am, Pump Am, Catch Am, Blend Am, Reflex Training and Ajo
 
 Three kinds of sound, from three places:
 
 | Kind | Where it comes from | How many |
 |---|---|---|
-| Sound effects (sizzle, horn, pouring, buzzing, breaking…) | **ElevenLabs Sound Effects** (AI) | 102 |
+| Sound effects (sizzle, horn, pouring, buzzing, breaking…) | **ElevenLabs Sound Effects** (AI) | 107 |
 | Background music | **Suno** (AI) | 7 |
 | Voices (customers, passengers, agbero, LASTMA, a bitten sleeper, a danfo conductor) | **You and your friends**, recorded on a phone | 37 lines |
 
@@ -163,6 +163,16 @@ One short voice line, recorded on a phone like the others: `v-ba-danfo` ("Oshodi
 | `rx-roar` | 2 | A big stadium crowd roaring and cheering for a great save, no clear words |
 | `rx-goal` | 1.5 | A football swishing into a net, then a stadium crowd groaning |
 | `rx-whistle` | 0.8 | A referee's whistle, one sharp short blast |
+
+### Ajo (file names start `aj-`)
+
+| File | Seconds | Prompt |
+|---|---|---|
+| `aj-slide` | 0.3 | A few paper banknotes sliding across a wooden table, a soft quick rustle |
+| `aj-merge` | 0.3 | A crisp paper banknote snapped tight between two hands, one sharp snap |
+| `aj-stamp` | 0.3 | A rubber ink stamp thumped down on a card, one firm thud |
+| `aj-top` | 1 | An old cash register drawer opening with a bright bell ka-ching, cheerful |
+| `aj-lose` | 1.5 | A short gentle descending marimba phrase, a little sad, no voices |
 
 ### Okada Rush (file names start `ok-`)
 

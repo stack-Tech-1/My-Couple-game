@@ -11,6 +11,10 @@ export const noteOf = (level: number) => NOTES[level - 1] ?? `L${level}`;
 /** Points for making a tile: doubles each level, like the notes roughly do. */
 export const pointsOf = (level: number) => 2 ** level;
 
+/** The last game's top note and moves, kept for the finish screen (which only gets the score). */
+export type AjoLast = { best: number; moves: number };
+export const AJO_LAST = "amah:ajo:last";
+
 export type Dir = "up" | "down" | "left" | "right";
 export type AjoState = { tiles: number[]; score: number; cursor: number; best: number; moves: number; won: boolean };
 
@@ -30,14 +34,16 @@ export function newAjo(seed: string): AjoState {
 }
 
 /** Slide one line toward its start; returns the new line and points made. */
-function slideLine(line: number[]): { line: number[]; points: number; best: number } {
+function slideLine(line: number[]): { line: number[]; points: number; best: number; merged: number[] } {
   const vals = line.filter((v) => v);
   const out: number[] = [];
+  const merged: number[] = [];
   let points = 0;
   let best = 0;
   for (let i = 0; i < vals.length; i++) {
     if (vals[i] === vals[i + 1]) {
       const lv = vals[i]! + 1;
+      merged.push(out.length);
       out.push(lv);
       points += pointsOf(lv);
       best = Math.max(best, lv);
@@ -45,7 +51,7 @@ function slideLine(line: number[]): { line: number[]; points: number; best: numb
     } else out.push(vals[i]!);
   }
   while (out.length < N) out.push(0);
-  return { line: out, points, best };
+  return { line: out, points, best, merged };
 }
 
 const index = (dir: Dir, line: number, k: number) => {
@@ -61,9 +67,13 @@ const index = (dir: Dir, line: number, k: number) => {
   }
 };
 
-/** One swipe. Null when nothing would move. */
-export function move(seed: string, s: AjoState, dir: Dir): { state: AjoState; points: number; merged: number } | null {
+/**
+ * One swipe. Null when nothing would move. `mergedAt` is where merges landed and `spawnedAt` where
+ * the new note appeared (for the stamp and the pop-in on screen).
+ */
+export function move(seed: string, s: AjoState, dir: Dir): { state: AjoState; points: number; merged: number; mergedAt: number[]; spawnedAt: number | null } | null {
   const tiles = [...s.tiles];
+  const mergedAt: number[] = [];
   let points = 0;
   let best = 0;
   let changed = false;
@@ -75,13 +85,15 @@ export function move(seed: string, s: AjoState, dir: Dir): { state: AjoState; po
       if (tiles[idx[k]!] !== v) changed = true;
       tiles[idx[k]!] = v;
     });
+    for (const k of r.merged) mergedAt.push(idx[k]!);
     points += r.points;
     best = Math.max(best, r.best);
   }
   if (!changed) return null;
   const top = Math.max(s.best, best, ...tiles);
   const next = spawn(seed, { ...s, tiles, score: s.score + points, best: top, moves: s.moves + 1, won: s.won || top >= 8 });
-  return { state: next, points, merged: best };
+  const spawnedAt = next.tiles.findIndex((v, i) => v && !tiles[i]);
+  return { state: next, points, merged: best, mergedAt, spawnedAt: spawnedAt >= 0 ? spawnedAt : null };
 }
 
 export function canMove(s: AjoState): boolean {

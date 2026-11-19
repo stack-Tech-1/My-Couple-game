@@ -22,6 +22,7 @@ import { PumpDoneTop, pumpPoster } from "./pump/PumpDoneTop";
 import { CatchDoneTop, catchPoster } from "./catch/CatchDoneTop";
 import { BlendDoneTop, blendPoster } from "./blend/BlendDoneTop";
 import { ReflexDoneTop, reflexPoster } from "./reflex/ReflexDoneTop";
+import { AjoDoneTop, ajoPoster } from "./ajo/AjoDoneTop";
 import { rankFor as mosquitoRank, starsOfTakings as mosquitoStars } from "@/lib/solo/games/mosquito";
 
 // Each game is its own download, fetched only when you open it.
@@ -95,6 +96,7 @@ export function ArcadeScreen({
             doneView: (r: { score: number; left: number | null; again: () => void; share: () => void }) => <MosquitoNightDone night={mosquito.night} score={r.score} totalBefore={mosquito.totalStars} totalAfter={mosquitoTotal(r.score)} left={r.left} again={r.again} share={r.share} />,
           }
         : {})}
+      {...(gameId === "ajo" ? { doneTop: (r: { newBest: boolean }) => <AjoDoneTop newBest={r.newBest} />, posterHeadline: (score: number) => ajoPoster() ?? `${score.toLocaleString("en-NG")} points` } : {})}
       {...(gameId === "reflex" ? { doneTop: (r: { score: number; newBest: boolean }) => <ReflexDoneTop score={r.score} newBest={r.newBest} />, posterHeadline: reflexPoster } : {})}
       {...(gameId === "blend-am" ? { doneTop: (r: { newBest: boolean }) => <BlendDoneTop newBest={r.newBest} />, posterHeadline: (score: number) => blendPoster() ?? `${score.toLocaleString("en-NG")} points` } : {})}
       {...(gameId === "catch-am" ? { doneTop: (r: { newBest: boolean }) => <CatchDoneTop newBest={r.newBest} />, posterHeadline: (score: number) => catchPoster() ?? `${score.toLocaleString("en-NG")} points` } : {})}
