@@ -18,6 +18,7 @@ import { rankFor, starsOfTakings } from "@/lib/solo/games/zobo";
 import { BashWallDone } from "./bash/BashWallDone";
 import { rankFor as bashRank, starsOfTakings as bashStars } from "@/lib/solo/games/bashwall";
 import { MosquitoNightDone } from "./mosquito/MosquitoNightDone";
+import { PumpDoneTop, pumpPoster } from "./pump/PumpDoneTop";
 import { rankFor as mosquitoRank, starsOfTakings as mosquitoStars } from "@/lib/solo/games/mosquito";
 
 // Each game is its own download, fetched only when you open it.
@@ -91,6 +92,7 @@ export function ArcadeScreen({
             doneView: (r: { score: number; left: number | null; again: () => void; share: () => void }) => <MosquitoNightDone night={mosquito.night} score={r.score} totalBefore={mosquito.totalStars} totalAfter={mosquitoTotal(r.score)} left={r.left} again={r.again} share={r.share} />,
           }
         : {})}
+      {...(gameId === "pump-am" ? { doneTop: (r: { score: number }) => <PumpDoneTop score={r.score} />, posterHeadline: pumpPoster } : {})}
       {...(careerDay ? { doneView: (r: { score: number; newBest: boolean; again: () => void; share: () => void }) => <MamaDayDone day={careerDay} score={r.score} newBest={r.newBest} again={r.again} share={r.share} /> } : {})}
       {...(route ? { doneView: (r: { score: number; newBest: boolean; again: () => void; share: () => void }) => <OkadaRouteDone route={route} score={r.score} newBest={r.newBest} again={r.again} share={r.share} /> } : {})}
       header={<Title name={daily ? `Today's game: ${game.name}` : (play?.title ?? game.name)} tagline={daily ? "The same level for everyone today. You get one go." : (play?.tagline ?? game.tagline)} />}

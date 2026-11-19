@@ -1,12 +1,19 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { PEGS, NOZZLES, RING_COLORS, RING_R, RINGS, STEP, TANK_H, TANK_W, TIME_LIMIT, hung, newPump, pump, pumpScore, stepPump, upright, type PumpState, type Ring } from "@/lib/solo/games/pump";
+import { PEGS, NOZZLES, RING_COLORS, RING_R, RINGS, STEP, TANK_H, TANK_W, TIME_LIMIT, clockText, hung, newPump, pump, pumpScore, stepPump, upright, type PumpState, type Ring } from "@/lib/solo/games/pump";
+import { GameAudio } from "@/lib/game-audio";
 import type { SoloApi } from "../SoloShell";
 
-/** Little things that only exist on screen: bubbles and the water bursts. */
+/** Little things that only exist on screen: bubbles, water bursts, sparkles and the "+100"s. */
 type Bubble = { x: number; y: number; r: number; vy: number; wob: number; life: number };
 type Jet = { side: 0 | 1; t: number };
+type Spark = { x: number; y: number; vx: number; vy: number; life: number; color: string };
+type Pop = { x: number; y: number; text: string; t: number };
+type Fx = { bubbles: Bubble[]; jets: Jet[]; sparks: Spark[]; pops: Pop[]; glow: [number, number] };
+
+const SOUNDS = ["pa-pump", "pa-ring", "pa-tick", "pa-win", "pa-lose"];
+const POP_S = 0.9;
 
 // The toy is drawn in a 358 × 560 box; the water window sits at (22, 42), 314 × 400.
 const BOX_W = 358;
@@ -79,7 +86,8 @@ function drawPeg(c: CanvasRenderingContext2D, p: (typeof PEGS)[number]) {
   c.fill();
 }
 
-function draw(c: CanvasRenderingContext2D, s: PumpState, bubbles: Bubble[], jets: Jet[], clock: number, calm: boolean) {
+function draw(c: CanvasRenderingContext2D, s: PumpState, fx: Fx, clock: number, calm: boolean) {
+  const { bubbles, jets } = fx;
   // Water.
   const w = c.createLinearGradient(0, 0, 0, TANK_H);
   w.addColorStop(0, "#c8f0fb");
@@ -140,6 +148,17 @@ function draw(c: CanvasRenderingContext2D, s: PumpState, bubbles: Bubble[], jets
     c.stroke();
   }
 
+  // A peg that just caught a ring glows for a moment.
+  PEGS.forEach((p, i) => {
+    const age = clock - fx.glow[i]!;
+    if (age < 0 || age > 0.6) return;
+    const g = c.createRadialGradient(p.x, p.tip + 20, 4, p.x, p.tip + 20, 70);
+    g.addColorStop(0, `rgba(255,240,170,${0.75 * (1 - age / 0.6)})`);
+    g.addColorStop(1, "rgba(255,240,170,0)");
+    c.fillStyle = g;
+    c.fillRect(p.x - 70, p.tip - 50, 140, 140);
+  });
+
   // Pegs with their rings threaded on: back of each ring, the peg, then the front.
   PEGS.forEach((p, i) => {
     const on = s.rings.filter((r) => r.peg === i).sort((a, b) => a.y - b.y);
@@ -149,6 +168,32 @@ function draw(c: CanvasRenderingContext2D, s: PumpState, bubbles: Bubble[], jets
   });
   // Floating rings.
   s.rings.filter((r) => r.peg === null).forEach((r) => drawRing(c, r, "all"));
+
+  // Sparkles, then the "+100"s floating up.
+  for (const k of fx.sparks) {
+    c.globalAlpha = Math.max(0, k.life);
+    c.fillStyle = k.color;
+    c.beginPath();
+    c.arc(k.x, k.y, 1.5 + k.life * 2.5, 0, Math.PI * 2);
+    c.fill();
+  }
+  c.globalAlpha = 1;
+  c.textAlign = "center";
+  c.lineJoin = "round";
+  for (const p of fx.pops) {
+    const age = (clock - p.t) / POP_S;
+    if (age < 0 || age > 1) continue;
+    const grow = calm ? 1 : Math.min(1, 0.6 + age * 4);
+    c.globalAlpha = age < 0.7 ? 1 : (1 - age) / 0.3;
+    c.font = `900 ${Math.round(19 * grow)}px Fraunces, serif`;
+    const y = p.y - age * 34;
+    c.strokeStyle = "#1f3f6a";
+    c.lineWidth = 4;
+    c.strokeText(p.text, p.x, y);
+    c.fillStyle = "#fff6d6";
+    c.fillText(p.text, p.x, y);
+  }
+  c.globalAlpha = 1;
 
   // Nozzles and the glass.
   c.fillStyle = "#3a3a3a";
@@ -221,9 +266,11 @@ export function PumpAm({ api }: { api: SoloApi<PumpState> }) {
   const [s, setS] = useState<PumpState>(() => api.saved ?? newPump(api.seed));
   const state = useRef(s);
   const canvas = useRef<HTMLCanvasElement>(null);
-  const bubbles = useRef<Bubble[]>([]);
-  const jets = useRef<Jet[]>([]);
+  const fx = useRef<Fx>({ bubbles: [], jets: [], sparks: [], pops: [], glow: [-9, -9] });
   const clock = useRef(0);
+  const lastTick = useRef(0);
+  const settle = useRef(0);
+  const audio = useRef<GameAudio | null>(null);
   const tilt = useRef(0);
   const [tiltOn, setTiltOn] = useState(false);
   const [pressed, setPressed] = useState<[boolean, boolean]>([false, false]);
@@ -233,16 +280,44 @@ export function PumpAm({ api }: { api: SoloApi<PumpState> }) {
   apiRef.current = api;
   const calm = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+  useEffect(() => {
+    const au = new GameAudio(api.soundOn);
+    audio.current = au;
+    au.preload(SOUNDS);
+    return () => au.dispose();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one mixer for the life of the game
+  }, []);
+
+  /** A ring just went on peg `p`: a glow, sparkles in its colour, "+100", and a clink. */
+  const caught = useCallback(
+    (r: Ring, p: number, count: number) => {
+      const f = fx.current;
+      const peg = PEGS[p]!;
+      f.glow[p] = clock.current;
+      const color = RING_COLORS[r.color % RING_COLORS.length]![0];
+      const n = calm ? 4 : 18;
+      for (let i = 0; i < n; i++) {
+        const a = (i / n) * Math.PI * 2 + Math.random() * 0.4;
+        const v = 50 + Math.random() * 90;
+        f.sparks.push({ x: peg.x, y: peg.tip + 16, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 30, life: 1, color: i % 3 ? color : "#fff6d6" });
+      }
+      f.pops.push({ x: peg.x, y: peg.tip - 6, text: count === RINGS - 1 ? "One more!" : count === RINGS ? "All ten!" : "+100", t: clock.current });
+      audio.current?.sfx("pa-ring", { rate: 1 + count * 0.045, volume: 0.9 });
+    },
+    [calm],
+  );
+
   const press = useCallback(
     (side: 0 | 1) => {
       const a = apiRef.current;
       if (a.paused || state.current.over) return;
       state.current = pump(a.seed, state.current, side);
-      jets.current.push({ side, t: clock.current });
+      fx.current.jets.push({ side, t: clock.current });
       const n = calm ? 4 : 16;
       for (let i = 0; i < n; i++)
-        bubbles.current.push({ x: NOZZLES[side].x + (Math.random() - 0.5) * 34, y: TANK_H - 8 - Math.random() * 30, r: 1.5 + Math.random() * 4, vy: 60 + Math.random() * 120, wob: Math.random() * 6, life: 1 });
-      a.sound("tap");
+        fx.current.bubbles.push({ x: NOZZLES[side].x + (Math.random() - 0.5) * 34, y: TANK_H - 8 - Math.random() * 30, r: 1.5 + Math.random() * 4, vy: 60 + Math.random() * 120, wob: Math.random() * 6, life: 1 });
+      audio.current?.wake();
+      audio.current?.sfx("pa-pump", { rate: (side ? 1.1 : 0.92) * (0.96 + Math.random() * 0.08), volume: 0.8 });
       setPressed((p) => (side === 0 ? [true, p[1]] : [p[0], true]));
       setTimeout(() => setPressed((p) => (side === 0 ? [false, p[1]] : [p[0], false])), 120);
     },
@@ -259,44 +334,79 @@ export function PumpAm({ api }: { api: SoloApi<PumpState> }) {
       const dt = Math.min(0.1, (t - last) / 1000);
       last = t;
       const a = apiRef.current;
-      if (!a.paused && !state.current.over) {
+      const playing = !a.paused && !state.current.over;
+      if (playing) {
         acc += dt;
-        clock.current += dt;
         let changed = false;
         while (acc >= STEP) {
           acc -= STEP;
+          const before = state.current;
           state.current = stepPump(state.current, tilt.current);
           steps++;
           if (state.current.landed) {
-            a.sound("drop");
+            const count = hung(state.current);
+            state.current.rings.forEach((r, i) => {
+              if (r.peg !== null && before.rings[i]!.peg === null) caught(r, r.peg, count);
+            });
             navigator.vibrate?.(25);
-            setSaid(`Ring on. ${hung(state.current)} of ${RINGS}.`);
+            setSaid(`Ring on. ${count} of ${RINGS}.`);
             changed = true;
           }
           if (steps % 30 === 0) changed = true;
           if (state.current.over) break;
         }
-        // Bubbles rise and fade; a few drift up all the time.
-        if (!calm && Math.random() < dt * 3) bubbles.current.push({ x: 20 + Math.random() * (TANK_W - 40), y: TANK_H - 4, r: 1 + Math.random() * 2.5, vy: 30 + Math.random() * 40, wob: 0, life: 1 });
-        bubbles.current = bubbles.current.filter((b) => {
+        // The last ten seconds tick.
+        const left = Math.ceil(TIME_LIMIT - state.current.time);
+        if (left <= 10 && left > 0 && left !== lastTick.current) {
+          lastTick.current = left;
+          audio.current?.sfx("pa-tick", { volume: 0.8 });
+        }
+        if (changed) setS(state.current);
+      } else acc = 0;
+      // Effects keep moving after the last ring, so the finish can be seen.
+      if (playing || state.current.over) {
+        clock.current += dt;
+        if (!playing) {
+          // After the end, the rings still settle: the last one slides down its peg. Looks only;
+          // the score is already settled.
+          settle.current += dt;
+          while (settle.current >= STEP) {
+            settle.current -= STEP;
+            const end = state.current;
+            const next = stepPump({ ...end, over: false }, 0);
+            // Only rings already on a peg move, so nothing can land after the whistle.
+            state.current = { ...next, rings: next.rings.map((r, i) => (end.rings[i]!.peg === null ? end.rings[i]! : r)), time: end.time, over: true, landed: 0 };
+          }
+        }
+        const f = fx.current;
+        if (!calm && playing && Math.random() < dt * 3) f.bubbles.push({ x: 20 + Math.random() * (TANK_W - 40), y: TANK_H - 4, r: 1 + Math.random() * 2.5, vy: 30 + Math.random() * 40, wob: 0, life: 1 });
+        f.bubbles = f.bubbles.filter((b) => {
           b.y -= b.vy * dt;
           b.wob += dt * 6;
           return b.y > 14;
         });
-        jets.current = jets.current.filter((j) => clock.current - j.t < 0.8);
-        if (changed) setS(state.current);
-      } else acc = 0;
+        f.sparks = f.sparks.filter((k) => {
+          k.x += k.vx * dt;
+          k.y += k.vy * dt;
+          k.vy += 60 * dt;
+          k.vx *= 0.97;
+          k.life -= dt * 1.4;
+          return k.life > 0;
+        });
+        f.jets = f.jets.filter((j) => clock.current - j.t < 0.8);
+        f.pops = f.pops.filter((p) => clock.current - p.t < POP_S);
+      }
       const ctx = canvas.current?.getContext("2d");
       if (ctx) {
         const k = canvas.current!.width / TANK_W;
         ctx.setTransform(k, 0, 0, k, 0, 0);
-        draw(ctx, state.current, bubbles.current, jets.current, clock.current, calm);
+        draw(ctx, state.current, fx.current, clock.current, calm);
       }
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [calm]);
+  }, [calm, caught]);
 
   // Canvas resolution follows its size on screen.
   useEffect(() => {
@@ -316,7 +426,16 @@ export function PumpAm({ api }: { api: SoloApi<PumpState> }) {
     if (s.over && !ended.current) {
       ended.current = true;
       const n = hung(s);
-      api.sound(n === RINGS ? "win" : "lose");
+      audio.current?.sfx(n === RINGS ? "pa-win" : "pa-lose", { volume: 0.9 });
+      if (n === RINGS) {
+        // All ten: the tank fizzes up with bubbles and every colour sparkles.
+        const f = fx.current;
+        const many = calm ? 12 : 90;
+        for (let i = 0; i < many; i++) f.bubbles.push({ x: 10 + Math.random() * (TANK_W - 20), y: TANK_H - Math.random() * 60, r: 2 + Math.random() * 6, vy: 90 + Math.random() * 160, wob: Math.random() * 6, life: 1 });
+        if (!calm)
+          for (let i = 0; i < 40; i++)
+            f.sparks.push({ x: TANK_W / 2 + (Math.random() - 0.5) * 120, y: 120 + Math.random() * 60, vx: (Math.random() - 0.5) * 260, vy: -60 - Math.random() * 120, life: 1.4, color: RING_COLORS[i % RING_COLORS.length]![0] });
+      }
       api.end(pumpScore(s), { rings: n, seconds: Math.round(s.time) });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- runs when the state changes
@@ -364,16 +483,42 @@ export function PumpAm({ api }: { api: SoloApi<PumpState> }) {
 
   const n = hung(s);
   const left = Math.max(0, Math.ceil(TIME_LIMIT - s.time));
+  const on = s.rings.filter((r) => r.peg !== null).map((r) => r.color);
+  const hurry = left <= 10 && !s.over;
   return (
     <div className="mx-auto max-w-[420px] select-none">
-      <div className="flex items-end justify-between px-1">
-        <p className="display text-[2rem] leading-none tabular">
-          {n} <span className="text-[1rem] text-muted">of {RINGS}</span>
-        </p>
-        <p className="display text-[1.6rem] leading-none tabular" aria-label={`${left} seconds left`}>
-          {Math.floor(left / 60)}:{String(left % 60).padStart(2, "0")}
+      <div className="flex items-end justify-between gap-3 px-1">
+        <div className="flex items-end gap-3">
+          <p className="display text-[2rem] leading-none tabular">
+            {n} <span className="text-[1rem] text-muted">of {RINGS}</span>
+          </p>
+          {/* A slot for every ring, filled in its colour once it's on. */}
+          <svg viewBox="0 0 140 30" className="mb-0.5 h-[26px] w-auto" aria-hidden>
+            {Array.from({ length: RINGS }, (_, i) => {
+              const x = 7 + (i % 5) * 28;
+              const y = i < 5 ? 8 : 22;
+              const c = on[i];
+              const [light, dark] = c === undefined ? ["none", "rgba(28,20,22,.22)"] : RING_COLORS[c % RING_COLORS.length]!;
+              return (
+                <g key={i} className={c !== undefined ? "pa-slot" : undefined}>
+                  <ellipse cx={x + 7} cy={y} rx="9" ry="5" fill="none" stroke={dark} strokeWidth={c === undefined ? 1.6 : 4} />
+                  {c !== undefined ? <ellipse cx={x + 7} cy={y - 0.5} rx="9" ry="5" fill="none" stroke={light} strokeWidth="2.2" /> : null}
+                </g>
+              );
+            })}
+          </svg>
+        </div>
+        <p className={`display text-[1.6rem] leading-none tabular ${hurry ? "pa-hurry text-[#c0361c]" : ""}`} aria-label={`${left} seconds left`}>
+          {clockText(left)}
         </p>
       </div>
+      <style>{`
+        .pa-slot { animation: pa-slot .35s cubic-bezier(.3,1.6,.5,1) both; transform-box: fill-box; transform-origin: center; }
+        @keyframes pa-slot { from { transform: scale(.2); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .pa-hurry { animation: pa-hurry 1s ease-in-out infinite; }
+        @keyframes pa-hurry { 0%, 100% { transform: scale(1); } 15% { transform: scale(1.14); } }
+        @media (prefers-reduced-motion: reduce) { .pa-slot, .pa-hurry { animation: none; } }
+      `}</style>
       <p className="sr-only" aria-live="polite">{said}</p>
       <div data-tour="pump-tank" className="relative mt-3 w-full" style={{ aspectRatio: `${BOX_W} / ${BOX_H}` }}>
         <Casing />

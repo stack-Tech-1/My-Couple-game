@@ -212,3 +212,11 @@ export function pumpScore(s: PumpState): number {
   const bonus = n === RINGS ? Math.max(0, Math.round((TIME_LIMIT - s.time) * 20)) : 0;
   return n * 100 + bonus;
 }
+
+/** Read a score back: how many rings, and for all ten, about how many seconds it took. */
+export function pumpResult(score: number): { rings: number; seconds: number | null } {
+  if (score < RINGS * 100) return { rings: Math.max(0, Math.min(RINGS, Math.floor(score / 100))), seconds: null };
+  return { rings: RINGS, seconds: Math.max(0, Math.round(TIME_LIMIT - (score - RINGS * 100) / 20)) };
+}
+
+export const clockText = (seconds: number) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;

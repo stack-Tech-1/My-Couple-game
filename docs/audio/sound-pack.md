@@ -1,10 +1,10 @@
-# Sound pack: Mama Put, Okada Rush, Zobo Sort, Mosquito Wahala and Bash Am
+# Sound pack: Mama Put, Okada Rush, Zobo Sort, Mosquito Wahala, Bash Am and Pump Am
 
 Three kinds of sound, from three places:
 
 | Kind | Where it comes from | How many |
 |---|---|---|
-| Sound effects (sizzle, horn, pouring, buzzing, breaking…) | **ElevenLabs Sound Effects** (AI) | 76 |
+| Sound effects (sizzle, horn, pouring, buzzing, breaking…) | **ElevenLabs Sound Effects** (AI) | 81 |
 | Background music | **Suno** (AI) | 7 |
 | Voices (customers, passengers, agbero, LASTMA, a bitten sleeper, a danfo conductor) | **You and your friends**, recorded on a phone | 37 lines |
 
@@ -117,6 +117,16 @@ Two short voice lines, recorded on a phone like the others: `v-mq-ouch` ("Ouch!"
 | `ba-clear` | 3 | A wall collapsing into rubble with a dust rumble, then a small work crew cheering |
 
 One short voice line, recorded on a phone like the others: `v-ba-danfo` ("Oshodi, Oshodi, enter with your change!").
+
+### Pump Am (file names start `pa-`)
+
+| File | Seconds | Prompt |
+|---|---|---|
+| `pa-pump` | 0.5 | A plastic water toy button pressed, a short gush of water through a small nozzle with bubbles, close-up, no voices, no music |
+| `pa-ring` | 0.4 | A small plastic ring dropping onto a plastic peg under water, a light bright clink |
+| `pa-tick` | 0.2 | One short clock tick, crisp and quiet |
+| `pa-win` | 2 | A short joyful marimba and shekere flourish with bubbly water sparkle, no voices |
+| `pa-lose` | 1.5 | A short gentle descending marimba phrase with a soft bubble, no voices |
 
 ### Okada Rush (file names start `ok-`)
 

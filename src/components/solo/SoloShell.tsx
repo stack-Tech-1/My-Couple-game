@@ -72,6 +72,7 @@ export function SoloShell<S>({
   toured = false,
   extras,
   doneView,
+  doneTop,
   outNote,
   posterHeadline,
   posterScore,
@@ -92,6 +93,8 @@ export function SoloShell<S>({
   extras?: SoloApi<S>["extras"];
   /** A game's own finish screen (Mama Put's career day), in place of the score and buttons. */
   doneView?: (r: { score: number; best: number; newBest: boolean; left: number | null; again: () => void; share: () => void }) => ReactNode;
+  /** A game's own picture above the usual score and buttons (Pump Am's pegs). */
+  doneTop?: (r: { score: number; best: number; newBest: boolean }) => ReactNode;
   /** What the waiting screen says when today's free plays are used. */
   outNote?: string;
   /** The line on the share poster, in place of the score. */
@@ -339,6 +342,7 @@ export function SoloShell<S>({
             doneView({ score: result.score, best: result.best, newBest: result.newBest, left: run?.left ?? null, again: () => void begin(), share: () => void share() })
           ) : result ? (
             <>
+              {doneTop?.(result)}
               <p id="solo-result-h" className="display text-[2.4rem] leading-none">{formatScore(game, result.score)}</p>
               <p className="mt-2 font-semibold">
                 {result.challenge

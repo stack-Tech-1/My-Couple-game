@@ -5,7 +5,7 @@ import { CAP, dealLevel, drinksFor, isWon, newZobo, pour, pourAmount, solvable, 
 import { RIM_Y, multiplier, newCatch, stepCatch, type CatchState } from "./games/catch";
 import { BED_Y, START_BITES, newMosquito, stepMosquito, waveSize } from "./games/mosquito";
 import { FRY_SECONDS, BURN_AFTER, RUSH_SECONDS, add, bin, fry, newMama, orderPrice, serve, stars, tick, type MamaState } from "./games/mama";
-import { PEGS, RINGS, TIME_LIMIT, hung, newPump, pump, pumpScore, stepPump, type PumpState } from "./games/pump";
+import { PEGS, RINGS, TIME_LIMIT, clockText, hung, newPump, pump, pumpResult, pumpScore, stepPump, type PumpState } from "./games/pump";
 
 const run = (s: PumpState, steps: number) => {
   for (let i = 0; i < steps && !s.over; i++) s = stepPump(s);
@@ -57,6 +57,11 @@ describe("Pump Am", () => {
     expect(pumpScore(all)).toBe(1000 + 120 * 20);
     // The server's plausibility check lets real scores through.
     expect(pumpScore(all)).toBeLessThanOrEqual(soloGame("pump-am")!.cap(60));
+    // And back again, for the finish screen and the poster.
+    expect(pumpResult(pumpScore(some))).toEqual({ rings: 3, seconds: null });
+    expect(pumpResult(pumpScore(all))).toEqual({ rings: 10, seconds: 60 });
+    expect(pumpResult(0)).toEqual({ rings: 0, seconds: null });
+    expect(clockText(84)).toBe("1:24");
   });
 });
 
