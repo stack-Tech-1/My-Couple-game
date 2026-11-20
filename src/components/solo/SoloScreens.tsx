@@ -23,6 +23,7 @@ import { CatchDoneTop, catchPoster } from "./catch/CatchDoneTop";
 import { BlendDoneTop, blendPoster } from "./blend/BlendDoneTop";
 import { ReflexDoneTop, reflexPoster } from "./reflex/ReflexDoneTop";
 import { AjoDoneTop, ajoPoster } from "./ajo/AjoDoneTop";
+import { FixDoneTop } from "./fixam/FixDoneTop";
 import { rankFor as mosquitoRank, starsOfTakings as mosquitoStars } from "@/lib/solo/games/mosquito";
 
 // Each game is its own download, fetched only when you open it.
@@ -165,6 +166,7 @@ export function FixAmScreen({ pictures, todayId, finished, total, ...c }: Common
         challenge={c.challenge}
         toured={c.toured}
         poster={{ photoUrl: picture.url, credit: picture.credit }}
+        doneTop={() => <FixDoneTop picture={picture} n={n} />}
         header={<Title name={picture.name} tagline={`${picture.place}${picture.note ? `. ${picture.note}` : ""}`} />}
       >
         {(api) => <FixAm api={api} picture={picture} n={n} />}

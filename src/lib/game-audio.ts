@@ -268,8 +268,23 @@ function burst(ac: AudioContext, out: AudioNode, d: number, freq: number, v: num
 
 function standIn(ac: AudioContext, out: AudioNode, name: string, o: Opts) {
   const v = o.volume ?? 1;
-  const key = name.replace(/^(mp|ok|zs|mq|ba|pa|ca|bl|rx|aj)-/, "");
+  const key = name.replace(/^(mp|ok|zs|mq|ba|pa|ca|bl|rx|aj|fx|or)-/, "");
   switch (key) {
+    case "lock":
+      // A tile clicking into its own place.
+      tone(ac, out, 1400 * (o.rate ?? 1), 0, 0.05, "square", 0.04 * v);
+      tone(ac, out, 2100 * (o.rate ?? 1), 0.04, 0.12, "sine", 0.05 * v);
+      return;
+    case "key":
+      tone(ac, out, 1800 * (o.rate ?? 1), 0, 0.03, "triangle", 0.035 * v);
+      return;
+    case "flip":
+      burst(ac, out, 0.06, 2400 * (o.rate ?? 1), 0.08 * v, "bandpass");
+      tone(ac, out, 520 * (o.rate ?? 1), 0, 0.06, "triangle", 0.04 * v);
+      return;
+    case "bad":
+      tone(ac, out, 150, 0, 0.18, "square", 0.05 * v, 120);
+      return;
     case "slide":
       burst(ac, out, 0.12, 3800 * (o.rate ?? 1), 0.07 * v, "bandpass");
       return;
@@ -555,7 +570,7 @@ function standIn(ac: AudioContext, out: AudioNode, name: string, o: Opts) {
 
 /** Continuous stand-ins: an engine that revs, oil that sizzles, a pot that bubbles. Ambience stays silent. */
 function standInLoop(ac: AudioContext, out: AudioNode, name: string, rate: number) {
-  const key = name.replace(/^(mp|ok|zs|mq|ba|pa|ca|bl|rx|aj)-/, "");
+  const key = name.replace(/^(mp|ok|zs|mq|ba|pa|ca|bl|rx|aj|fx|or)-/, "");
   if (key === "crowd") {
     // A stadium murmur: low, wide noise.
     const s = ac.createBufferSource();

@@ -6,6 +6,10 @@ import { makeRng } from "@/games/_engine/rng";
  */
 export type FixState = { n: number; tiles: number[]; moves: number };
 
+/** The last puzzle's moves and time, kept for the finish screen (which only gets the score). */
+export type FixLast = { moves: number; seconds: number };
+export const FIX_LAST = "amah:fixam:last";
+
 /** Tile values 0..n²-1; the last value is the gap. */
 export const gapOf = (s: FixState) => s.tiles.indexOf(s.n * s.n - 1);
 

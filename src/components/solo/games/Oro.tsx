@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { Button } from "@/design/Button";
 import { Icon } from "@/design/icons";
 import { toast } from "@/design/toast";
 import { cn } from "@/lib/cn";
-import { playSound } from "@/lib/sound";
+import { GameAudio } from "@/lib/game-audio";
 import { guessOro, type OroState } from "@/lib/solo/oro";
 import type { Mark } from "@/lib/solo/oro-words";
 import { makePoster, sharePoster } from "../poster";
@@ -15,6 +15,9 @@ import { SoloTour, soloTourDue } from "../SoloTour";
 const ROWS = 6;
 const KEYS = ["qwertyuiop", "asdfghjkl", "zxcvbnm"];
 const MARK_LABEL: Record<Mark, string> = { hit: "right place", near: "in the word, wrong place", miss: "not in the word" };
+const SOUNDS = ["or-key", "or-flip", "or-bad", "or-win", "or-lose"];
+/** Each tile of a guess turns over this long after the one before. */
+const FLIP_STEP = 140;
 
 /** Our own look: indigo for the right place, marigold for wrong place, each with its own shape. */
 function Tile({ letter, mark, small }: { letter: string; mark?: Mark; small?: boolean }) {
@@ -47,7 +50,16 @@ export function Oro({ initial, myName, soundOn, toured = false }: { initial: Oro
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [shake, setShake] = useState(false);
-  const sound = (n: Parameters<typeof playSound>[0]) => soundOn && playSound(n);
+  // The row whose tiles are turning over, and whether it's the winning one (it bounces after).
+  const [reveal, setReveal] = useState<{ row: number; won: boolean } | null>(null);
+  const audio = useRef<GameAudio | null>(null);
+  useEffect(() => {
+    const au = new GameAudio(soundOn);
+    audio.current = au;
+    au.preload(SOUNDS);
+    return () => au.dispose();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one mixer for the page
+  }, []);
 
   const keyMark = (k: string): Mark | undefined => {
     let best: Mark | undefined;
@@ -73,22 +85,32 @@ export function Oro({ initial, myName, soundOn, toured = false }: { initial: Oro
     setBusy(false);
     if (!r.ok) {
       toast.error(r.error);
+      audio.current?.sfx("or-bad", { volume: 0.7 });
       setShake(true);
       setTimeout(() => setShake(false), 400);
       return;
     }
     setS(r.data);
     setDraft("");
-    sound(r.data.solved ? "win" : r.data.finished ? "lose" : "flip");
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- sound only reads soundOn
+    // The tiles turn over one by one, each with a soft flip; then a win or a sigh.
+    const row = r.data.guesses.length - 1;
+    setReveal({ row, won: r.data.solved });
+    const au = audio.current;
+    for (let i = 0; i < 5; i++) setTimeout(() => au?.sfx("or-flip", { volume: 0.6, rate: 0.95 + i * 0.04 }), i * FLIP_STEP);
+    if (r.data.finished) setTimeout(() => au?.sfx(r.data.solved ? "or-win" : "or-lose", { volume: 0.85 }), 5 * FLIP_STEP + 120);
+    setTimeout(() => setReveal((v) => (v?.row === row && !v.won ? null : v)), 5 * FLIP_STEP + 400);
   }, [busy, draft, s.finished]);
 
   const press = useCallback(
     (k: string) => {
       if (s.finished) return;
       if (k === "enter") return void submit();
+      audio.current?.wake();
       if (k === "back") return setDraft((d) => d.slice(0, -1));
-      if (/^[a-z]$/.test(k)) setDraft((d) => (d.length < 5 ? d + k : d));
+      if (/^[a-z]$/.test(k)) {
+        audio.current?.sfx("or-key", { volume: 0.45, rate: 0.95 + Math.random() * 0.1 });
+        setDraft((d) => (d.length < 5 ? d + k : d));
+      }
     },
     [s.finished, submit],
   );
@@ -141,7 +163,13 @@ export function Oro({ initial, myName, soundOn, toured = false }: { initial: Oro
         {rows.map((row, r) => (
           <div key={r} role="row" className="grid grid-cols-5 gap-1.5">
             {row.letters.map((l, i) => (
-              <span key={i} role="gridcell" aria-label={l ? `${l.toUpperCase()}${row.marks ? `, ${MARK_LABEL[row.marks[i]!]}` : ""}` : "Empty"}>
+              <span
+                key={`${i}-${l}`}
+                role="gridcell"
+                aria-label={l ? `${l.toUpperCase()}${row.marks ? `, ${MARK_LABEL[row.marks[i]!]}` : ""}` : "Empty"}
+                className={cn("block", reveal?.row === r ? (reveal.won ? "oro-flip oro-win" : "oro-flip") : l && !row.marks && "oro-pop")}
+                style={reveal?.row === r ? ({ "--d": `${i * FLIP_STEP}ms`, "--b": `${5 * FLIP_STEP + 150 + i * 90}ms` } as CSSProperties) : undefined}
+              >
                 <Tile letter={l} mark={row.marks?.[i]} />
               </span>
             ))}
@@ -224,6 +252,15 @@ export function Oro({ initial, myName, soundOn, toured = false }: { initial: Oro
         </div>
       )}
       {touring ? <SoloTour gameId="oro" onDone={endTour} /> : null}
+      <style>{`
+        .oro-pop { animation: oro-pop .12s ease-out both; }
+        @keyframes oro-pop { from { transform: scale(.86); } 60% { transform: scale(1.08); } to { transform: scale(1); } }
+        .oro-flip { animation: oro-flip .42s var(--d, 0ms) ease-in-out both; }
+        @keyframes oro-flip { 0% { transform: rotateX(90deg); } 100% { transform: rotateX(0); } }
+        .oro-win { animation: oro-flip .42s var(--d, 0ms) ease-in-out both, oro-bounce .5s var(--b, 0ms) ease-out; }
+        @keyframes oro-bounce { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-14px); } 70% { transform: translateY(3px); } }
+        @media (prefers-reduced-motion: reduce) { .oro-pop, .oro-flip, .oro-win { animation: none; } }
+      `}</style>
     </div>
   );
 }

@@ -1,10 +1,10 @@
-# Sound pack: Mama Put, Okada Rush, Zobo Sort, Mosquito Wahala, Bash Am, Pump Am, Catch Am, Blend Am, Reflex Training and Ajo
+# Sound pack: Mama Put, Okada Rush, Zobo Sort, Mosquito Wahala, Bash Am, Pump Am, Catch Am, Blend Am, Reflex Training, Ajo, Fix Am and Ọ̀rọ̀
 
 Three kinds of sound, from three places:
 
 | Kind | Where it comes from | How many |
 |---|---|---|
-| Sound effects (sizzle, horn, pouring, buzzing, breaking…) | **ElevenLabs Sound Effects** (AI) | 107 |
+| Sound effects (sizzle, horn, pouring, buzzing, breaking…) | **ElevenLabs Sound Effects** (AI) | 115 |
 | Background music | **Suno** (AI) | 7 |
 | Voices (customers, passengers, agbero, LASTMA, a bitten sleeper, a danfo conductor) | **You and your friends**, recorded on a phone | 37 lines |
 
@@ -173,6 +173,24 @@ One short voice line, recorded on a phone like the others: `v-ba-danfo` ("Oshodi
 | `aj-stamp` | 0.3 | A rubber ink stamp thumped down on a card, one firm thud |
 | `aj-top` | 1 | An old cash register drawer opening with a bright bell ka-ching, cheerful |
 | `aj-lose` | 1.5 | A short gentle descending marimba phrase, a little sad, no voices |
+
+### Fix Am (file names start `fx-`)
+
+| File | Seconds | Prompt |
+|---|---|---|
+| `fx-slide` | 0.3 | A small wooden tile sliding across a wooden board, a short soft scrape |
+| `fx-lock` | 0.3 | A wooden puzzle piece clicking neatly into place, one crisp click |
+| `fx-win` | 2 | A short warm kalimba and shaker flourish for finishing a picture puzzle, no voices |
+
+### Ọ̀rọ̀ of the Day (file names start `or-`)
+
+| File | Seconds | Prompt |
+|---|---|---|
+| `or-key` | 0.15 | One soft tap on a phone keyboard, very short and quiet |
+| `or-flip` | 0.25 | A small card flipped over on a table, a light quick flick |
+| `or-bad` | 0.4 | A soft low wooden knock, a gentle "not quite" sound |
+| `or-win` | 2 | A bright cheerful talking drum and kalimba flourish for solving a word puzzle, no voices |
+| `or-lose` | 1.5 | A short gentle descending kalimba phrase, a little sad, no voices |
 
 ### Okada Rush (file names start `ok-`)
 
