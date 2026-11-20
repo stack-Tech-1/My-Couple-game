@@ -7,5 +7,14 @@ export const APP_DESCRIPTION =
 export const INVITE_CODE_LENGTH = 6;
 export const MAX_DISPLAY_NAME = 32;
 
-export const siteUrl = (): string =>
-  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "http://localhost:3000";
+/**
+ * The site's own address, for links in emails, challenges and payment returns. Live sets
+ * NEXT_PUBLIC_SITE_URL. A Vercel preview (the staging test copy) leaves it unset and uses its own
+ * branch address, so its links never send anyone to the live site.
+ */
+export const siteUrl = (): string => {
+  const set = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
+  if (set) return set;
+  const branch = process.env.NEXT_PUBLIC_VERCEL_BRANCH_URL;
+  return branch ? `https://${branch}` : "http://localhost:3000";
+};
