@@ -43,7 +43,6 @@ export function BlendDoneTop({ newBest }: { newBest: boolean }) {
       <p className="display mt-2 text-[1.5rem] leading-tight">
         {last.lines} line{last.lines === 1 ? "" : "s"} sewn
       </p>
-      <p className="mt-0.5 text-[0.92rem] text-muted">{blendLine(last.lines)}</p>
       {last.bestCombo >= 2 ? <p className="mt-2 text-[0.88rem] font-semibold">Best run: {last.bestCombo} in a row</p> : null}
       <style>{`
         .bl-done-tailor { animation: bl-done-tailor .5s cubic-bezier(.3,1.5,.5,1) both; transform-origin: 50% 100%; }

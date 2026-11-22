@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { BackButton } from "@/design/BackButton";
 import { useState } from "react";
 import { Button } from "@/design/Button";
 import { Icon } from "@/design/icons";
@@ -55,6 +56,7 @@ export function MamaHome({ career }: { career: MamaCareer }) {
   const boughtUp = bought ? ups.find((u) => u.id === bought)! : null;
   return (
     <div className="mx-auto max-w-[460px]">
+      <BackButton href="/solo" label="Solo" />
       <div className="mt-5">
         <h1 className="display text-[2.2rem] leading-none">Mama Put</h1>
         <p className="mt-1.5 text-muted">Run the buka across Lagos, one lunch rush at a time.</p>

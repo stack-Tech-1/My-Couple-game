@@ -38,9 +38,11 @@ export async function FriendRoomHome({ roomId }: { roomId: string }) {
   return (
     <div className="relative isolate pt-8 sm:pt-12">
       {/* Phones: deep teal with the oko canoe, everyone in the same boat. */}
-      <PageBackdrop motif={look.motif} bg={look.bg} ink={look.ink} glow={look.glow} height={600} />
+      <div className="relative isolate max-sm:mb-2 max-sm:pb-12">
+      <PageBackdrop motif={look.motif} bg={look.bg} ink={look.ink} fit reach={72} />
       <p className="eyebrow text-muted max-sm:text-[#ffd65c]">Friend room · {bundle.members.length} {bundle.members.length === 1 ? "person" : "people"}</p>
       <h1 className="display mt-2 text-[clamp(2.6rem,9vw,4.2rem)] leading-[1.02] max-sm:text-[#f6efe6]">{bundle.room.name}</h1>
+      </div>
       <InstallPrompt />
       <div className="mt-4 empty:hidden">
         <SeatPrompt />

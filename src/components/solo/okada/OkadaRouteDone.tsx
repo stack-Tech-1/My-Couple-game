@@ -7,7 +7,6 @@ import { ROUTES, ROUTE_ABOUT, routeConfig, routeStars } from "@/lib/solo/games/o
 
 const naira = (n: number) => `₦${n.toLocaleString("en-NG")}`;
 const STAR = "M12 2l2.9 6.2 6.8.7-5.1 4.6 1.5 6.7L12 16.8 5.9 20.2l1.5-6.7L2.3 8.9l6.8-.7z";
-const LINES = ["The road won today. Ride it again.", "One star. The park is noticing you.", "Two stars. Passengers are asking for you by name.", "Three stars! Chairman of this road."];
 
 /** The end of a route: stars, what you took in, and the next route. Drawn on the page (a portal), like Mama Put's. */
 export function OkadaRouteDone(props: { route: number; score: number; newBest: boolean; again: () => void; share: () => void }) {
@@ -43,7 +42,7 @@ function Done({ route, score, newBest, again, share }: { route: number; score: n
             {naira(score)}
           </h2>
           <p className="mx-auto mt-2 max-w-[22rem] text-[0.93rem] text-[#e6dcd4]">
-            {LINES[stars]} {toNext > 0 ? `${naira(toNext)} more for ${stars ? "the next star" : "a star"}.` : ""} {newBest ? "Your best on this route." : ""}
+            {toNext > 0 ? `${naira(toNext)} more for ${stars ? "the next star" : "a star"}.` : ""} {newBest ? "Your best on this route." : ""}
           </p>
         </div>
         {opened ? (

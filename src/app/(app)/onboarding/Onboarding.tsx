@@ -44,8 +44,7 @@ export function Onboarding({ profile, startAt, next }: { profile: Profile; start
   return (
     <div className="relative isolate mx-auto flex min-h-dvh max-w-xl flex-col px-4 py-5 sm:px-8">
       {/* Phones: deep purple with iye feathers (reaching your goal quickly). */}
-      <PageBackdrop motif={PAGE_LOOKS.onboarding.motif} bg={PAGE_LOOKS.onboarding.bg} ink={PAGE_LOOKS.onboarding.ink} glow={PAGE_LOOKS.onboarding.glow} height={460} />
-      <div className="flex items-center justify-between max-sm:text-[#f6efe6]">
+      <div className="relative z-[1] flex items-center justify-between max-sm:text-[#f6efe6]">
         <Logo />
         <span className="flex items-center gap-2">
           <span className="eyebrow tabular text-muted max-sm:text-[#ffd65c]">Step {step === "you" ? 1 : 2} of 2</span>
@@ -63,8 +62,11 @@ export function Onboarding({ profile, startAt, next }: { profile: Profile; start
             exit={{ opacity: 0, x: -24 }}
             className="flex flex-1 flex-col py-12"
           >
+            <div className="relative isolate max-sm:pb-12">
+            <PageBackdrop motif={PAGE_LOOKS.onboarding.motif} bg={PAGE_LOOKS.onboarding.bg} ink={PAGE_LOOKS.onboarding.ink} fit reach={150} />
             <h1 className="display text-[clamp(2.6rem,9vw,3.8rem)] max-sm:text-[#f6efe6]">First, who&apos;s playing?</h1>
             <p className="mt-3 text-muted max-sm:text-[#f6efe6]/85">This is what your partner sees on the scoreboard. Choose wisely, it&apos;ll be there when you lose.</p>
+            </div>
 
             <div className="glass mt-10 flex items-center gap-5 rounded-[24px] p-4">
               <Avatar name={name || "You"} motif={motif} hue={hue} size={88} />
@@ -97,8 +99,11 @@ export function Onboarding({ profile, startAt, next }: { profile: Profile; start
             exit={{ opacity: 0, x: -24 }}
             className="flex flex-1 flex-col py-12"
           >
+            <div className="relative isolate max-sm:mb-8 max-sm:pb-12">
+            <PageBackdrop motif={PAGE_LOOKS.onboarding.motif} bg={PAGE_LOOKS.onboarding.bg} ink={PAGE_LOOKS.onboarding.ink} fit reach={150} />
             <h1 className="display text-[clamp(2.6rem,9vw,3.8rem)] max-sm:text-[#f6efe6]">Now, your first room.</h1>
-            <p className="mt-3 mb-10 text-muted max-sm:text-[#f6efe6]/85">A couple room is just for the two of you. A friend room fits up to eight. You can have one of each, and more friend rooms later.</p>
+            <p className="mt-3 mb-10 text-muted max-sm:mb-0 max-sm:text-[#f6efe6]/85">A couple room is just for the two of you. A friend room fits up to eight. You can have one of each, and more friend rooms later.</p>
+            </div>
             <NewRoomForm name={name} hasCouple={false} friendRooms={0} initialMode={next?.startsWith("/join/") ? "join" : "couple"} onBack={() => setStep("you")} />
             <div className="glass mt-8 flex flex-wrap items-center gap-4 rounded-[20px] p-4">
               <div className="min-w-0 flex-1">

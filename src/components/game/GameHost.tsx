@@ -259,7 +259,7 @@ export function GameHost({ initial, rules }: { initial: SessionSnapshot; rules?:
   const cat = CATEGORIES[meta.category];
 
   return (
-    <div className={cn("isolate", session.status === "active" ? "pt-4 sm:pt-6" : "pb-56 pt-4 sm:pt-6")}>
+    <div className={cn("isolate", session.status === "active" ? "pt-4 sm:pt-6" : "pb-24 pt-4 sm:pt-6")}>
       {/* Each game sits on its own adire pattern (After Dark keeps its own dark room). */}
       {meta.category !== "spicy" ? <GameBackdrop gameId={session.game_id} category={meta.category} /> : null}
       <div className={cn("mb-5 flex items-center justify-between gap-3 sm:mb-8", meta.category !== "spicy" && "glass rounded-[22px] px-3 py-2.5")}>

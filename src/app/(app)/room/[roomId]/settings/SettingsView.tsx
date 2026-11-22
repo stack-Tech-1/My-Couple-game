@@ -371,7 +371,7 @@ export function SettingsView({ announcementEmails, feedback, push }: { announcem
 
 function Section({ title, id, children }: { title: string; id?: string; children: React.ReactNode }) {
   return (
-    <section id={id} aria-labelledby={`${id ?? title}-h`} className="mt-12 scroll-mt-24 border-t-[1.5px] border-line-strong pt-5 max-sm:glass max-sm:mt-4 max-sm:rounded-[24px] max-sm:p-5 max-sm:first-of-type:mt-8">
+    <section id={id} aria-labelledby={`${id ?? title}-h`} className="mt-12 scroll-mt-24 border-t-[1.5px] border-line-strong pt-5 max-sm:glass max-sm:mt-4 max-sm:rounded-[24px] max-sm:p-5 max-sm:first-of-type:mt-16">
       <h2 id={`${id ?? title}-h`} className="eyebrow mb-5 text-muted">{title}</h2>
       {children}
     </section>

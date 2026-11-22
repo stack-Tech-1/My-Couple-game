@@ -40,7 +40,6 @@ export function CatchDoneTop({ newBest }: { newBest: boolean }) {
       {/* eslint-disable-next-line @next/next/no-img-element -- a small painted picture, already sized */}
       <img src={`/games/catch/seller-${pose}.webp`} alt="" className="ca-done-seller mx-auto block h-[190px] w-auto drop-shadow-[0_10px_14px_rgba(28,20,22,.3)]" />
       <p className="display mt-2 text-[1.5rem] leading-tight">{last.caught} caught</p>
-      <p className="mt-0.5 text-[0.92rem] text-muted">{catchLine(last.caught)}</p>
       {last.gold || last.bestCombo >= 3 ? (
         <p className="mt-2 flex justify-center gap-4 text-[0.88rem] font-semibold">
           {last.gold ? <span>{last.gold} golden puff-puff</span> : null}

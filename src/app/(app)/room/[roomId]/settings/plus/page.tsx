@@ -79,11 +79,13 @@ export default async function PlusPage({ params, searchParams }: { params: Promi
 
   return (
     <div className="relative isolate mx-auto max-w-2xl pt-8">
-      <PageBackdrop motif={PAGE_LOOKS.settings.motif} bg={PAGE_LOOKS.settings.bg} ink={PAGE_LOOKS.settings.ink} glow={PAGE_LOOKS.settings.glow} height={420} />
+      <div className="relative isolate max-sm:pb-10">
+      <PageBackdrop motif={PAGE_LOOKS.settings.motif} bg={PAGE_LOOKS.settings.bg} ink={PAGE_LOOKS.settings.ink} fit />
       <Link prefetch={false} href={`/room/${roomId}/settings`} className="inline-flex items-center gap-1.5 text-[0.9rem] font-semibold text-muted hover:text-fg max-sm:text-[#f6efe6]/85">
         <Icon name="arrowLeft" size={16} /> Settings
       </Link>
       <h1 className="display mt-4 text-[clamp(2.4rem,8vw,3.4rem)] max-sm:text-[#f6efe6]">Amah Plus</h1>
+      </div>
 
       {banner ? (
         <p role="status" className={`mt-4 rounded-[16px] px-4 py-3 text-[0.92rem] font-semibold ${banner.tone === "good" ? "bg-[#dcefd9] text-[#1f4d2a]" : banner.tone === "bad" ? "bg-[#f6d5cc] text-[#7a2e1f]" : "bg-[#f6e7c4] text-[#5e4320]"}`}>

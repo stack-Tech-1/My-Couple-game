@@ -8,7 +8,6 @@ import { LEVELS, STALLS, rankFor, starsOfTakings, stallOf } from "@/lib/solo/gam
 
 const naira = (n: number) => `₦${n.toLocaleString("en-NG")}`;
 const STAR = "M12 2l2.9 6.2 6.8.7-5.1 4.6 1.5 6.7L12 16.8 5.9 20.2l1.5-6.7L2.3 8.9l6.8-.7z";
-const LINES = ["", "Sorted. Fewer pours will earn more stars.", "Well poured. One tidy run from three stars.", "Three stars! Not one drop wasted."];
 
 type Props = { level: number; score: number; totalBefore: number; totalAfter: number; left: number | null; again: () => void; share: () => void };
 
@@ -52,7 +51,6 @@ function Done({ level, score, totalBefore, totalAfter, left, again, share }: Pro
         </div>
         <div className="text-center">
           <h2 id="solo-result-h" className="display text-[2.5rem] leading-none">All sorted!</h2>
-          <p className="mx-auto mt-2 max-w-[22rem] text-[0.95rem]">{LINES[stars]}</p>
         </div>
         <dl className="mt-6 grid gap-2 text-[0.95rem]">
           {pours ? (

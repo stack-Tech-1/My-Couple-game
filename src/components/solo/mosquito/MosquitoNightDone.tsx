@@ -8,7 +8,6 @@ import { NIGHTS, ROOMS, START_BITES, nightPay, rankFor, roomOf, starsOfTakings }
 
 const naira = (n: number) => `₦${n.toLocaleString("en-NG")}`;
 const STAR = "M12 2l2.9 6.2 6.8.7-5.1 4.6 1.5 6.7L12 16.8 5.9 20.2l1.5-6.7L2.3 8.9l6.8-.7z";
-const LINES = ["", "You made it, but they fed well.", "You slept well, with a few scratches.", "You slept like a baby."];
 
 type Props = { night: number; score: number; totalBefore: number; totalAfter: number; left: number | null; again: () => void; share: () => void };
 
@@ -50,7 +49,7 @@ function Done({ night, score, totalBefore, totalAfter, left, again, share }: Pro
         ) : null}
         <div className="text-center">
           <h2 id="solo-result-h" className="display text-[2.5rem] leading-none">{won ? "Morning don come!" : "They finished you!"}</h2>
-          <p className="mx-auto mt-2 max-w-[22rem] text-[0.95rem]">{won ? `Night ${night} cleared. ${LINES[stars]}` : `${START_BITES} bites on night ${night}. Get your can and try again.`}</p>
+          <p className="mx-auto mt-2 max-w-[22rem] text-[0.95rem]">{won ? `Night ${night} cleared.` : `${START_BITES} bites on night ${night}.`}</p>
         </div>
         {won ? (
           <div className="mt-4 flex justify-center gap-1" role="img" aria-label={`${stars} of 3 stars`}>

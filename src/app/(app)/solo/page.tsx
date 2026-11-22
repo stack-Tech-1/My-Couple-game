@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { AdireFill } from "@/design/adire";
 import { Icon } from "@/design/icons";
-import { PageBackdrop } from "@/components/room/HomeBackdrop";
+import { Selvedge } from "@/design/wax";
 import { SoloCard } from "@/components/solo/SoloCard";
 import { SOLO_GAMES, SOLO_LOOK, formatScore, soloGame } from "@/lib/solo/catalog";
 import { soloContext } from "@/lib/solo/context";
@@ -30,19 +30,22 @@ export default async function SoloHome() {
   const fix = live.find((g) => g.id === "fix-am");
 
   return (
-    <div className="relative isolate pt-8">
-      <PageBackdrop motif={SOLO_LOOK.motif} bg={SOLO_LOOK.bg} ink={SOLO_LOOK.ink} glow={SOLO_LOOK.glow} height={420} />
-      <div className="relative overflow-hidden rounded-[24px] px-5 py-5 text-[#2a1a05] sm:mt-2">
+    <div className="relative isolate pt-0 sm:pt-8">
+      {/* Solo's cloth: its own adire, one band, with the title sewn on as a patch. */}
+      <section className="relative -mx-4 overflow-hidden sm:mx-0 sm:cut">
         <AdireFill motif={SOLO_LOOK.motif} bg={SOLO_LOOK.bg} ink={SOLO_LOOK.ink} />
-        <div className="relative">
+        <div className="relative px-3.5 pb-4 pt-12 sm:px-7 sm:pb-7 sm:pt-16">
+        <div className="cut relative bg-raised px-5 py-4 shadow-[0_14px_30px_-16px_rgba(0,0,0,.6)] sm:max-w-[560px]">
           <div className="flex items-baseline justify-between gap-3">
             <h1 className="display text-[clamp(2.2rem,8vw,3rem)] leading-none">On your own</h1>
-            <span className="text-[0.85rem] font-extrabold">Free</span>
+            <span className="cut-sm bg-marigold px-2.5 py-0.5 text-[0.8rem] font-extrabold text-[#1b1519]">Free</span>
           </div>
           <p className="mt-1.5 font-semibold">Quick games, no partner needed. Beat your best, then beat your friends.</p>
-          {plays.limited ? <p className="mt-1 text-[0.85rem] font-semibold opacity-80">Most games are free twice a day, Zobo Sort gives one free level a day, and Bash Am comes with Amah Plus. Challenges and today&apos;s word are always open.</p> : null}
+          {plays.limited ? <p className="mt-1 text-[0.85rem] text-muted">Most games are free twice a day, Zobo Sort gives one free level a day, and Bash Am comes with Amah Plus. Challenges and today&apos;s word are always open.</p> : null}
         </div>
-      </div>
+        </div>
+        <Selvedge words={["ON YOUR OWN", `${live.length} GAMES`]} />
+      </section>
 
       {challenges.length ? (
         <section aria-labelledby="ch-h" className="mt-6">
@@ -52,12 +55,12 @@ export default async function SoloHome() {
               const g = soloGame(c.gameId)!;
               return (
                 <li key={c.token}>
-                  <Link prefetch={false} href={`/solo/${g.id}?challenge=${c.token}`} className="glass flex items-center gap-3 rounded-[18px] px-4 py-3">
+                  <Link prefetch={false} href={`/solo/${g.id}?challenge=${c.token}`} className="cloth flex items-center gap-3 px-4 py-3">
                     <span className="min-w-0 flex-1">
                       <span className="block font-bold">{c.fromName} challenged you</span>
                       <span className="block text-[0.85rem] text-muted">Beat {formatScore(g, c.target)} in {g.name}</span>
                     </span>
-                    <span className="rounded-full bg-[#1c1416] px-3.5 py-1.5 text-[0.85rem] font-bold text-[#f6efe6]">Play</span>
+                    <span className="cut-sm bg-fg px-3.5 py-1.5 text-[0.85rem] font-bold text-bg">Play</span>
                   </Link>
                 </li>
               );
@@ -107,14 +110,14 @@ export default async function SoloHome() {
         <section aria-labelledby="rooms-h" className="mt-10">
           <h2 id="rooms-h" className="display text-[1.5rem]">Play with people too</h2>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            <Link prefetch={false} href="/onboarding?step=room" className="glass flex items-center gap-3 rounded-[20px] p-4">
+            <Link prefetch={false} href="/onboarding?step=room" className="cloth flex items-center gap-3 p-4">
               <Icon name="heart" size={22} className="text-accent" />
               <span className="flex-1">
                 <span className="block font-bold">Invite your person</span>
                 <span className="block text-[0.85rem] text-muted">A couple room, just for the two of you</span>
               </span>
             </Link>
-            <Link prefetch={false} href="/room/new" className="glass flex items-center gap-3 rounded-[20px] p-4">
+            <Link prefetch={false} href="/room/new" className="cloth flex items-center gap-3 p-4">
               <Icon name="user" size={22} />
               <span className="flex-1">
                 <span className="block font-bold">Start a friend room</span>

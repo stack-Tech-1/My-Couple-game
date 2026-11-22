@@ -18,7 +18,7 @@ export default async function SoloLayout({ children }: { children: ReactNode }) 
   const [ctx, winners] = await Promise.all([soloContext(), currentSpotlight()]);
   return (
     <>
-      <header className="sticky top-0 z-40 border-b border-[color-mix(in_srgb,var(--line)_70%,transparent)] bg-[color-mix(in_srgb,var(--bg)_72%,transparent)] backdrop-blur-xl">
+      <header className="sticky top-0 z-40 border-b border-line bg-bg">
         <div className="mx-auto flex h-16 max-w-3xl items-center gap-3 px-4 sm:px-8">
           <Link prefetch={false} href="/solo" aria-label="Solo home">
             <Logo />

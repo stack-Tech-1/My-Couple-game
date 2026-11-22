@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Button } from "@/design/Button";
-import { Icon } from "@/design/icons";
 import { toast } from "@/design/toast";
 import { playSound } from "@/lib/sound";
 import type { SoundName } from "@/games/_engine/types";
@@ -17,6 +16,9 @@ import { OutOfPlays, PlaysLeft } from "@/components/plus/OutOfPlays";
 import { useSoloLimits } from "./SoloLimits";
 import { Modal } from "@/design/Modal";
 import { PosterStudio } from "@/components/poster/PosterStudio";
+import { BackButton } from "@/design/BackButton";
+import { ResultPop } from "@/design/ResultPop";
+import { useRouter } from "next/navigation";
 
 /** What every Solo game gets from the frame. */
 export type SoloApi<S> = {
@@ -117,6 +119,10 @@ export function SoloShell<S>({
   const [result, setResult] = useState<(FinishResult & { score: number }) | null>(null);
   const [round, setRound] = useState(0);
   const [challengeOpen, setChallengeOpen] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+  const router = useRouter();
+  // Where the back button goes, in words: Solo, the game's own menu, or home (today's game).
+  const backLabel = backHref === "/solo" ? "Solo" : backHref.startsWith("/room") ? "Home" : game.name;
   const elapsed = useRef(0);
   const since = useRef<number | null>(null);
   const lastState = useRef<S | null>(null);
@@ -293,9 +299,17 @@ export function SoloShell<S>({
   return (
     <div className="relative">
       <div className="flex items-center justify-between gap-3">
-        <Link prefetch={false} href={backHref} className="glass inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[0.9rem] font-semibold">
-          <Icon name="arrowLeft" size={16} /> Solo
-        </Link>
+        <BackButton
+          href={backHref}
+          label={backLabel}
+          onClick={(e) => {
+            // Mid-run, ask first: leaving throws this go away.
+            if (phase !== "playing") return;
+            e.preventDefault();
+            setUserPaused(true);
+            setLeaving(true);
+          }}
+        />
         {phase === "playing" ? (
           <div className="flex gap-2">
             {hasTour ? (
@@ -336,25 +350,28 @@ export function SoloShell<S>({
         </div>
       ) : null}
 
-      {phase === "done" ? (
-        <section aria-live="polite" aria-labelledby="solo-result-h" className="glass mt-5 rounded-[26px] p-5 text-center">
-          {result && doneView ? (
-            doneView({ score: result.score, best: result.best, newBest: result.newBest, left: run?.left ?? null, again: () => void begin(), share: () => void share() })
-          ) : result ? (
+      {phase === "done" && result && doneView ? (
+        // Career games bring their own full-screen finish.
+        doneView({ score: result.score, best: result.best, newBest: result.newBest, left: run?.left ?? null, again: () => void begin(), share: () => void share() })
+      ) : phase === "done" ? (
+        <ResultPop key={`result-${round}`} look={game.look} win={!!result && (result.challenge ? result.challenge.result === "won" : game.kind === "bot" ? !!result.score : result.newBest)} labelledBy="solo-result-h">
+          {result ? (
             <>
-              {doneTop?.(result)}
-              <p id="solo-result-h" className="display text-[2.4rem] leading-none">{formatScore(game, result.score)}</p>
-              <p className="mt-2 font-semibold">
+              <p className="eyebrow text-muted">{game.name}</p>
+              <h2 id="solo-result-h" className="display mt-1 text-[2rem] leading-none">
+                {result.challenge || game.kind === "bot" ? (result.challenge ? result.challenge.result === "won" : game.kind === "bot" ? !!result.score : result.newBest ? "You won" : "You lost") : result.newBest ? "New best!" : "Game over"}
+              </h2>
+              <div className="mt-4">{doneTop?.(result)}</div>
+              {game.kind !== "bot" ? <p className="display text-[2.6rem] leading-none">{formatScore(game, result.score)}</p> : null}
+              <p className="mt-2 text-[0.92rem] font-semibold text-muted">
                 {result.challenge
                   ? result.challenge.result === "won"
                     ? `You beat ${result.challenge.from}'s ${formatScore(game, result.challenge.target)}.`
-                    : `${result.challenge.from}'s ${formatScore(game, result.challenge.target)} still stands. So close.`
-                  : result.newBest
-                    ? gameId === "okada-rush" ? "New best. Okada don fly." : "New best. Who taught you this?"
-                    : game.kind === "bot"
-                      ? result.score
-                        ? "You beat the bot."
-                        : "The bot got this one. Rematch?"
+                    : `${result.challenge.from}'s ${formatScore(game, result.challenge.target)} still stands.`
+                  : game.kind === "bot"
+                    ? "Against the bot"
+                    : result.newBest
+                      ? "Your best yet"
                       : `Your best: ${formatScore(game, result.best)}`}
               </p>
               <div className="mt-5 flex flex-col gap-2.5">
@@ -366,13 +383,23 @@ export function SoloShell<S>({
                     <Button size="lg" variant="outline" disabled={!result.scoreId} onClick={() => setChallengeOpen(true)}>Challenge</Button>
                   </div>
                 ) : null}
+                <Link prefetch={false} href={backHref} className="mt-1 text-[0.92rem] font-semibold underline underline-offset-4">
+                  Back to {backLabel}
+                </Link>
               </div>
             </>
           ) : (
-            <p id="solo-result-h" className="text-muted">Saving your score…</p>
+            <p id="solo-result-h" className="py-6 text-muted">Saving your score…</p>
           )}
-        </section>
+        </ResultPop>
       ) : null}
+
+      <Modal open={leaving} onClose={() => { setLeaving(false); setUserPaused(false); }} title="Leave this game?" description="This go won't count.">
+        <div className="flex flex-col gap-2.5 sm:flex-row-reverse">
+          <Button size="lg" onClick={() => { setLeaving(false); setUserPaused(false); }}>Keep playing</Button>
+          <Button size="lg" variant="outline" onClick={() => router.push(backHref)}>Leave</Button>
+        </div>
+      </Modal>
 
       {phase === "plus" ? (
         <div className="glass mt-6 rounded-[24px] p-6 text-center">

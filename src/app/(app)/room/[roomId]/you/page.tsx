@@ -53,7 +53,7 @@ export default async function YourAmahPage({ params }: { params: Promise<{ roomI
       <p className="eyebrow mt-8 text-muted max-sm:mt-6 max-sm:text-[#ffd65c]">{couple ? "The two of you, and you" : "Across all your rooms"}</p>
       <h1 className="display mt-2 text-[clamp(2.6rem,9vw,4rem)] leading-[1.02] max-sm:text-[#f6efe6]">{couple ? "Us" : "Your Amah"}</h1>
       {progress ? (
-        <div className="mt-6">
+        <div className="mt-6 max-sm:mt-[3.25rem]">
           <UsPanel roomId={roomId} stats={progress} />
         </div>
       ) : null}

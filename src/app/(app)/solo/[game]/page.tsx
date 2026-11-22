@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Icon } from "@/design/icons";
-import { PageBackdrop } from "@/components/room/HomeBackdrop";
 import { ArcadeScreen, BotScreen, FixAmScreen } from "@/components/solo/SoloScreens";
 import { Oro } from "@/components/solo/games/Oro";
 import { getGameFlags } from "@/lib/games/flags.server";
@@ -42,7 +41,6 @@ export default async function SoloGamePage({ params, searchParams }: { params: P
   const game = soloGame(id);
   if (!game) notFound();
   const ctx = await soloContext();
-  const backdrop = <PageBackdrop motif={game.look.motif} bg={game.look.bg} ink={game.look.ink} glow="rgba(232,86,58,.3)" height={120} />;
 
   if ((await getGameFlags()).off.includes(game.id)) {
     return (
@@ -87,7 +85,6 @@ export default async function SoloGamePage({ params, searchParams }: { params: P
 
   return (
     <div className="relative isolate pt-6">
-      {backdrop}
       {body}
     </div>
   );

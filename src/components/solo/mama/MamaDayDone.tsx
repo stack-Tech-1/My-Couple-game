@@ -7,7 +7,6 @@ import { AREAS, DAYS, ITEM_NAME, areaIndex, careerDay, newOnDay } from "@/lib/so
 
 const naira = (n: number) => `₦${n.toLocaleString("en-NG")}`;
 const STAR = "M12 2l2.9 6.2 6.8.7-5.1 4.6 1.5 6.7L12 16.8 5.9 20.2l1.5-6.7L2.3 8.9l6.8-.7z";
-const LINES = ["Mama says try again. You've got this.", "One star. The customers are warming to you.", "Two stars. Mama is proud of you.", "Three stars! The whole street is talking about your buka."];
 
 /**
  * The end of a career day: stars over a sunburst, what you took in, and the way on. Drawn on
@@ -49,7 +48,7 @@ function DayDone({ day, score, newBest, again, share }: { day: number; score: nu
             {naira(score)}
           </h2>
           <p className="mx-auto mt-2 max-w-[22rem] text-[0.93rem] text-[#f1dccb]">
-            {LINES[stars]} {toNext > 0 ? `${naira(toNext)} more for ${stars ? "the next star" : "a star"}.` : ""} {newBest ? "Your best on this day." : ""}
+            {toNext > 0 ? `${naira(toNext)} more for ${stars ? "the next star" : "a star"}.` : ""} {newBest ? "Your best on this day." : ""}
           </p>
         </div>
         {opened ? (

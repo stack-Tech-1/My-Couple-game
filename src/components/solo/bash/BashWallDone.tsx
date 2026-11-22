@@ -7,7 +7,6 @@ import { SITES, WALLS, rankFor, siteOf, starsOfTakings, wallPay } from "@/lib/so
 
 const naira = (n: number) => `₦${n.toLocaleString("en-NG")}`;
 const STAR = "M12 2l2.9 6.2 6.8.7-5.1 4.6 1.5 6.7L12 16.8 5.9 20.2l1.5-6.7L2.3 8.9l6.8-.7z";
-const LINES = ["", "It fell, but it fought back.", "Good job. One clean run from three stars.", "Not one ball dropped. Clean job."];
 
 type Props = { wall: number; score: number; totalBefore: number; totalAfter: number; again: () => void; share: () => void };
 
@@ -57,7 +56,7 @@ function Done({ wall, score, totalBefore, totalAfter, again, share }: Props) {
         ) : <div className="h-14" />}
         <div className="mt-4 text-center">
           <h2 id="solo-result-h" className="display text-[2.5rem] leading-none">{won ? "Wall don fall!" : "The wall won this one"}</h2>
-          <p className="mx-auto mt-2 max-w-[22rem] text-[0.95rem]">{won ? `Wall ${wall} cleared. ${LINES[stars]}` : `You ran out of balls on wall ${wall}. Pick up your plank and try again.`}</p>
+          <p className="mx-auto mt-2 max-w-[22rem] text-[0.95rem]">{won ? `Wall ${wall} cleared.` : `You ran out of balls on wall ${wall}.`}</p>
         </div>
         {won ? (
           <div className="mt-3 flex justify-center gap-1" role="img" aria-label={`${stars} of 3 stars`}>

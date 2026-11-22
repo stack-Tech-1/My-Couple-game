@@ -40,7 +40,6 @@ export function AjoDoneTop({ newBest }: { newBest: boolean }) {
       {/* eslint-disable-next-line @next/next/no-img-element -- a small painted picture, already sized */}
       <img src={`/games/ajo/collector-${pose}.webp`} alt="" className="aj-done mx-auto block h-[180px] w-auto drop-shadow-[0_10px_14px_rgba(28,20,22,.3)]" />
       <p className="display mt-2 text-[1.5rem] leading-tight">Top note: {noteOf(Math.max(1, last.best))}</p>
-      <p className="mt-0.5 text-[0.92rem] text-muted">{ajoLine(last.best)}</p>
       <p className="mt-2 text-[0.88rem] font-semibold">{last.moves} moves</p>
       <style>{`
         .aj-done { animation: aj-done .5s cubic-bezier(.3,1.5,.5,1) both; transform-origin: 50% 100%; }

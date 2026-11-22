@@ -5,11 +5,11 @@ import { RING_COLORS, RINGS, clockText, pumpResult } from "@/lib/solo/games/pump
 /** What the finish says, by how many rings went on. */
 export function pumpLine(score: number): { title: string; line: string } {
   const { rings, seconds } = pumpResult(score);
-  if (rings === RINGS) return { title: "All ten on!", line: `In ${clockText(seconds ?? 0)}. Pump master.` };
-  if (rings >= 7) return { title: `${rings} of ${RINGS} rings on`, line: "So close. One more push." };
-  if (rings >= 4) return { title: `${rings} of ${RINGS} rings on`, line: "Halfway there. The water is learning who's boss." };
-  if (rings >= 1) return { title: `${rings} of ${RINGS} rings on`, line: "The water had its own plans today." };
-  return { title: "No rings this time", line: "The water won this round. Short, quick pumps help." };
+  if (rings === RINGS) return { title: "All ten on!", line: `In ${clockText(seconds ?? 0)}` };
+  if (rings >= 7) return { title: `${rings} of ${RINGS} rings on`, line: "" };
+  if (rings >= 4) return { title: `${rings} of ${RINGS} rings on`, line: "" };
+  if (rings >= 1) return { title: `${rings} of ${RINGS} rings on`, line: "" };
+  return { title: "No rings this time", line: "" };
 }
 
 /** The poster's line: "All 10 rings in 1:24", or "7 of 10 rings". */
@@ -64,7 +64,7 @@ export function PumpDoneTop({ score }: { score: number }) {
         <path d="M24 30 Q22 70 24 110" stroke="rgba(255,255,255,.45)" strokeWidth="4" fill="none" strokeLinecap="round" />
       </svg>
       <p className="display mt-3 text-[1.5rem] leading-tight">{title}</p>
-      <p className="mt-0.5 text-[0.92rem] text-muted">{line}</p>
+      {line ? <p className="mt-0.5 text-[0.92rem] text-muted">{line}</p> : null}
       <style>{`
         .pa-done-ring { animation: pa-done-ring .45s cubic-bezier(.3,1.5,.5,1) both; }
         @keyframes pa-done-ring { from { transform: translateY(-60px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }

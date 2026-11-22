@@ -2,20 +2,26 @@
 
 import { AdireFill, type Motif } from "@/design/adire";
 import { INDIGO_LOOK } from "@/games/look";
+import { Selvedge } from "@/design/wax";
 
 /**
- * Phones: an adire pattern runs behind the top of a page and melts into the page colour, so the
- * glass cards above it have something to glow over. Each page brings its own colour and motif.
- * The parent must be `relative isolate`.
+ * Phones: the page's own adire runs behind its title as one clean band, edged with the selvedge,
+ * and the page carries on in plain calico below. `height` is the old fade height; the band takes
+ * the top two fifths of it unless `band` says exactly how tall it is. With `fit`, the band
+ * fills its parent instead (wrap the title block, give it bottom padding for the selvedge), and
+ * `reach` lets it run up behind anything above. The parent must be `relative isolate`.
  */
-export function PageBackdrop({ motif, bg, ink, glow, height = 640 }: { motif: Motif; bg: string; ink: string; glow: string; height?: number }) {
+export function PageBackdrop({ motif, bg, ink, height = 640, band, fit, reach = 40 }: { motif: Motif; bg: string; ink: string; glow?: string; height?: number; band?: number; fit?: boolean; reach?: number }) {
   return (
-    <div aria-hidden className="pointer-events-none absolute -inset-x-4 -top-10 -z-10 overflow-hidden sm:hidden" style={{ height }}>
+    <div
+      aria-hidden
+      className="pointer-events-none absolute -inset-x-4 -z-10 overflow-hidden sm:hidden"
+      style={fit ? { top: -reach, bottom: 0 } : { top: -40, height: band ?? Math.round(height * 0.4) }}
+    >
       <AdireFill motif={motif} bg={bg} ink={ink} />
-      <div
-        className="absolute inset-0"
-        style={{ background: `${glow}, linear-gradient(180deg, transparent 0%, transparent 42%, color-mix(in srgb, var(--bg) 94%, transparent) 84%, var(--bg) 100%)` }}
-      />
+      <div className="absolute inset-x-0 bottom-0">
+        <Selvedge />
+      </div>
     </div>
   );
 }

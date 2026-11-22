@@ -24,7 +24,8 @@ export default async function NewRoomPage() {
   return (
     <div className="relative isolate mx-auto flex min-h-dvh max-w-2xl flex-col px-4 py-5 sm:px-8">
       {/* Phones: burnt orange with ade crowns. */}
-      <PageBackdrop motif={PAGE_LOOKS.newroom.motif} bg={PAGE_LOOKS.newroom.bg} ink={PAGE_LOOKS.newroom.ink} glow={PAGE_LOOKS.newroom.glow} height={440} />
+      <div className="relative isolate max-sm:pb-12">
+      <PageBackdrop motif={PAGE_LOOKS.newroom.motif} bg={PAGE_LOOKS.newroom.bg} ink={PAGE_LOOKS.newroom.ink} fit />
       <div className="flex items-center justify-between max-sm:text-[#f6efe6]">
         <Logo />
         <span className="flex items-center gap-2">
@@ -36,9 +37,12 @@ export default async function NewRoomPage() {
         ) : null}
         </span>
       </div>
-      <div className="flex flex-1 flex-col py-12">
+      <div className="pt-12">
         <h1 className="display text-[clamp(2.6rem,9vw,3.8rem)] max-sm:text-[#f6efe6]">Another room.</h1>
-        <p className="mt-3 mb-10 text-muted max-sm:text-[#f6efe6]/85">Start a friend room for your best friend or your group, or join one with a code. Everything in your other rooms stays where it is.</p>
+        <p className="mt-3 text-muted max-sm:text-[#f6efe6]/85">Start a friend room for your best friend or your group, or join one with a code. Everything in your other rooms stays where it is.</p>
+      </div>
+      </div>
+      <div className="flex flex-1 flex-col pb-12 pt-10 max-sm:pt-8">
         <NewRoomForm name={profile.display_name} hasCouple={hasCouple} friendRooms={friendRooms} />
       </div>
     </div>

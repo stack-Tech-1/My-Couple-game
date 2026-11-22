@@ -12,7 +12,7 @@ export function SoloShelf() {
   const bots = SOLO_GAMES.filter((g) => g.kind === "bot" && !isOff(g.id));
   return (
     <section aria-labelledby="shelf-solo-h" id="shelf-solo" className="scroll-mt-24">
-      <div className="relative overflow-hidden rounded-[20px] px-5 py-4 text-[#2a1a05]">
+      <div className="cut relative overflow-hidden px-5 py-4 text-[#2a1a05]">
         <AdireFill motif={SOLO_LOOK.motif} bg={SOLO_LOOK.bg} ink={SOLO_LOOK.ink} />
         <div className="relative">
           <div className="flex items-baseline justify-between gap-4">

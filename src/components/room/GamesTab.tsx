@@ -19,11 +19,11 @@ export function GamesTab() {
     <div className="pt-6 sm:pt-10">
       <h1 className="display text-[clamp(2.4rem,9vw,3.6rem)]">Games</h1>
       <nav aria-label="Jump to a mood" className="-mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
-        <a href="#shelf-solo" className="shrink-0 rounded-full bg-[#1c1416] px-4 py-2 text-[0.88rem] font-bold text-[#f6efe6]">
+        <a href="#shelf-solo" className="cut-sm shrink-0 bg-fg px-4 py-2 text-[0.88rem] font-bold text-bg">
           On your own
         </a>
         {moods.map((c) => (
-          <a key={c} href={`#shelf-${c}`} className="glass shrink-0 rounded-full px-4 py-2 text-[0.88rem] font-bold">
+          <a key={c} href={`#shelf-${c}`} className="cut-sm shrink-0 border border-line bg-raised px-4 py-2 text-[0.88rem] font-bold">
             {CATEGORIES[c].label}
           </a>
         ))}

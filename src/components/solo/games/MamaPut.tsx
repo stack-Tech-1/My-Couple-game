@@ -1184,6 +1184,17 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
             >
               Leave full screen
             </button>
+            <button
+              type="button"
+              onClick={() => {
+                // Full screen hides the page's back button, so the way out lives here too.
+                leaveFull();
+                window.location.assign("/solo/mama-put");
+              }}
+              className="text-[0.85rem] font-semibold underline underline-offset-4"
+            >
+              Quit to the menu (this go won&apos;t count)
+            </button>
           </div>
         ) : null}
       </div>

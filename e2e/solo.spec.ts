@@ -9,7 +9,8 @@ async function playReflex(page: Page) {
     await expect(page.getByRole("button", { name: "Dive!" })).toBeVisible({ timeout: 10_000 });
     await page.getByRole("button", { name: "Dive!" }).click();
   }
-  await expect(page.locator("#solo-result-h")).toContainText("ms");
+  // The result pops up over the board, score and all.
+  await expect(page.getByRole("dialog").filter({ has: page.locator("#solo-result-h") })).toContainText("ms");
 }
 
 test("solo: just me for now, Reflex Training saves a score, and a challenge to your partner", async ({ browser }) => {
@@ -42,7 +43,7 @@ test("solo: just me for now, Reflex Training saves a score, and a challenge to y
 
     // Challenge Bo to beat it.
     await pa.getByRole("button", { name: "Challenge" }).click();
-    await pa.getByRole("dialog").getByRole("button", { name: "Bo" }).click();
+    await pa.getByRole("dialog", { name: "Challenge someone" }).getByRole("button", { name: "Bo" }).click();
     await expect(pa.getByText("Challenge sent to Bo.")).toBeVisible();
 
     // Bo sees it on the Solo home and plays it.
@@ -73,7 +74,7 @@ test("solo: a challenge link brings someone new into a friend room, never the co
     await pa.goto(await signInPath(a.email, "/solo/reflex"));
     await playReflex(pa);
     await pa.getByRole("button", { name: "Challenge" }).click();
-    const dialog = pa.getByRole("dialog");
+    const dialog = pa.getByRole("dialog", { name: /Challenge someone|Where should they land/ });
     await dialog.getByRole("button", { name: "Someone not on Amah yet" }).click();
     await dialog.getByRole("radio", { name: /Start a new friend room/ }).click();
     await dialog.getByRole("button", { name: "Share the challenge" }).click();

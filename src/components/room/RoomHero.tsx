@@ -35,7 +35,7 @@ export function RoomHero({ mine, theirs, stats }: { mine: number; theirs: number
 
   return (
     <section aria-labelledby="room-hero" className="relative -mx-4 overflow-hidden sm:mx-0 sm:cut">
-      {/* The room's cloth: the record print, one bold band. The score is sewn on as a patch. */}
+      {/* The room's cloth: indigo adire, one bold band. The score is sewn on as a patch. */}
       <AdireFill motif="agbole" bg={INDIGO_LOOK.bg} ink={INDIGO_LOOK.ink} />
       <div className="relative px-3.5 pb-4 pt-16 sm:px-7 sm:pb-7 sm:pt-24">
         <div className="cut relative bg-raised px-4 pb-4 pt-3.5 shadow-[0_14px_30px_-16px_rgba(0,0,0,.6)] sm:max-w-[560px] sm:px-6 sm:pb-5">

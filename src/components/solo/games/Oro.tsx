@@ -1,9 +1,10 @@
 "use client";
 
-import Link from "next/link";
+import { BackButton } from "@/design/BackButton";
+import { ResultPop } from "@/design/ResultPop";
+import { soloGame } from "@/lib/solo/catalog";
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { Button } from "@/design/Button";
-import { Icon } from "@/design/icons";
 import { toast } from "@/design/toast";
 import { cn } from "@/lib/cn";
 import { GameAudio } from "@/lib/game-audio";
@@ -144,9 +145,7 @@ export function Oro({ initial, myName, soundOn, toured = false }: { initial: Oro
   return (
     <div className="mx-auto max-w-[420px] select-none">
       <div className="flex items-center justify-between gap-3">
-        <Link prefetch={false} href="/solo" className="glass inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[0.9rem] font-semibold">
-          <Icon name="arrowLeft" size={16} /> Solo
-        </Link>
+        <BackButton href="/solo" label="Solo" />
         <div className="flex gap-2">
           {!s.finished ? (
             <button type="button" onClick={() => setTouring(true)} className="glass rounded-full px-3.5 py-2 text-[0.85rem] font-semibold">
@@ -183,9 +182,11 @@ export function Oro({ initial, myName, soundOn, toured = false }: { initial: Oro
       </p>
 
       {s.finished ? (
-        <section aria-live="polite" className="glass mt-5 rounded-[24px] p-5 text-center">
-          <p className="display text-[1.8rem] leading-tight">{s.solved ? (s.guesses.length <= 2 ? "Ọ̀rọ̀ master." : "Got it.") : "Not today."}</p>
-          <p className="mt-1 font-semibold">
+        <ResultPop look={soloGame("oro")!.look} win={s.solved} labelledBy="oro-result-h">
+          <p className="eyebrow text-muted">{soloGame("oro")!.name}</p>
+          <h2 id="oro-result-h" className="display mt-1 text-[2rem] leading-none">{s.solved ? "Got it." : "Not today."}</h2>
+          {s.solved ? <p className="mt-2 text-[0.92rem] font-semibold text-muted">In {s.guesses.length} of 6</p> : null}
+          <p className="mt-3 font-semibold">
             The word was <span className="uppercase tracking-wide">{s.answer}</span>
             {s.naija && s.hint ? ` (${s.hint.toLowerCase()})` : ""}.
           </p>
@@ -210,12 +211,12 @@ export function Oro({ initial, myName, soundOn, toured = false }: { initial: Oro
               </div>
             </div>
           ) : (
-            <p className="mt-2 text-[0.85rem] text-muted">Come back tomorrow for a new word. Your streak is waiting.</p>
+            <p className="mt-2 text-[0.85rem] text-muted">Come back tomorrow for a new word.</p>
           )}
           <Button size="lg" variant="outline" className="mt-4 w-full" onClick={() => void share()}>
             Share
           </Button>
-        </section>
+        </ResultPop>
       ) : (
         <div data-tour="oro-keys" className="mt-5 flex flex-col gap-1.5" aria-label="Keyboard">
           {KEYS.map((row, i) => (

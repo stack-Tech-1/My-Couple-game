@@ -34,7 +34,6 @@ export function ReflexDoneTop({ score, newBest }: { score: number; newBest: bool
         <img src={`/games/reflex/${pose}.webp`} alt="" className={pose === "keeper-dive-l" ? "absolute left-1/2 top-[28%] w-[78%] -translate-x-1/2" : "absolute bottom-0 left-1/2 h-[92%] w-auto -translate-x-1/2"} />
       </div>
       <p className="display mt-3 text-[1.5rem] leading-tight">{rank.name}</p>
-      <p className="mt-0.5 text-[0.92rem] text-muted">{rank.line}</p>
       {last ? (
         <p className="mt-2 text-[0.88rem] font-semibold">
           {savesOf(last.times)} of {last.times.length} saved, fastest {Math.min(...last.times)} ms

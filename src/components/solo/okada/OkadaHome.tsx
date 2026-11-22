@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { BackButton } from "@/design/BackButton";
 import { useEffect, useState } from "react";
 import { Icon } from "@/design/icons";
 import { toast } from "@/design/toast";
@@ -65,6 +66,7 @@ export function OkadaHome({ career }: { career: OkadaCareer }) {
 
   return (
     <div className="mx-auto max-w-[460px]">
+      <BackButton href="/solo" label="Solo" />
       <div className="mt-5 flex items-end gap-2">
         <div className="min-w-0 flex-1 pb-3">
           <h1 className="display text-[2.2rem] leading-none">Okada Rush</h1>

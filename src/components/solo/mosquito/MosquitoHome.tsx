@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { BackButton } from "@/design/BackButton";
 import { useState } from "react";
 import { Icon } from "@/design/icons";
 import { toast } from "@/design/toast";
@@ -38,7 +39,8 @@ export function MosquitoHome({ career }: { career: MosquitoCareer }) {
 
   return (
     <div className="mx-auto max-w-[460px]">
-      <div className="mt-16">
+      <BackButton href="/solo" label="Solo" />
+      <div className="mt-5">
         <h1 className="display text-[2.2rem] leading-none">Mosquito Wahala</h1>
         <p className="mt-1.5 text-muted">Five rooms, {NIGHTS} nights. Sleep till morning.</p>
       </div>

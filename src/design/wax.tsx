@@ -172,11 +172,11 @@ export function WaxPrint({ print, scale = 1, className }: { print: Print; scale?
  * The selvedge: real wax cloth carries the maker's name printed along its edge. Ours runs under
  * each page's print. Decorative, so screen readers skip it.
  */
-export function Selvedge({ words, className }: { words: string[]; className?: string }) {
+export function Selvedge({ words = [], className }: { words?: string[]; className?: string }) {
   const line = ["AMAH", ...words].join(" · ");
   return (
     <div aria-hidden className={cn("selvedge", className)}>
-      <span>{Array.from({ length: 6 }, () => line).join(" · ")}</span>
+      <span>{Array.from({ length: words.length ? 6 : 24 }, () => line).join(" · ")}</span>
     </div>
   );
 }
