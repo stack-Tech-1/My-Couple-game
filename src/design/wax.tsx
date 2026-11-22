@@ -173,7 +173,7 @@ export function WaxPrint({ print, scale = 1, className }: { print: Print; scale?
  * each page's print. Decorative, so screen readers skip it.
  */
 export function Selvedge({ words, className }: { words: string[]; className?: string }) {
-  const line = ["AMAH", ...words, "REAL WAX PRINT"].join(" · ");
+  const line = ["AMAH", ...words].join(" · ");
   return (
     <div aria-hidden className={cn("selvedge", className)}>
       <span>{Array.from({ length: 6 }, () => line).join(" · ")}</span>

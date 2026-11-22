@@ -9,7 +9,9 @@ import { Suspense } from "react";
 import { CATEGORIES, CATEGORY_ORDER, GAMES, gamesIn } from "@/games/catalog";
 import { GameArt } from "@/games/GameArt";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { SECTION_CLOTH, Selvedge, WaxPrint } from "@/design/wax";
+import { Selvedge } from "@/design/wax";
+import { AdireFill } from "@/design/adire";
+import { CATEGORY_LOOKS, INDIGO_LOOK } from "@/games/look";
 
 export const metadata: Metadata = {
   title: { absolute: `${APP_NAME}: games for the people closest to you` },
@@ -90,7 +92,7 @@ export default function Landing() {
             </div>
           </div>
           <div className="relative -mx-4 overflow-hidden px-6 py-12 sm:mx-0 sm:cut sm:px-10 sm:py-14">
-            <WaxPrint print="record" />
+            <AdireFill motif="agbole" bg={INDIGO_LOOK.bg} ink={INDIGO_LOOK.ink} />
             <div className="relative rotate-[-1.5deg]">
               <RoomPreview />
             </div>
@@ -126,7 +128,7 @@ export default function Landing() {
           <ul className="mt-10 grid gap-3 md:grid-cols-2">
             {CATEGORY_ORDER.map((c, i) => {
               const cat = CATEGORIES[c];
-              const cloth = SECTION_CLOTH[c];
+              const l = CATEGORY_LOOKS[c];
               const games = gamesIn(c);
               const names = games.map((g) => g.name);
               const art = featured[c] ?? games[0]?.id ?? "";
@@ -134,9 +136,10 @@ export default function Landing() {
                 <li
                   key={c}
                   className={`cut relative flex min-w-0 gap-4 overflow-hidden p-5 sm:p-6 ${i === 0 ? "md:col-span-2" : ""}`}
-                  style={{ background: cloth.fill, color: cloth.ink }}
+                  style={{ color: l.fg }}
                 >
-                  <div className="min-w-0 flex-1">
+                  <AdireFill motif={l.motif} bg={l.bg} ink={l.ink} />
+                  <div className="relative min-w-0 flex-1">
                     <h3 className="display text-[clamp(1.7rem,4vw,2.2rem)] leading-tight">{cat.label}</h3>
                     <p className="mt-1 opacity-90">{cat.blurb}</p>
                     <p className={`mt-3 text-[0.9rem] font-semibold opacity-85 ${c === "spicy" ? "hidden" : ""}`}>
@@ -279,7 +282,7 @@ export default function Landing() {
         {/* Closing call: the same cloth again, with the last word sewn on as a patch. */}
         <section className="relative overflow-hidden">
           <Selvedge words={["TONIGHT'S PLANS", "BEAT THEM AT WHOT"]} />
-          <WaxPrint print="record" />
+          <AdireFill motif="agbole" bg={INDIGO_LOOK.bg} ink={INDIGO_LOOK.ink} />
           <div className="relative mx-auto max-w-6xl px-4 py-16 sm:px-8 sm:py-20">
             <div className="cut flex flex-col items-start gap-6 bg-bg p-6 shadow-[0_24px_40px_-22px_rgba(0,0,0,.65)] sm:p-10 md:flex-row md:items-end md:justify-between">
               <h2 className="display max-w-3xl text-[clamp(2.4rem,6.5vw,4.6rem)]">

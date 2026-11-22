@@ -5,7 +5,8 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { useRoom } from "@/lib/realtime/RoomProvider";
 import { Logo } from "@/design/Logo";
-import { WaxPrint } from "@/design/wax";
+import { AdireFill } from "@/design/adire";
+import { INDIGO_LOOK } from "@/games/look";
 import { cn } from "@/lib/cn";
 
 type Where = "home" | "games" | "us" | "place" | null;
@@ -146,7 +147,7 @@ function SideRail() {
         </li>
       </ul>
       <div className="relative mt-auto h-44 shrink-0">
-        <WaxPrint print="record" />
+        <AdireFill motif="agbole" bg={INDIGO_LOOK.bg} ink={INDIGO_LOOK.ink} />
       </div>
     </nav>
   );

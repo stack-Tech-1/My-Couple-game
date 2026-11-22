@@ -8,7 +8,7 @@ import { cn } from "@/lib/cn";
 import { afterDarkOpen } from "@/lib/room/afterDark";
 import { useGameFlags } from "@/lib/games/FlagsProvider";
 import { CATEGORY_LOOKS } from "@/games/look";
-import { SECTION_CLOTH } from "@/design/wax";
+import { AdireFill } from "@/design/adire";
 import { GameCard } from "./GameCard";
 import { FREE_PLAYS_PER_DAY, isPlusGame } from "@/lib/plus/plans";
 
@@ -48,11 +48,12 @@ export function Library({ heading = true }: { heading?: boolean }) {
   );
 }
 
-/** A shelf banner: a plain cut of the section's colour. */
+/** A shelf banner: the category's colour with its adire motif printed through it. */
 function CategoryBanner({ category, label, count, blurb }: { category: keyof typeof CATEGORY_LOOKS; label: string; count: number; blurb: string }) {
-  const cloth = SECTION_CLOTH[category];
+  const l = CATEGORY_LOOKS[category];
   return (
-    <div className="cut relative overflow-hidden px-5 py-4" style={{ background: cloth.fill, color: cloth.ink }}>
+    <div className="cut relative overflow-hidden px-5 py-4" style={{ color: l.fg }}>
+      <AdireFill motif={l.motif} bg={l.bg} ink={l.ink} />
       <div className="relative">
         <div className="flex items-baseline justify-between gap-4">
           <h3 className="display text-[clamp(1.6rem,6vw,2rem)] leading-tight">{label}</h3>
