@@ -25,7 +25,7 @@ export function RoomHeader({ feedbackUnread = 0 }: { feedbackUnread?: number }) 
     : "away";
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[color-mix(in_srgb,var(--line)_70%,transparent)] bg-[color-mix(in_srgb,var(--bg)_72%,transparent)] backdrop-blur-xl backdrop-saturate-150">
+    <header className="sticky top-0 z-40 border-b border-line bg-bg">
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:px-8">
         <RoomSwitcher />
         {/* Everyone here has Plus: a small crown, nothing louder. */}

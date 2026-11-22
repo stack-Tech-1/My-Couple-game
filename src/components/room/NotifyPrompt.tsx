@@ -56,7 +56,7 @@ export function NotifyPrompt({ publicKey }: { publicKey: string | null }) {
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, height: 0, marginTop: 0 }}
-          className="mt-6 flex flex-wrap items-center gap-4 rounded-[18px] glass p-4 sm:flex-nowrap"
+          className="mt-6 flex flex-wrap items-center gap-4 cloth p-4 sm:flex-nowrap"
         >
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-fg text-bg">
             <Icon name="bolt" size={22} />

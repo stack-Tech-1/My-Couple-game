@@ -61,7 +61,7 @@ export function Birthdays() {
       ))}
 
       {soon.length ? (
-        <div className="rounded-[18px] glass p-4">
+        <div className="cloth p-4">
           <p className="eyebrow text-muted">Coming up</p>
           <ul className="mt-2 flex flex-col gap-1.5">
             {soon.map((p) => (
@@ -77,7 +77,7 @@ export function Birthdays() {
       ) : null}
 
       {askMine ? (
-        <div className="glass flex flex-wrap items-center gap-x-4 gap-y-2 rounded-[18px] p-4">
+        <div className="cloth flex flex-wrap items-center gap-x-4 gap-y-2 p-4">
           <p className="min-w-0 flex-1 text-[0.92rem]">
             When&apos;s your birthday? Add it so {others.length === 1 ? others[0]!.profile.display_name : "your people"} never forget{others.length === 1 ? "s" : ""}.
           </p>

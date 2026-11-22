@@ -30,7 +30,7 @@ export function WeeklyRecap({ week }: { week: Week }) {
   ];
 
   return (
-    <section aria-labelledby="recap-h" className="rounded-[22px] glass p-5">
+    <section aria-labelledby="recap-h" className="cloth p-5">
       <div className="flex items-baseline justify-between gap-3">
         <h2 id="recap-h" className="eyebrow text-muted">
           Last week, together

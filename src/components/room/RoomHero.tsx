@@ -2,18 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { Avatar } from "@/design/Avatar";
-import { AdireFill } from "@/design/adire";
-import { INDIGO_LOOK } from "@/games/look";
+import { Selvedge, WaxPrint } from "@/design/wax";
 import { useRoom } from "@/lib/realtime/RoomProvider";
 import { levelOf, xpOf, type Stats } from "@/lib/progress/model";
 
 const GREETING = { morning: "Morning", afternoon: "Afternoon", evening: "Evening", late: "Still up" } as const;
 const partOfDay = (h: number): keyof typeof GREETING => (h < 5 ? "late" : h < 12 ? "morning" : h < 17 ? "afternoon" : h < 22 ? "evening" : "late");
 
-/**
- * The top of a couple's room: the two of you and the lifetime score, printed on adire indigo
- * (the agbole motif: the family home and close bonds).
- */
+/** The top of a couple's room: the two of you and the lifetime score, sewn onto the room's cloth. */
 export function RoomHero({ mine, theirs, stats }: { mine: number; theirs: number; stats: Stats | null }) {
   const { bundle } = useRoom();
   const { me, partner } = bundle;
@@ -32,51 +28,48 @@ export function RoomHero({ mine, theirs, stats }: { mine: number; theirs: number
           : `${partner.profile.display_name} leads by ${theirs - mine}. Revenge is a dish best served at Whot.`;
   const level = stats ? levelOf(xpOf(stats)) : null;
 
+  const days = Math.max(1, Math.floor((Date.now() - Date.parse(bundle.room.created_at)) / 864e5) + 1);
+  const names = partner ? `${me.profile.display_name} & ${partner.profile.display_name}` : me.profile.display_name;
+
   return (
-    <section aria-labelledby="room-hero" className="glass-dark relative mt-4 overflow-hidden rounded-[30px] px-5 pb-6 pt-5 text-[#f6efe6] sm:mt-0 sm:rounded-[28px] sm:border-0 sm:px-8 sm:pb-9 sm:pt-8">
-      {/* Larger screens print the pattern on the card itself; phones see it behind the page instead. */}
-      <div aria-hidden className="absolute inset-0 hidden sm:block">
-        <AdireFill motif="agbole" bg={INDIGO_LOOK.bg} ink={INDIGO_LOOK.ink} />
-        <div className="absolute inset-0" style={{ background: `linear-gradient(180deg, rgba(24,32,63,0), rgba(24,32,63,.55))` }} />
-      </div>
-      <div className="relative">
-        <h1 id="room-hero" className="text-[1rem] font-semibold opacity-85" style={{ opacity: part ? 0.85 : 0, transition: "opacity 300ms" }}>
-          {GREETING[part ?? "evening"]}, {me.profile.display_name}.
-        </h1>
-
-        <div className="mt-5 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-          <Person name={me.profile.display_name} motif={me.profile.avatar_key} hue={me.profile.avatar_hue} lead={mine > theirs} />
-          <p className="display tabular whitespace-nowrap text-center leading-none">
-            <span className="text-[clamp(3.6rem,15vw,6.5rem)]" aria-label={`${me.profile.display_name}: ${mine} wins`}>{mine}</span>
-            <span aria-hidden className="mx-2 text-[clamp(1.3rem,5vw,2rem)] opacity-60">to</span>
+    <section aria-labelledby="room-hero" className="relative -mx-4 overflow-hidden sm:mx-0 sm:cut">
+      {/* The room's cloth: the record print, one bold band. The score is sewn on as a patch. */}
+      <WaxPrint print="record" />
+      <div className="relative px-3.5 pb-4 pt-16 sm:px-7 sm:pb-7 sm:pt-24">
+        <div className="cut relative bg-raised px-4 pb-4 pt-3.5 shadow-[0_14px_30px_-16px_rgba(0,0,0,.6)] sm:max-w-[560px] sm:px-6 sm:pb-5">
+          <h1 id="room-hero" className="text-center text-[0.9rem] font-semibold text-muted" style={{ opacity: part ? 1 : 0, transition: "opacity 300ms" }}>
+            {GREETING[part ?? "evening"]}, {me.profile.display_name}.
+          </h1>
+          <div className="mt-2 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+            <Person name={me.profile.display_name} motif={me.profile.avatar_key} hue={me.profile.avatar_hue} lead={mine > theirs} />
+            <p className="display tabular whitespace-nowrap text-center leading-none">
+              <span className="text-[clamp(3.2rem,14vw,5.4rem)]" aria-label={`${me.profile.display_name}: ${mine} wins`}>{mine}</span>
+              <span aria-hidden className="mx-2 text-[clamp(1.1rem,4.5vw,1.7rem)] text-muted">to</span>
+              {partner ? (
+                <span className="text-[clamp(3.2rem,14vw,5.4rem)]" aria-label={`${partner.profile.display_name}: ${theirs} wins`}>{theirs}</span>
+              ) : (
+                <span aria-hidden className="text-[clamp(3.2rem,14vw,5.4rem)]">?</span>
+              )}
+            </p>
             {partner ? (
-              <span className="text-[clamp(3.6rem,15vw,6.5rem)]" aria-label={`${partner.profile.display_name}: ${theirs} wins`}>{theirs}</span>
+              <Person name={partner.profile.display_name} motif={partner.profile.avatar_key} hue={partner.profile.avatar_hue} lead={theirs > mine} />
             ) : (
-              <span aria-hidden className="text-[clamp(3.6rem,15vw,6.5rem)]">?</span>
+              <div className="text-center">
+                <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border-2 border-dashed border-muted text-[1.3rem] text-muted">?</span>
+                <p className="mt-1.5 text-[0.82rem] font-semibold text-muted">Empty seat</p>
+              </div>
             )}
-          </p>
-          {partner ? (
-            <Person name={partner.profile.display_name} motif={partner.profile.avatar_key} hue={partner.profile.avatar_hue} lead={theirs > mine} />
-          ) : (
-            <div className="text-center">
-              <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border-2 border-dashed border-[rgba(246,239,230,.5)] text-[1.4rem] opacity-70">?</span>
-              <p className="mt-1.5 text-[0.85rem] font-semibold opacity-80">Empty seat</p>
-            </div>
-          )}
-        </div>
-
-        <p className="mt-4 text-center text-[0.95rem] opacity-85">{verdict}</p>
-        {level ? (
-          <div className="mt-4 flex flex-wrap justify-center gap-2 text-[0.8rem] font-bold">
-            <span className="rounded-full border border-[rgba(246,239,230,.3)] bg-[rgba(246,239,230,.12)] px-3 py-1">Level {level.level}</span>
-            {stats && stats.streak > 0 ? (
-              <span className="rounded-full border border-[rgba(242,183,5,.55)] bg-[rgba(242,183,5,.16)] px-3 py-1 text-[#ffd65c]">
-                {stats.streak}-day streak
-              </span>
-            ) : null}
           </div>
-        ) : null}
+          <p className="mt-3 text-center text-[0.92rem] text-muted">{verdict}</p>
+          {level ? (
+            <div className="mt-3 flex flex-wrap justify-center gap-2 text-[0.78rem] font-bold">
+              <span className="cut-sm bg-indigo px-3 py-1 text-[#f6efe6]">Level {level.level}</span>
+              {stats && stats.streak > 0 ? <span className="cut-sm bg-marigold px-3 py-1 text-[#1b1519]">{stats.streak}-day streak</span> : null}
+            </div>
+          ) : null}
+        </div>
       </div>
+      <Selvedge words={[names.toUpperCase(), `DAY ${days}`]} />
     </section>
   );
 }
@@ -84,10 +77,10 @@ export function RoomHero({ mine, theirs, stats }: { mine: number; theirs: number
 function Person({ name, motif, hue, lead }: { name: string; motif: string; hue: number; lead: boolean }) {
   return (
     <div className="flex flex-col items-center text-center">
-      <span className={lead ? "rounded-full p-[3px] shadow-[0_0_0_6px_rgba(242,183,5,.18)]" : "rounded-full p-[3px]"} style={{ background: lead ? "#f2b705" : "rgba(246,239,230,.85)" }}>
-        <Avatar name={name} motif={motif} hue={hue} size={60} />
+      <span className="rounded-full p-[3px]" style={{ background: lead ? "var(--fab-marigold)" : "var(--line)" }}>
+        <Avatar name={name} motif={motif} hue={hue} size={52} />
       </span>
-      <p className="mt-1.5 max-w-[7rem] truncate text-[0.9rem] font-bold">{name}</p>
+      <p className="mt-1.5 max-w-[6.5rem] truncate text-[0.85rem] font-bold">{name}</p>
     </div>
   );
 }

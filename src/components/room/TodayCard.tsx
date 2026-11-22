@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { AdireFill } from "@/design/adire";
 import { Icon } from "@/design/icons";
 import { cn } from "@/lib/cn";
 import type { Today } from "@/lib/engage/today";
@@ -53,7 +52,7 @@ export function TodayCard({ roomId, today, streak, restUsed, week }: { roomId: s
 
       {/* The streak and this week. */}
       {week?.length ? (
-        <div className="glass rounded-[22px] px-4 py-3.5">
+        <div className="cloth px-4 py-3.5">
           <div className="flex items-center gap-3">
             <span className={cn("flex h-12 w-12 shrink-0 items-center justify-center rounded-full font-display text-[1.25rem]", streak ? "bg-accent text-[#fff8f0]" : "bg-sunk text-muted")}>{streak}</span>
             <div className="min-w-0">
@@ -86,23 +85,22 @@ export function TodayCard({ roomId, today, streak, restUsed, week }: { roomId: s
       ) : null}
 
       {/* Today's game: the same level for everyone, one go each. */}
-      <Link prefetch={false} href={me?.played ? `/solo/${g.id}` : `/solo/${g.id}?daily=1`} className="relative block overflow-hidden rounded-[22px] text-[#1c1416]">
-        <AdireFill motif={g.look.motif} bg={g.look.bg} ink={g.look.ink} />
+      <Link prefetch={false} href={me?.played ? `/solo/${g.id}` : `/solo/${g.id}?daily=1`} className="cut relative block bg-lagoon text-[#fff8f0]">
         <div className="relative flex gap-3 p-4">
           <div className="min-w-0 flex-1">
-            <span className="inline-block rounded-full bg-[#1c1416] px-2.5 py-1 text-[0.68rem] font-extrabold text-[#f6d26a]">TODAY&apos;S GAME</span>
-            <p className="display mt-2 text-[1.6rem] leading-tight text-[#fffaf4] [text-shadow:0_2px_0_rgba(28,20,22,.35)]">{g.name}</p>
-            <p className="text-[0.85rem] font-semibold text-[#fffaf4]/95">Same level for everyone today. One go each.</p>
+            <span className="cut-sm inline-block bg-[#fff8f0] px-2.5 py-1 text-[0.68rem] font-extrabold text-[#136474]">TODAY&apos;S GAME</span>
+            <p className="display mt-2 text-[1.6rem] leading-tight">{g.name}</p>
+            <p className="text-[0.85rem] font-semibold opacity-90">Same level for everyone today. One go each.</p>
           </div>
-          <SoloArt id={g.id} className="h-16 w-auto shrink-0 self-center" />
+          <SoloArt id={g.id} className="-my-6 h-24 w-auto shrink-0 self-center drop-shadow-[0_8px_8px_rgba(0,0,0,.3)]" />
         </div>
         <div className="relative grid grid-cols-2 gap-2 px-4 pb-4">
-          <div className="rounded-[14px] bg-[rgba(255,250,244,.95)] px-3 py-2">
-            <p className="text-[0.7rem] font-extrabold text-[#a2412c]">YOU</p>
+          <div className="cut-sm bg-[#fff8f0] px-3 py-2 text-[#1b1519]">
+            <p className="text-[0.7rem] font-extrabold text-[#136474]">YOU</p>
             <p className="font-extrabold">{me?.score ?? (me?.played ? "Playing" : "Your turn")}</p>
           </div>
           {others.slice(0, 1).map((o) => (
-            <div key={o.userId} className="rounded-[14px] bg-[rgba(255,250,244,.3)] px-3 py-2 text-[#fffaf4]">
+            <div key={o.userId} className="cut-sm bg-[rgba(0,0,0,.18)] px-3 py-2">
               <p className="truncate text-[0.7rem] font-extrabold uppercase opacity-90">{o.name}</p>
               <p className="font-extrabold">{o.score ?? (o.played ? "Playing" : "Not yet")}</p>
             </div>
@@ -111,13 +109,13 @@ export function TodayCard({ roomId, today, streak, restUsed, week }: { roomId: s
       </Link>
 
       <div className="grid grid-cols-2 gap-3">
-        <Link prefetch={false} href="/solo/oro" className="glass rounded-[18px] p-3.5">
+        <Link prefetch={false} href="/solo/oro" className="cloth p-3.5">
           <p className="text-[0.7rem] font-extrabold" style={{ color: "var(--cat-personal-ink)" }}>Ọ̀RỌ̀ OF THE DAY</p>
           <p className="mt-1.5 font-bold leading-snug">{today.word.finished ? (today.word.solved ? `Solved in ${today.word.guesses}` : "Not this time") : today.word.started ? `${today.word.guesses} guess${today.word.guesses === 1 ? "" : "es"} so far` : "One word, six guesses"}</p>
           <p className="mt-1 text-[0.78rem] text-muted">{today.word.finished ? "A new one at midnight" : "Play it"}</p>
         </Link>
         {today.freeGame ? (
-          <Link prefetch={false} href={`/room/${roomId}/games/${today.freeGame.gameId}`} className="glass rounded-[18px] p-3.5">
+          <Link prefetch={false} href={`/room/${roomId}/games/${today.freeGame.gameId}`} className="cloth p-3.5">
             <p className="text-[0.7rem] font-extrabold" style={{ color: "var(--cat-romantic-ink)" }}>FREE THIS WEEK</p>
             <p className="mt-1.5 font-bold leading-snug">{today.freeGame.name}</p>
             <p className="mt-1 text-[0.78rem] text-muted">A Plus game, open to everyone until Sunday</p>
@@ -126,7 +124,7 @@ export function TodayCard({ roomId, today, streak, restUsed, week }: { roomId: s
       </div>
 
       {today.memory ? (
-        <Link prefetch={false} href={`/room/${roomId}/games/memory-lane`} className="glass flex items-center gap-3 rounded-[18px] px-4 py-3">
+        <Link prefetch={false} href={`/room/${roomId}/games/memory-lane`} className="cloth flex items-center gap-3 px-4 py-3">
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-[linear-gradient(135deg,#f4b26b,#d9521f)] text-[#fff8f0]">
             <Icon name="camera" size={20} />
           </span>

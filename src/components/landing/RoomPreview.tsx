@@ -29,8 +29,7 @@ export function RoomPreview() {
 
   return (
     <div aria-hidden className="relative mx-auto w-full max-w-[380px] select-none">
-      <div className="absolute inset-0 translate-x-3 translate-y-3 rotate-[2.5deg] rounded-[26px] border border-line bg-sunk max-md:hidden" />
-      <div className="relative overflow-hidden rounded-[26px] border-[1.5px] border-line-strong bg-bg max-md:bg-[color-mix(in_srgb,var(--bg)_88%,transparent)] max-md:text-fg max-md:backdrop-blur-xl">
+      <div className="cut relative overflow-hidden bg-bg text-fg shadow-[0_24px_40px_-22px_rgba(0,0,0,.65)]">
         <div className="flex items-center justify-between border-b border-line px-5 py-4">
           <div>
             <p className="eyebrow text-muted">Room</p>
@@ -51,7 +50,7 @@ export function RoomPreview() {
           </div>
           <p className="mt-1 text-[0.85rem] text-muted">Tolu leads. Sam disputes this.</p>
 
-          <div className="mt-5 rounded-[14px] border border-line bg-raised p-4">
+          <div className="mt-5 cut-sm border border-line bg-raised p-4">
             <p className="eyebrow" style={{ color: "var(--cat-personal-ink)" }}>
               Today&apos;s question
             </p>
@@ -66,7 +65,7 @@ export function RoomPreview() {
 
         <div
           className={cn(
-            "absolute inset-x-3 top-3 flex items-center gap-3 rounded-[14px] border border-line bg-bg px-3.5 py-3 shadow-[0_18px_40px_-22px_rgba(28,20,22,.6)]",
+            "absolute inset-x-3 top-3 flex items-center gap-3 cut-sm border border-line bg-bg px-3.5 py-3 shadow-[0_18px_40px_-22px_rgba(28,20,22,.6)]",
             "transition-[transform,opacity] duration-500 ease-[cubic-bezier(.34,1.3,.64,1)]",
             showInvite ? "translate-y-0 opacity-100" : "-translate-y-[120%] opacity-0",
           )}
@@ -96,7 +95,7 @@ function Score({ value }: { value: number }) {
 function MiniBoard({ drop, dropKey }: { drop: boolean; dropKey: number }) {
   const cells = [0, 0, 1, 2, 0, 0, 0, 1, 2, 1, 2, 0];
   return (
-    <div className="mt-5 flex items-end justify-between rounded-[14px] border border-line px-4 py-3">
+    <div className="mt-5 flex items-end justify-between cut-sm border border-line px-4 py-3">
       <div>
         <p className="eyebrow text-muted">Now playing</p>
         <p className="mt-1 font-semibold">Connect Four · Sam&apos;s move</p>

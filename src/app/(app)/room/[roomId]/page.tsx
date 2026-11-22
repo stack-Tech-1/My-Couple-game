@@ -8,7 +8,6 @@ import { PlayNext } from "@/components/room/PlayNext";
 import { Moments } from "@/components/room/Moments";
 import { Library } from "@/components/room/Library";
 import { RoomHero } from "@/components/room/RoomHero";
-import { HomeBackdrop } from "@/components/room/HomeBackdrop";
 import { GamesPeek } from "@/components/room/GamesPeek";
 import { Birthdays } from "@/components/room/Birthdays";
 import { InstallPrompt } from "@/components/room/InstallPrompt";
@@ -55,7 +54,6 @@ export default async function RoomHome({ params }: { params: Promise<{ roomId: s
 
   return (
     <div className="relative isolate pt-0 sm:pt-8">
-      <HomeBackdrop />
       <RoomHero mine={mine} theirs={theirs} stats={progress} />
       <Birthdays />
       <InstallPrompt />
@@ -80,7 +78,7 @@ export default async function RoomHome({ params }: { params: Promise<{ roomId: s
         </div>
       ) : null}
 
-      <div className="mt-10 grid gap-x-12 gap-y-10 lg:grid-cols-[1.25fr_1fr]">
+      <div className="mt-10 grid gap-x-12 gap-y-10 lg:grid-cols-[1.25fr_1fr] [&>*]:min-w-0">
         <div className="flex flex-col gap-10">
           {/* Tonight first: something to play and today's question. */}
           <PlayNext />
@@ -98,7 +96,8 @@ export default async function RoomHome({ params }: { params: Promise<{ roomId: s
         </div>
       </div>
 
-      <div className="mt-14 grid gap-x-12 gap-y-14 lg:grid-cols-[1fr_2.2fr]">
+      {/* min-w-0: the swipeable games row must scroll inside its own box, not widen the page. */}
+      <div className="mt-14 grid gap-x-12 gap-y-14 lg:grid-cols-[1fr_2.2fr] [&>*]:min-w-0">
         <Moments moments={moments} />
         {/* Phones get a peek here; the full shelf lives in the Games tab. */}
         <GamesPeek />

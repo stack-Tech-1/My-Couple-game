@@ -339,6 +339,90 @@ body::after {
   .glass-dark { background: rgba(24, 32, 63, 0.92); -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
 
+/* ------------------------------------------------------------------
+   Cloth: the wax-print look. One print per page (src/design/wax.tsx), plain cuts of colour
+   everywhere else. Fabric colours deepen at night, so the prints dim with the room.
+------------------------------------------------------------------- */
+:root {
+  --fab-calico: #faf5ec;
+  --fab-indigo: #1f2a5c;
+  --fab-indigo-deep: #161e45;
+  --fab-hibiscus: #d23a50;
+  --fab-hibiscus-deep: #a82c40;
+  --fab-marigold: #f0a928;
+  --fab-marigold-deep: #d98f12;
+  --fab-palm: #1e7356;
+  --fab-palm-deep: #165a43;
+  --fab-plum: #5b2a55;
+  --fab-plum-deep: #451f41;
+  --fab-lagoon: #1a7f93;
+  --fab-lagoon-deep: #136474;
+  --cut: 6px 22px 6px 22px;
+  --cut-sm: 4px 14px 4px 14px;
+}
+:root[data-theme="night"],
+:root[data-theme="afterdark"] {
+  --fab-calico: #e9dcc8;
+  --fab-indigo: #19214a;
+  --fab-indigo-deep: #10163a;
+  --fab-hibiscus: #b8334a;
+  --fab-hibiscus-deep: #8f263a;
+  --fab-marigold: #d9951f;
+  --fab-marigold-deep: #b87a10;
+  --fab-palm: #1a654c;
+  --fab-palm-deep: #124a37;
+  --fab-plum: #4f2449;
+  --fab-plum-deep: #3a1a36;
+  --fab-lagoon: #176f81;
+  --fab-lagoon-deep: #105563;
+}
+@theme inline {
+  --color-calico: var(--fab-calico);
+  --color-indigo: var(--fab-indigo);
+  --color-indigo-deep: var(--fab-indigo-deep);
+  --color-hibiscus: var(--fab-hibiscus);
+  --color-marigold: var(--fab-marigold);
+  --color-palm: var(--fab-palm);
+  --color-plum: var(--fab-plum);
+  --color-lagoon: var(--fab-lagoon);
+}
+/* A card cut like folded cloth: two sharp corners, two round. */
+@utility cut {
+  border-radius: var(--cut);
+}
+@utility cut-sm {
+  border-radius: var(--cut-sm);
+}
+/* The everyday card: plain and solid, no blur. */
+@utility cloth {
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--cut);
+}
+/* The printed edge under each page's cloth. */
+.selvedge {
+  position: relative;
+  height: 22px;
+  overflow: hidden;
+  white-space: nowrap;
+  background: var(--fab-calico);
+  color: var(--fab-indigo);
+  border-block: 2px solid var(--fab-indigo);
+  font: 800 9.5px/18px var(--font-sans);
+  letter-spacing: 0.22em;
+}
+.selvedge > span {
+  display: inline-block;
+  padding-left: 14px;
+}
+
+/* Computers: the room's pages move over for the side rail, only while the rail is there. */
+@media (min-width: 1024px) {
+  body:has(#amah-rail) .rail-pad {
+    padding-left: 224px;
+  }
+}
+
 /* Discreet blur (used by spicy section) */
 .discreet-blur {
   filter: blur(18px) saturate(0.4);

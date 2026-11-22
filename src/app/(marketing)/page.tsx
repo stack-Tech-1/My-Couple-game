@@ -9,8 +9,7 @@ import { Suspense } from "react";
 import { CATEGORIES, CATEGORY_ORDER, GAMES, gamesIn } from "@/games/catalog";
 import { GameArt } from "@/games/GameArt";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { PatternLayer } from "@/components/landing/PatternLayer";
-import { CATEGORY_LOOKS, INDIGO_LOOK } from "@/games/look";
+import { SECTION_CLOTH, Selvedge, WaxPrint } from "@/design/wax";
 
 export const metadata: Metadata = {
   title: { absolute: `${APP_NAME}: games for the people closest to you` },
@@ -33,48 +32,49 @@ const featured: Record<string, string> = {
   spicy: "fantasy-match",
 };
 
+/** The ledger strip: four numbers, each on its own cut of colour. */
+const LEDGER: [string, string, string, string][] = [
+  [String(GAMES.length), "games, from Whot to love notes", "var(--fab-indigo)", "#f6efe6"],
+  ["2", "in a couple room. Only ever.", "var(--fab-hibiscus)", "#fff8f0"],
+  ["8", "friends in a friend room", "var(--fab-palm)", "#fff8f0"],
+  ["0", "ads, feeds or audiences", "var(--fab-marigold)", "#1b1519"],
+];
+
+/**
+ * The landing page wears Amah's cloth: one record print, opening the page around the live room
+ * preview and closing it under the last call to play. Everything between is plain colour.
+ */
 export default function Landing() {
   return (
     <div className="relative z-[1] overflow-x-clip">
       <Suspense fallback={null}>
         <DeletedNotice />
       </Suspense>
-      <header className="relative z-10 mx-auto flex max-w-6xl items-center justify-between px-4 py-5 sm:px-8 max-md:text-[#f6efe6]">
+      <header className="relative z-10 mx-auto flex max-w-6xl items-center justify-between px-4 py-5 sm:px-8">
         <Link prefetch={false} href="/" aria-label={`${APP_NAME} home`} className="rounded-md">
           <Logo />
         </Link>
         <nav className="flex items-center gap-2">
           <ThemeToggle />
-          <Link prefetch={false} href="/sign-in" className="rounded-full px-4 py-2 text-[0.92rem] font-semibold hover:bg-sunk max-md:hover:bg-white/10">
+          <Link prefetch={false} href="/sign-in" className="rounded-full px-4 py-2 text-[0.92rem] font-semibold hover:bg-sunk">
             Sign in
           </Link>
-          <Link prefetch={false}
-            href="/sign-in?intent=create"
-            className="rounded-full bg-fg px-4 py-2 text-[0.92rem] font-semibold text-bg hover:opacity-90 max-md:bg-[#f6efe6] max-md:text-[#1c1416]"
-          >
+          <Link prefetch={false} href="/sign-in?intent=create" className="cut-sm bg-fg px-4 py-2 text-[0.92rem] font-semibold text-bg hover:opacity-90">
             Start a room
           </Link>
         </nav>
       </header>
 
       <main>
-        {/* Hero */}
-        <section className="relative isolate mx-auto grid max-w-6xl items-center gap-14 px-4 pb-20 pt-8 sm:px-8 lg:grid-cols-[1.15fr_1fr] lg:pt-16 max-md:gap-10 max-md:pb-12 max-md:text-[#f6efe6]">
-          {/* Phones: the hero (and the header above it) sit on indigo adire with an ember glow. */}
-          <PatternLayer
-            className="-top-[80px]"
-            motif="agbole"
-            bg={INDIGO_LOOK.bg}
-            ink={INDIGO_LOOK.ink}
-            glow="radial-gradient(70% 30% at 100% 0%, rgba(232,86,58,.55), transparent 70%), radial-gradient(70% 25% at 0% 62%, rgba(242,183,5,.2), transparent 70%), linear-gradient(180deg, rgba(24,32,63,.1), rgba(24,32,63,.5))"
-          />
+        {/* Hero: the words on plain calico, the room sewn onto a panel of cloth beside them. */}
+        <section className="mx-auto grid max-w-6xl items-center gap-10 px-4 pb-14 pt-6 sm:px-8 lg:grid-cols-[1.1fr_1fr] lg:gap-14 lg:pb-20 lg:pt-14">
           <div>
-            <p className="eyebrow text-accent-ink max-md:text-[#ffb59f]">Made for couples. Bring your best friends too.</p>
+            <p className="eyebrow text-accent-ink">Made for couples. Bring your best friends too.</p>
             <h1 className="display mt-5 text-[clamp(3.1rem,9vw,6.4rem)]">
               Games for the people <span className="display-wonk mr-[0.12em] italic">closest</span>{" "}
               <span className="scribble">to you</span>.
             </h1>
-            <p className="mt-7 max-w-[34rem] text-[1.12rem] leading-relaxed text-muted max-md:text-[#f6efe6]/85">
+            <p className="mt-7 max-w-[34rem] text-[1.12rem] leading-relaxed text-muted">
               A private room for the two of you: cards, board games, trivia about each other, love notes that unlock
               on a date you choose, and an after-dark corner you both have to open. And when the group chat wants a
               rematch, a friend room fits up to eight. Everyone plays from their own phone, live.
@@ -82,38 +82,40 @@ export default function Landing() {
             <div className="mt-9 flex flex-wrap items-center gap-3">
               <Link prefetch={false}
                 href="/sign-in?intent=create"
-                className="inline-flex h-14 items-center gap-2 rounded-full bg-accent px-7 text-[1.05rem] font-semibold text-on-accent shadow-[inset_0_-2px_0_rgba(0,0,0,.18)] hover:brightness-105"
+                className="cut inline-flex h-14 items-center gap-2 bg-hibiscus px-7 text-[1.05rem] font-semibold text-[#fff8f0] shadow-[inset_0_-3px_0_rgba(0,0,0,.18)] hover:brightness-105"
               >
                 Make your room <Icon name="arrowRight" size={20} />
               </Link>
-              <span className="text-[0.9rem] text-muted max-md:text-[#f6efe6]/80">Free. Takes about forty seconds.</span>
+              <span className="text-[0.9rem] text-muted">Free. Takes about forty seconds.</span>
             </div>
           </div>
-          <RoomPreview />
+          <div className="relative -mx-4 overflow-hidden px-6 py-12 sm:mx-0 sm:cut sm:px-10 sm:py-14">
+            <WaxPrint print="record" />
+            <div className="relative rotate-[-1.5deg]">
+              <RoomPreview />
+            </div>
+          </div>
         </section>
 
+        <Selvedge words={["GAMES FOR THE PEOPLE CLOSEST TO YOU", `${GAMES.length} GAMES`]} />
+
         {/* Ledger strip */}
-        <section aria-label="At a glance" className="border-y border-line-strong max-md:glass max-md:mx-4 max-md:mt-8 max-md:overflow-hidden max-md:rounded-[24px]">
-          <dl className="mx-auto grid max-w-6xl grid-cols-2 divide-line sm:grid-cols-4 sm:divide-x">
-            {[
-              [String(GAMES.length), "games, from Whot to love notes"],
-              ["2", "in a couple room. Only ever."],
-              ["8", "friends in a friend room"],
-              ["0", "ads, feeds or audiences"],
-            ].map(([n, label]) => (
-              <div key={label} className="px-4 py-6 sm:px-8">
+        <section aria-label="At a glance" className="mx-auto max-w-6xl px-4 pt-14 sm:px-8">
+          <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {LEDGER.map(([n, label, bg, fg]) => (
+              <div key={label} className="cut px-5 py-5" style={{ background: bg, color: fg }}>
                 <dt className="sr-only">{label}</dt>
                 <dd>
-                  <span className="display tabular block text-[3rem]">{n}</span>
-                  <span className="text-[0.9rem] text-muted">{label}</span>
+                  <span className="display tabular block text-[3rem] leading-none">{n}</span>
+                  <span className="mt-2 block text-[0.9rem] opacity-90">{label}</span>
                 </dd>
               </div>
             ))}
           </dl>
         </section>
 
-        {/* Categories, editorial index */}
-        <section className="mx-auto max-w-6xl px-4 py-24 sm:px-8" aria-labelledby="moods">
+        {/* The library: each mood is its own cut of colour. */}
+        <section className="mx-auto max-w-6xl px-4 py-24 sm:px-8 max-md:py-16" aria-labelledby="moods">
           <div className="max-w-2xl">
             <p className="eyebrow text-muted">The library</p>
             <h2 id="moods" className="display mt-3 text-[clamp(2.4rem,6vw,4rem)]">
@@ -121,62 +123,42 @@ export default function Landing() {
             </h2>
           </div>
 
-          <ul className="mt-8 space-y-3 md:hidden">
-            {CATEGORY_ORDER.map((c) => {
-              const l = CATEGORY_LOOKS[c];
-              const names = gamesIn(c).map((g) => g.name);
+          <ul className="mt-10 grid gap-3 md:grid-cols-2">
+            {CATEGORY_ORDER.map((c, i) => {
+              const cat = CATEGORIES[c];
+              const cloth = SECTION_CLOTH[c];
+              const games = gamesIn(c);
+              const names = games.map((g) => g.name);
+              const art = featured[c] ?? games[0]?.id ?? "";
               return (
-                <li key={c} className="relative isolate h-32 overflow-hidden rounded-[24px]">
-                  <PatternLayer motif={l.motif} bg={l.bg} ink={l.ink} />
-                  <div className={`absolute inset-x-2.5 bottom-2.5 rounded-[16px] px-4 py-2.5 ${l.fg === "#1c1416" ? "glass" : "glass-dark text-[#f6efe6]"}`}>
-                    <h3 className="display text-[1.35rem]">{CATEGORIES[c].label}</h3>
-                    <p className={`mt-0.5 line-clamp-1 text-[0.82rem] ${l.fg === "#1c1416" ? "text-muted" : "opacity-80"}`}>
-                      {c === "spicy" ? CATEGORIES[c].blurb : `${names.slice(0, 5).join(", ")}${names.length > 5 ? ` and ${names.length - 5} more` : ""}`}
+                <li
+                  key={c}
+                  className={`cut relative flex min-w-0 gap-4 overflow-hidden p-5 sm:p-6 ${i === 0 ? "md:col-span-2" : ""}`}
+                  style={{ background: cloth.fill, color: cloth.ink }}
+                >
+                  <div className="min-w-0 flex-1">
+                    <h3 className="display text-[clamp(1.7rem,4vw,2.2rem)] leading-tight">{cat.label}</h3>
+                    <p className="mt-1 opacity-90">{cat.blurb}</p>
+                    <p className={`mt-3 text-[0.9rem] font-semibold opacity-85 ${c === "spicy" ? "hidden" : ""}`}>
+                      {`${names.slice(0, i === 0 ? 10 : 5).join(", ")}${names.length > (i === 0 ? 10 : 5) ? ` and ${names.length - (i === 0 ? 10 : 5)} more` : ""}`}
                     </p>
+                  </div>
+                  <div aria-hidden className="relative hidden h-28 w-28 shrink-0 items-center justify-center self-center rounded-full bg-[#fbf7f1] text-[#1c1416] sm:flex">
+                    <GameArt id={art} accent={cat.color} className="h-16 w-auto" />
                   </div>
                 </li>
               );
             })}
           </ul>
-
-          <ol className="mt-14 border-t border-line-strong max-md:hidden">
-            {CATEGORY_ORDER.map((c, i) => {
-              const cat = CATEGORIES[c];
-              const games = gamesIn(c);
-              const art = featured[c] ?? games[0]?.id ?? "";
-              return (
-                <li key={c} className="grid gap-6 border-b border-line py-10 md:grid-cols-[4rem_1.1fr_1.4fr_10rem] md:items-start">
-                  <span className="display tabular text-[1.6rem] text-muted">{String(i + 1).padStart(2, "0")}</span>
-                  <div>
-                    <h3 className="display text-[2.2rem]" style={{ color: cat.ink }}>
-                      {cat.label}
-                    </h3>
-                    <p className="mt-2 text-muted">{cat.blurb}</p>
-                  </div>
-                  <ul className="flex flex-wrap gap-x-5 gap-y-2 text-[0.98rem] md:pt-2">
-                    {games.map((g) => (
-                      <li key={g.id} className="font-medium">
-                        {g.name}
-                      </li>
-                    ))}
-                  </ul>
-                  <div style={{ color: "var(--fg)" }} className="hidden md:block">
-                    <GameArt id={art} accent={cat.color} className="h-auto w-full" />
-                  </div>
-                </li>
-              );
-            })}
-          </ol>
         </section>
 
-        {/* How it works */}
-        <section className="relative isolate bg-fg text-bg max-md:text-[#f6efe6]" aria-labelledby="how">
-          <PatternLayer motif="dundun" bg="#1d2750" ink="#2a3668" glow="radial-gradient(70% 50% at 100% 100%, rgba(232,86,58,.35), transparent 70%)" />
-          <div className="mx-auto max-w-6xl px-4 py-24 sm:px-8">
+        {/* How it works: indigo, three calico cards. */}
+        <section className="bg-indigo text-[#f6efe6]" aria-labelledby="how">
+          <div className="mx-auto max-w-6xl px-4 py-24 sm:px-8 max-md:py-16">
             <h2 id="how" className="display text-[clamp(2.4rem,6vw,4rem)]">
               Three steps. One of them is texting.
             </h2>
-            <ol className="mt-14 grid gap-12 md:grid-cols-3 max-md:mt-8 max-md:gap-3">
+            <ol className="mt-12 grid gap-3 md:grid-cols-3 max-md:mt-8">
               {(
                 [
                   ["door", "Make a room", "Sign in with an email link or Google, pick a little mark for your avatar, name your room."],
@@ -184,13 +166,15 @@ export default function Landing() {
                   ["dice", "Play, anywhere", "Pick a game and their phone lights up with an invite. Scores, streaks and moments stack up as you go."],
                 ] as [IconName, string, string][]
               ).map(([icon, title, body], i) => (
-                <li key={title} className="border-t border-[color-mix(in_srgb,var(--bg)_30%,transparent)] pt-6 max-md:glass-dark max-md:rounded-[22px] max-md:p-5">
+                <li key={title} className="cut bg-[#faf5ec] p-6 text-[#1b1519]">
                   <div className="flex items-center justify-between">
-                    <Icon name={icon} size={28} />
-                    <span className="display tabular text-[1.2rem] opacity-60">0{i + 1}</span>
+                    <span className="flex h-12 w-12 items-center justify-center rounded-full bg-marigold">
+                      <Icon name={icon} size={24} />
+                    </span>
+                    <span className="display tabular text-[1.2rem] text-[#6a5a57]">0{i + 1}</span>
                   </div>
-                  <h3 className="display mt-6 text-[1.8rem]">{title}</h3>
-                  <p className="mt-3 leading-relaxed opacity-75">{body}</p>
+                  <h3 className="display mt-5 text-[1.8rem]">{title}</h3>
+                  <p className="mt-3 leading-relaxed text-[#57474a]">{body}</p>
                 </li>
               ))}
             </ol>
@@ -198,8 +182,8 @@ export default function Landing() {
         </section>
 
         {/* Friend rooms */}
-        <section className="mx-auto max-w-6xl px-4 py-24 sm:px-8" aria-labelledby="friends">
-          <div className="grid gap-12 lg:grid-cols-[1fr_1.2fr] lg:items-start">
+        <section className="mx-auto max-w-6xl px-4 py-24 sm:px-8 max-md:py-16" aria-labelledby="friends">
+          <div className="grid gap-12 lg:grid-cols-[1fr_1.2fr] lg:items-start max-md:gap-8">
             <div>
               <p className="eyebrow text-accent-ink">New · Friend rooms</p>
               <h2 id="friends" className="display mt-4 text-[clamp(2.4rem,6vw,4rem)]">
@@ -210,14 +194,14 @@ export default function Landing() {
                 room, send the code, and pick who you&apos;re playing. Your couple room stays just for the two of you.
               </p>
             </div>
-            <div className="grid gap-8 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2">
               {[
                 ["Up to eight", "Everyone gets a seat. Be in up to five friend rooms, plus your couple room."],
                 ["The good games", "Whot, Ludo, Ayo, Word Duel, Connect Four, Draw & Guess, riddles and Don't Laugh."],
                 ["A group chat", "Voice notes, stickers and trash talk, following you into every game."],
                 ["One owner", "Whoever starts the room invites people and can remove them. Nobody else gets a key."],
               ].map(([t, b]) => (
-                <div key={t} className="border-t border-line-strong pt-4 max-md:glass max-md:rounded-[18px] max-md:p-4">
+                <div key={t} className="cloth p-5">
                   <h3 className="font-bold">{t}</h3>
                   <p className="mt-2 leading-relaxed text-muted">{b}</p>
                 </div>
@@ -226,9 +210,8 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* After dark */}
+        {/* After dark keeps its own dark, ember look. */}
         <section className="relative isolate overflow-hidden bg-[#120c0e] text-[#f4e4da]" aria-labelledby="afterdark">
-          <PatternLayer motif="olokoto" bg="#120c0e" ink="#24161a" />
           <div
             aria-hidden
             className="pointer-events-none absolute inset-0"
@@ -237,7 +220,7 @@ export default function Landing() {
                 "radial-gradient(50% 60% at 90% 10%, rgba(232,86,58,.28), transparent 70%), radial-gradient(40% 50% at 0% 100%, rgba(91,26,43,.55), transparent 70%)",
             }}
           />
-          <div className="relative mx-auto grid max-w-6xl gap-14 px-4 py-24 sm:px-8 lg:grid-cols-2">
+          <div className="relative mx-auto grid max-w-6xl gap-14 px-4 py-24 sm:px-8 lg:grid-cols-2 max-md:gap-8 max-md:py-16">
             <div>
               <p className="eyebrow text-[#ff8a6e]">After dark · 18+</p>
               <h2 id="afterdark" className="display mt-4 text-[clamp(2.4rem,6vw,4rem)]">
@@ -248,7 +231,7 @@ export default function Landing() {
                 so that nobody is ever surprised, pressured or put on the spot.
               </p>
             </div>
-            <ul className="grid gap-px overflow-hidden rounded-[18px] border border-[#3d2127] bg-[#3d2127] sm:grid-cols-2">
+            <ul className="cut grid gap-px overflow-hidden border border-[#3d2127] bg-[#3d2127] sm:grid-cols-2">
               {[
                 ["Two keys", "Each of you confirms you're 18+ and opts in separately. One no keeps it locked."],
                 ["Lowest ceiling wins", "You each set a max heat. The game never goes past the lower one."],
@@ -267,22 +250,24 @@ export default function Landing() {
         </section>
 
         {/* Privacy */}
-        <section className="mx-auto max-w-6xl px-4 py-24 sm:px-8" aria-labelledby="privacy">
-          <div className="grid gap-12 lg:grid-cols-[1fr_1.2fr]">
+        <section className="mx-auto max-w-6xl px-4 py-24 sm:px-8 max-md:py-16" aria-labelledby="privacy">
+          <div className="grid gap-12 lg:grid-cols-[1fr_1.2fr] max-md:gap-8">
             <div>
-              <Icon name="shield" size={36} className="text-sage-ink" />
+              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-palm text-[#fff8f0]">
+                <Icon name="shield" size={28} />
+              </span>
               <h2 id="privacy" className="display mt-5 text-[clamp(2.2rem,5vw,3.4rem)]">
                 What happens in the room stays in the room.
               </h2>
             </div>
-            <div className="grid gap-8 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2">
               {[
                 ["Locked to two", "Once your partner joins a couple room, the invite code is retired. No third account can get in, and After Dark never exists in friend rooms."],
                 ["Hidden means hidden", "Your hand of cards and sealed answers never even reach your partner's phone until they should."],
                 ["Photos stay private", "Memory Lane photos sit in private storage and load through short-lived links."],
                 ["Leave cleanly", "Delete your account and everything you wrote goes with it. One button, no email to support."],
               ].map(([t, b]) => (
-                <div key={t} className="border-t border-line-strong pt-4 max-md:glass max-md:rounded-[18px] max-md:p-4">
+                <div key={t} className="cloth p-5">
                   <h3 className="font-bold">{t}</h3>
                   <p className="mt-2 leading-relaxed text-muted">{b}</p>
                 </div>
@@ -291,19 +276,22 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* Closing CTA */}
-        <section className="border-t border-line-strong max-md:relative max-md:isolate max-md:mx-4 max-md:overflow-hidden max-md:rounded-[30px] max-md:border-t-0 max-md:text-[#f6efe6]">
-          <PatternLayer motif="agbole" bg={INDIGO_LOOK.bg} ink={INDIGO_LOOK.ink} glow="radial-gradient(80% 80% at 100% 0%, rgba(232,86,58,.5), transparent 70%)" />
-          <div className="mx-auto flex max-w-6xl flex-col items-start gap-8 px-4 py-24 sm:px-8 md:flex-row md:items-end md:justify-between max-md:px-6 max-md:py-10">
-            <h2 className="display max-w-3xl text-[clamp(2.6rem,7vw,5rem)]">
-              Tonight&apos;s plans: <span className="text-accent-ink max-md:text-[#ffb59f]">beat them at Whot.</span>
-            </h2>
-            <Link prefetch={false}
-              href="/sign-in?intent=create"
-              className="inline-flex h-14 shrink-0 items-center gap-2 rounded-full bg-fg px-7 text-[1.05rem] font-semibold text-bg hover:opacity-90 max-md:bg-accent max-md:text-on-accent"
-            >
-              Make your room <Icon name="arrowRight" size={20} />
-            </Link>
+        {/* Closing call: the same cloth again, with the last word sewn on as a patch. */}
+        <section className="relative overflow-hidden">
+          <Selvedge words={["TONIGHT'S PLANS", "BEAT THEM AT WHOT"]} />
+          <WaxPrint print="record" />
+          <div className="relative mx-auto max-w-6xl px-4 py-16 sm:px-8 sm:py-20">
+            <div className="cut flex flex-col items-start gap-6 bg-bg p-6 shadow-[0_24px_40px_-22px_rgba(0,0,0,.65)] sm:p-10 md:flex-row md:items-end md:justify-between">
+              <h2 className="display max-w-3xl text-[clamp(2.4rem,6.5vw,4.6rem)]">
+                Tonight&apos;s plans: <span className="text-accent-ink">beat them at Whot.</span>
+              </h2>
+              <Link prefetch={false}
+                href="/sign-in?intent=create"
+                className="cut inline-flex h-14 shrink-0 items-center gap-2 bg-hibiscus px-7 text-[1.05rem] font-semibold text-[#fff8f0] hover:brightness-105"
+              >
+                Make your room <Icon name="arrowRight" size={20} />
+              </Link>
+            </div>
           </div>
         </section>
       </main>

@@ -7,8 +7,8 @@ import { CATEGORIES, CATEGORY_ORDER, gamesIn, isFriendGame } from "@/games/catal
 import { cn } from "@/lib/cn";
 import { afterDarkOpen } from "@/lib/room/afterDark";
 import { useGameFlags } from "@/lib/games/FlagsProvider";
-import { AdireFill } from "@/design/adire";
 import { CATEGORY_LOOKS } from "@/games/look";
+import { SECTION_CLOTH } from "@/design/wax";
 import { GameCard } from "./GameCard";
 import { FREE_PLAYS_PER_DAY, isPlusGame } from "@/lib/plus/plans";
 
@@ -48,12 +48,11 @@ export function Library({ heading = true }: { heading?: boolean }) {
   );
 }
 
-/** A shelf banner: the category's colour with its adire motif printed through it. */
+/** A shelf banner: a plain cut of the section's colour. */
 function CategoryBanner({ category, label, count, blurb }: { category: keyof typeof CATEGORY_LOOKS; label: string; count: number; blurb: string }) {
-  const l = CATEGORY_LOOKS[category];
+  const cloth = SECTION_CLOTH[category];
   return (
-    <div className="relative overflow-hidden rounded-[20px] px-5 py-4" style={{ color: l.fg }}>
-      <AdireFill motif={l.motif} bg={l.bg} ink={l.ink} />
+    <div className="cut relative overflow-hidden px-5 py-4" style={{ background: cloth.fill, color: cloth.ink }}>
       <div className="relative">
         <div className="flex items-baseline justify-between gap-4">
           <h3 className="display text-[clamp(1.6rem,6vw,2rem)] leading-tight">{label}</h3>
@@ -74,7 +73,7 @@ export function AfterDarkPanel() {
 
 function AfterDarkEntry({ roomId, open }: { roomId: string; open: boolean }) {
   return (
-    <div className="relative overflow-hidden rounded-[22px] bg-[#120c0e] p-7 text-[#f4e4da]">
+    <div className="cut relative overflow-hidden bg-[#120c0e] p-7 text-[#f4e4da]">
       <div aria-hidden className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(60% 80% at 100% 0%, rgba(232,86,58,.3), transparent 70%)" }} />
       <div className="relative">
         <Icon name={open ? "flame" : "lock"} size={26} className="text-[#ff8a6e]" />

@@ -66,13 +66,15 @@ export default async function RoomLayout({ children, params }: { children: React
   return (
     <RoomProvider bundle={bundle}>
       <GameFlagsProvider flags={flags}>
-        <RoomHeader feedbackUnread={feedbackUnread} />
-        <SpotlightTicker winners={winners} theme={themeOn(lagosDate())} />
-        <ConnectionBanner />
-        <AnnouncementBar items={forMe(announcements, bundle)} />
-        <InviteListener />
-        <Heartbeat userId={bundle.me.profile.id} />
-        <main className="mx-auto max-w-6xl px-4 pb-32 sm:px-8 sm:pb-24">{children}</main>
+        <div className="rail-pad">
+          <RoomHeader feedbackUnread={feedbackUnread} />
+          <SpotlightTicker winners={winners} theme={themeOn(lagosDate())} />
+          <ConnectionBanner />
+          <AnnouncementBar items={forMe(announcements, bundle)} />
+          <InviteListener />
+          <Heartbeat userId={bundle.me.profile.id} />
+          <main className="mx-auto max-w-6xl px-4 pb-32 sm:px-8 sm:pb-24">{children}</main>
+        </div>
         <TabBar />
         <GentleStop partnerName={bundle.partner?.profile.display_name ?? null} />
         {terms !== "ok" ? <TermsGate firstTime={terms === "first"} /> : roomAsks.length ? <SpotlightAsk asks={roomAsks} names={bundle.members.map((m) => m.profile.real_name ?? m.profile.display_name).join(" & ")} /> : null}

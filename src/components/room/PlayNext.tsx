@@ -7,8 +7,8 @@ import { useRoom } from "@/lib/realtime/RoomProvider";
 import { CATEGORIES, GAMES } from "@/games/catalog";
 import { GameArt } from "@/games/GameArt";
 import { useGameFlags } from "@/lib/games/FlagsProvider";
-import { AdireFill } from "@/design/adire";
 import { lookFor } from "@/games/look";
+import { SECTION_CLOTH } from "@/design/wax";
 
 /** A featured pick that rotates daily, so the dashboard always suggests something. */
 export function PlayNext() {
@@ -23,17 +23,19 @@ export function PlayNext() {
   }, [isOff]);
   const cat = CATEGORIES[game.category];
   const look = lookFor(game.id, game.category);
+  const cloth = SECTION_CLOTH[game.category];
 
   return (
-    <section aria-labelledby="playnext" className="relative overflow-hidden rounded-[22px] glass">
+    <section aria-labelledby="playnext" className="relative overflow-hidden cloth">
       <div className="flex items-start justify-between p-6 pb-0">
         <p id="playnext" className="eyebrow" style={{ color: cat.ink }}>Tonight&apos;s pick · {cat.label}</p>
         <span className="flex items-center gap-1 text-[0.8rem] text-muted">
           <Icon name="clock" size={14} /> ~{game.estimatedMinutes} min
         </span>
       </div>
-      <div className="relative mx-4 mt-4 flex justify-center overflow-hidden rounded-[16px] py-5" style={{ color: "#1c1416", ["--bg-raised" as string]: "#fbf7f1" }}>
-        <AdireFill motif={look.motif} bg={look.bg} ink={look.ink} />
+      {/* The game's picture on a plain swatch of its section's colour. */}
+      <div className="cut-sm relative mx-4 mt-4 flex justify-center overflow-hidden py-6" style={{ background: cloth.fill, color: "#1c1416", ["--bg-raised" as string]: "#fbf7f1" }}>
+        <div aria-hidden className="absolute inset-x-[22%] inset-y-3 rounded-full bg-[rgba(255,248,240,.9)]" />
         <GameArt id={game.id} accent={look.accent} className="relative h-32 w-auto" />
       </div>
       <div className="flex items-end justify-between gap-4 p-6 pt-2">
@@ -44,7 +46,8 @@ export function PlayNext() {
         <Link prefetch={false}
           href={`/room/${bundle.room.id}/games/${game.id}`}
           aria-label={`Play ${game.name}`}
-          className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent transition-transform hover:scale-105"
+          className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full transition-transform hover:scale-105"
+          style={{ background: cloth.fill, color: cloth.ink }}
         >
           <Icon name="arrowRight" size={24} />
         </Link>
