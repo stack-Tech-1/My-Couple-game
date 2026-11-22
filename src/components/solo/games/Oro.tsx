@@ -40,6 +40,14 @@ function Tile({ letter, mark, small }: { letter: string; mark?: Mark; small?: bo
 
 export function Oro({ initial, myName, soundOn, toured = false }: { initial: OroState; myName: string; soundOn: boolean; toured?: boolean }) {
   const [s, setS] = useState(initial);
+  // Once today's word is done, the board keeps only its colours, so a screenshot proves you
+  // played without giving the word away. A game that just ended waits for its last row to flip.
+  const [lettersHidden, setLettersHidden] = useState(initial.finished);
+  useEffect(() => {
+    if (!s.finished || lettersHidden) return;
+    const t = setTimeout(() => setLettersHidden(true), 5 * FLIP_STEP + 1100);
+    return () => clearTimeout(t);
+  }, [s.finished, lettersHidden]);
   const [touring, setTouring] = useState(false);
   // First visit: the how-to-play tour, unless today's word is already done.
   useEffect(() => {
@@ -165,11 +173,11 @@ export function Oro({ initial, myName, soundOn, toured = false }: { initial: Oro
               <span
                 key={`${i}-${l}`}
                 role="gridcell"
-                aria-label={l ? `${l.toUpperCase()}${row.marks ? `, ${MARK_LABEL[row.marks[i]!]}` : ""}` : "Empty"}
+                aria-label={lettersHidden && row.marks ? MARK_LABEL[row.marks[i]!] : l ? `${l.toUpperCase()}${row.marks ? `, ${MARK_LABEL[row.marks[i]!]}` : ""}` : "Empty"}
                 className={cn("block", reveal?.row === r ? (reveal.won ? "oro-flip oro-win" : "oro-flip") : l && !row.marks && "oro-pop")}
                 style={reveal?.row === r ? ({ "--d": `${i * FLIP_STEP}ms`, "--b": `${5 * FLIP_STEP + 150 + i * 90}ms` } as CSSProperties) : undefined}
               >
-                <Tile letter={l} mark={row.marks?.[i]} />
+                <Tile letter={lettersHidden && row.marks ? "" : l} mark={row.marks?.[i]} />
               </span>
             ))}
           </div>
@@ -186,10 +194,7 @@ export function Oro({ initial, myName, soundOn, toured = false }: { initial: Oro
           <p className="eyebrow text-muted">{soloGame("oro")!.name}</p>
           <h2 id="oro-result-h" className="display mt-1 text-[2rem] leading-none">{s.solved ? "Got it." : "Not today."}</h2>
           {s.solved ? <p className="mt-2 text-[0.92rem] font-semibold text-muted">In {s.guesses.length} of 6</p> : null}
-          <p className="mt-3 font-semibold">
-            The word was <span className="uppercase tracking-wide">{s.answer}</span>
-            {s.naija && s.hint ? ` (${s.hint.toLowerCase()})` : ""}.
-          </p>
+          {/* The card never names the word, win or lose: it stays secret for the day. */}
           {s.partner ? (
             <div className="mt-4 rounded-[16px] bg-sunk p-3">
               <p className="text-[0.88rem] font-bold">You and {s.partner.name} today</p>
@@ -217,8 +222,9 @@ export function Oro({ initial, myName, soundOn, toured = false }: { initial: Oro
             Share
           </Button>
         </ResultPop>
-      ) : (
-        <div data-tour="oro-keys" className="mt-5 flex flex-col gap-1.5" aria-label="Keyboard">
+      ) : null}
+      {/* The keyboard stays once the day is done, letters and colours and all; it just stops typing. */}
+        <div data-tour="oro-keys" className={cn("mt-5 flex flex-col gap-1.5", s.finished && "pointer-events-none")} aria-label="Keyboard" aria-disabled={s.finished || undefined}>
           {KEYS.map((row, i) => (
             <div key={row} className="flex justify-center gap-1">
               {i === 2 ? (
@@ -251,7 +257,7 @@ export function Oro({ initial, myName, soundOn, toured = false }: { initial: Oro
             </div>
           ))}
         </div>
-      )}
+
       {touring ? <SoloTour gameId="oro" onDone={endTour} /> : null}
       <style>{`
         .oro-pop { animation: oro-pop .12s ease-out both; }

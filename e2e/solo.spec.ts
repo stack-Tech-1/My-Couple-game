@@ -120,11 +120,13 @@ test("solo: today's word, a bot game, and Fix Am with a picture from the admin",
     await expect(page.getByText("QZXWV isn't in our word list.")).toBeVisible();
     for (let i = 0; i < 5; i++) await page.keyboard.press("Backspace");
     for (const w of ["crane", "pilot", "dough", "shame", "kitty", "bluff"]) {
-      if (await page.getByText(/The word was/).isVisible()) break;
+      if (await page.getByRole("dialog").isVisible()) break;
       await page.keyboard.type(w);
       await Promise.all([page.waitForResponse((r) => r.request().method() === "POST"), page.keyboard.press("Enter")]);
     }
-    await expect(page.getByText(/The word was/)).toBeVisible();
+    // The day is done; the card never names the word.
+    await expect(page.getByRole("dialog").getByText(/Got it.|Not today./)).toBeVisible();
+    await expect(page.getByText(/The word was/)).toHaveCount(0);
 
     // X and O against the easy bot: you play, it answers.
     await page.goto("/solo/bot-tic-tac-toe");
