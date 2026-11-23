@@ -49,14 +49,36 @@ export class GameAudio {
   private anyVoiceUntil = 0;
   private track: HTMLAudioElement | null = null;
   private trackName: string | null = null;
+  private musicHeld = false;
 
-  constructor(private enabled: boolean) {}
+  /**
+   * Phones keep a page's sound asleep until the player touches it, and it can only be woken
+   * during that touch. Every game used to have to remember to wake it; now the first tap or key
+   * anywhere does it (and the music, which the phone also held back, starts then).
+   */
+  private onGesture = () => {
+    this.ctx();
+    if (this.track && this.track.paused && !this.musicHeld) void this.track.play().catch(() => {});
+  };
+
+  constructor(private enabled: boolean) {
+    if (enabled && typeof window !== "undefined") {
+      for (const e of ["pointerdown", "touchend", "keydown"]) window.addEventListener(e, this.onGesture, { capture: true, passive: true });
+    }
+  }
 
   private ctx() {
     if (!this.enabled || typeof window === "undefined") return null;
     if (!this.ac) {
       const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
       if (!Ctor) return null;
+      // iPhones mute web sound when the ring switch is on silent; a game is "playback", like music.
+      try {
+        const session = (navigator as unknown as { audioSession?: { type: string } }).audioSession;
+        if (session) session.type = "playback";
+      } catch {
+        // Older phones: the switch decides.
+      }
       this.ac = new Ctor();
       this.out = this.ac.createGain();
       this.out.gain.value = 0.9;
@@ -196,6 +218,7 @@ export class GameAudio {
   }
   /** Quiet the music (paused game) or bring it back. */
   pauseMusic(paused: boolean) {
+    this.musicHeld = paused;
     if (!this.track) return;
     if (paused) this.track.pause();
     else void this.track.play().catch(() => {});
@@ -216,6 +239,7 @@ export class GameAudio {
     for (const l of [...this.loops]) l.stop();
   }
   dispose() {
+    if (typeof window !== "undefined") for (const e of ["pointerdown", "touchend", "keydown"]) window.removeEventListener(e, this.onGesture, { capture: true });
     this.stopLoops();
     this.track?.pause();
     this.track = null;
