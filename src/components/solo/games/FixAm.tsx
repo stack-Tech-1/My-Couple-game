@@ -17,6 +17,9 @@ export function FixAm({ api, picture, n }: { api: SoloApi<Saved>; picture: FixPi
   const [peek, setPeek] = useState(false);
   const [said, setSaid] = useState("");
   const [glint, setGlint] = useState<{ i: number; k: number } | null>(null);
+  // A tile under a finger: where the drag started, which way the gap is, and how far it has come.
+  const drag = useRef<{ i: number; id: number; x: number; y: number; ax: number; ay: number; size: number; t: number } | null>(null);
+  const [pull, setPull] = useState<{ i: number; d: number; ax: number; ay: number } | null>(null);
   const t0 = useRef(performance.now());
   const ended = useRef(false);
   const done = solved(s);
@@ -81,6 +84,36 @@ export function FixAm({ api, picture, n }: { api: SoloApi<Saved>; picture: FixPi
     return () => window.removeEventListener("keydown", onKey);
   });
 
+  // Drag a tile into the gap with a finger: it follows along the one way it can go, and lands if
+  // it's pulled past a third of the way or flicked. A touch that barely moves is a tap.
+  const onDown = (i: number) => (e: React.PointerEvent<HTMLButtonElement>) => {
+    if (api.paused || done || !canSlide(s, i)) return;
+    const g = gapOf(s);
+    const rect = e.currentTarget.getBoundingClientRect();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    drag.current = { i, id: e.pointerId, x: e.clientX, y: e.clientY, ax: (g % n) - (i % n), ay: Math.floor(g / n) - Math.floor(i / n), size: rect.width + 2, t: performance.now() };
+  };
+  const onMove = (e: React.PointerEvent<HTMLButtonElement>) => {
+    const d = drag.current;
+    if (!d || d.id !== e.pointerId) return;
+    const along = (e.clientX - d.x) * d.ax + (e.clientY - d.y) * d.ay;
+    setPull({ i: d.i, d: Math.max(0, Math.min(d.size, along)), ax: d.ax, ay: d.ay });
+  };
+  const onUp = (e: React.PointerEvent<HTMLButtonElement>) => {
+    const d = drag.current;
+    if (!d || d.id !== e.pointerId) return;
+    drag.current = null;
+    const along = Math.max(0, (e.clientX - d.x) * d.ax + (e.clientY - d.y) * d.ay);
+    const moved = Math.hypot(e.clientX - d.x, e.clientY - d.y);
+    const flick = along / Math.max(1, performance.now() - d.t) > 0.5;
+    setPull(null);
+    if (moved < 8 || along > d.size / 3 || (flick && along > 12)) go(d.i);
+  };
+  const onCancel = () => {
+    drag.current = null;
+    setPull(null);
+  };
+
   const pct = 100 * n;
   return (
     <div className="mx-auto max-w-[420px] select-none">
@@ -91,7 +124,7 @@ export function FixAm({ api, picture, n }: { api: SoloApi<Saved>; picture: FixPi
       <p className="sr-only" aria-live="polite">{said}</p>
       <div data-tour="fixam-board" className={cn("relative mt-3 overflow-hidden rounded-[22px] bg-[#2a1a05] p-2 shadow-[0_20px_40px_-26px_rgba(28,20,22,.8)]", done && "fx-done")}>
         {/* Solved: the seams close up and the photo comes back whole. */}
-        <div role="grid" aria-label={`${picture.name}, cut into ${n} by ${n} tiles`} className="grid transition-[gap] duration-500" style={{ gridTemplateColumns: `repeat(${n}, 1fr)`, gap: done ? 0 : 2 }}>
+        <div role="grid" aria-label={`${picture.name}, cut into ${n} by ${n} tiles`} className="grid touch-none transition-[gap] duration-500" style={{ gridTemplateColumns: `repeat(${n}, 1fr)`, gap: done ? 0 : 2 }}>
           {Array.from({ length: n }, (_, r) => (
             <div key={r} role="row" className="contents">
               {Array.from({ length: n }, (_, c) => {
@@ -106,15 +139,21 @@ export function FixAm({ api, picture, n }: { api: SoloApi<Saved>; picture: FixPi
                     type="button"
                     role="gridcell"
                     disabled={gap || !canSlide(s, i)}
-                    onClick={() => go(i)}
+                    // Keyboards still press; fingers and mice go through the drag.
+                    onClick={(e) => e.detail === 0 && go(i)}
+                    onPointerDown={onDown(i)}
+                    onPointerMove={onMove}
+                    onPointerUp={onUp}
+                    onPointerCancel={onCancel}
                     aria-label={gap ? "Gap" : `Tile ${v + 1}${canSlide(s, i) ? ", next to the gap" : ""}`}
                     className={cn(
                       "relative aspect-square overflow-hidden bg-cover transition-[border-radius] duration-500",
                       done ? "rounded-none" : "rounded-[6px]",
                       gap ? "border-2 border-dashed border-white/25 bg-white/5" : "cursor-pointer disabled:cursor-default",
                       glint?.i === i && !done && "fx-glint",
+                      pull?.i === i ? "z-10 shadow-[0_8px_18px_-6px_rgba(0,0,0,.7)]" : "transition-transform duration-150",
                     )}
-                    style={gap ? undefined : { backgroundImage: `url(${picture.url})`, backgroundSize: `${pct}% ${pct}%`, backgroundPosition: `${(vc / (n - 1)) * 100}% ${(vr / (n - 1)) * 100}%` }}
+                    style={gap ? undefined : { transform: pull?.i === i ? `translate(${pull.ax * pull.d}px, ${pull.ay * pull.d}px)` : undefined, backgroundImage: `url(${picture.url})`, backgroundSize: `${pct}% ${pct}%`, backgroundPosition: `${(vc / (n - 1)) * 100}% ${(vr / (n - 1)) * 100}%` }}
                   >
                     {glint?.i === i && !done ? <span key={glint.k} aria-hidden className="fx-shine absolute inset-0" /> : null}
                   </button>
