@@ -11,12 +11,17 @@ import { MAX_DISPLAY_NAME } from "@/lib/config";
 import { updateProfile } from "@/lib/room/actions";
 import { useRoom } from "@/lib/realtime/RoomProvider";
 import { AvatarPicker, motifOf } from "./AvatarPicker";
+import type { Profile } from "@/lib/room/types";
 
 /** Your name and avatar, as everyone sees them, with an inline editor. */
 export function ProfileEditor() {
   const { bundle } = useRoom();
+  return <ProfileEditorFor profile={bundle.me.profile} statsHref={`/room/${bundle.room.id}/you`} />;
+}
+
+/** The same, outside a room (Solo's settings): the profile is handed in. */
+export function ProfileEditorFor({ profile, statsHref }: { profile: Pick<Profile, "display_name" | "avatar_key" | "avatar_hue">; statsHref?: string }) {
   const router = useRouter();
-  const profile = bundle.me.profile;
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(profile.display_name);
   const [motif, setMotif] = useState<AvatarMotif>(motifOf(profile.avatar_key));
@@ -51,9 +56,11 @@ export function ProfileEditor() {
         <div className="min-w-0 flex-1">
           <p className="truncate text-[1.1rem] font-semibold">{profile.display_name}</p>
           <p className="text-[0.85rem] text-muted">Your name and mark, in every room.</p>
-          <Link prefetch={false} href={`/room/${bundle.room.id}/you`} className="text-[0.85rem] font-semibold underline underline-offset-2">
-            See your stats
-          </Link>
+          {statsHref ? (
+            <Link prefetch={false} href={statsHref} className="text-[0.85rem] font-semibold underline underline-offset-2">
+              See your stats
+            </Link>
+          ) : null}
         </div>
         <Button variant="outline" size="sm" onClick={open}>
           Edit

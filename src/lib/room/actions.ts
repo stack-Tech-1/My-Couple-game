@@ -229,13 +229,15 @@ export async function updateMyPrefs(input: unknown): Promise<ActionResult> {
   const user = await getUser();
   if (!user) return fail("not signed in");
   const supabase = await supabaseServer();
-  const { theme, ...perRoom } = parsed.data;
-  if (theme) {
-    const { error } = await supabase.from("profiles").update({ theme }).eq("id", user.id);
+  const { theme, sound_enabled } = parsed.data;
+  // Both live on the account; sound is also copied to every room, which the room games read.
+  const mine = { ...(theme ? { theme } : {}), ...(sound_enabled !== undefined ? { sound_enabled } : {}) };
+  if (Object.keys(mine).length) {
+    const { error } = await supabase.from("profiles").update(mine).eq("id", user.id);
     if (error) return fail(error);
   }
-  if (Object.keys(perRoom).length) {
-    const { error } = await supabase.from("room_members").update(perRoom).eq("user_id", user.id);
+  if (sound_enabled !== undefined) {
+    const { error } = await supabase.from("room_members").update({ sound_enabled }).eq("user_id", user.id);
     if (error) return fail(error);
   }
   return { ok: true, data: null };

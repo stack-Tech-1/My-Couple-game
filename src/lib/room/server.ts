@@ -18,7 +18,7 @@ export const getMyProfile = cache(async (): Promise<Profile | null> => {
   const user = await getUser();
   if (!user) return null;
   const supabase = await supabaseServer();
-  const { data } = await supabase.from("profiles").select("id, display_name, avatar_key, avatar_hue, onboarded_at, theme, tour, toured_games, solo_home, waiting_prompt_at").eq("id", user.id).maybeSingle();
+  const { data } = await supabase.from("profiles").select("id, display_name, avatar_key, avatar_hue, onboarded_at, theme, sound_enabled, tour, toured_games, solo_home, waiting_prompt_at").eq("id", user.id).maybeSingle();
   return (data as Profile | null) ?? null;
 });
 

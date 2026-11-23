@@ -11,6 +11,8 @@ export type Profile = {
   onboarded_at: string | null;
   /** The person's theme, on every room and device (set on their account). */
   theme?: "day" | "night" | "auto";
+  /** Game sound, on their account: on for new players, works with or without a room. */
+  sound_enabled?: boolean;
   /** Welcome tour: start it, offer it, or already seen. */
   tour?: "auto" | "ask" | "done";
   /** "Just me for now": Solo is home until someone joins. Only on my own profile. */
