@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BIKE_LEN, FREE, LANES, ROUTES, SIZE, VIEW_AHEAD, fareStop, isTraffic, newOkada, okadaConfig, rankFor, routeConfig, routeOpen, steer, tick, type OkadaState, type RouteConfig, type Thing } from "./okada";
+import { BIKE_LEN, FREE, LANES, ROUTES, SIZE, VIEW_AHEAD, fareStop, isTraffic, newOkada, okadaConfig, rankFor, routeConfig, routeOpen, steer, throttle, tick, type OkadaState, type RouteConfig, type Thing } from "./okada";
 
 const BLOCKERS = new Set(["danfo", "keke", "car", "brt", "truck", "suv", "barrier", "deep"]);
 
@@ -80,7 +80,9 @@ describe("Okada Rush", () => {
     expect(s.fare).toMatchObject({ stopId: 2 });
     s = run("x", s, 30);
     expect(s.served).toBe(1);
-    expect(s.money).toBe(100 + 30);
+    // The fare, plus a tip that grows with how quick the ride was.
+    expect(s.money).toBeGreaterThanOrEqual(100 + 20);
+    expect(s.money).toBeLessThanOrEqual(100 + 40);
 
     let m = empty({ ...FREE, flag: 0, fare: 100 });
     m = { ...steer(m, -1), x: 0, things: [{ id: 1, kind: "passenger", lane: 0, y: 10, v: 0 }, { id: 2, kind: "stop", lane: 2, y: 110, v: 0 }] };
@@ -176,4 +178,37 @@ describe("Okada Rush", () => {
     const free = [0.5, 0.8, 1.1].map((r) => seeds.map((sd) => { const s = autoplay(sd, FREE, r, 900); return `${Math.round(s.y)}m ₦${s.money}`; }).join(", "));
     console.log("free:", free.join("\n      "));
   }, 900000);
+
+  it("the flag fare is paid as they climb on, with a beat on the brakes", () => {
+    let s = empty({ ...FREE, flag: 300, fare: 100 });
+    s = { ...steer(s, -1), x: 0, things: [{ id: 1, kind: "passenger", lane: 0, y: 10, v: 0, look: 0 }, { id: 2, kind: "stop", lane: 0, y: 400, v: 0 }] };
+    let paid = 0;
+    let braked = false;
+    for (let i = 0; i < 400 && !paid; i++) {
+      const r = tick("x", s, 1 / 30);
+      s = r.state;
+      const e = r.events.find((x) => x.kind === "pick");
+      if (e && e.kind === "pick") paid = e.paid;
+      if (paid && (s.pause ?? 0) > 0) braked = true;
+    }
+    expect(paid).toBe(300);
+    expect(s.money).toBe(300);
+    expect(braked).toBe(true);
+    // The brake takes hold on the next moment.
+    s = tick("x", s, 1 / 30).state;
+    expect(s.v).toBeLessThan(2);
+  });
+
+  it("holding the throttle goes up to half as fast again, and lets go smoothly", () => {
+    let s = empty();
+    s = run("x", s, 5);
+    const cruising = s.v;
+    s = run("x", throttle(s, true), 1);
+    expect(s.v).toBeGreaterThan(cruising * 1.4);
+    expect(s.v).toBeLessThanOrEqual(cruising * 1.5 + 0.5);
+    s = run("x", throttle(s, false), 0.1);
+    expect(s.v).toBeGreaterThan(cruising * 1.05);
+    s = run("x", s, 1);
+    expect(s.v).toBeLessThan(cruising * 1.1);
+  });
 });

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { BIKE_LEN, LANES, ROUTES, SIZE, fareStop, isTraffic, newOkada, okadaConfig, progress, stars, steer, stopName, tick, type Kind, type OkadaEvent, type OkadaState, type Thing } from "@/lib/solo/games/okada";
+import { BIKE_LEN, LANES, ROUTES, SIZE, fareStop, isTraffic, newOkada, okadaConfig, progress, stars, steer, stopName, throttle, tick, type Kind, type OkadaEvent, type OkadaState, type Thing } from "@/lib/solo/games/okada";
 import type { SoloApi } from "../SoloShell";
 import { RATIO } from "./okada-art";
 import { GameAudio, musicPreferred, type LoopHandle } from "@/lib/game-audio";
@@ -159,6 +159,18 @@ function draw(c: CanvasRenderingContext2D, s: OkadaState, road: number, skin: st
       c.fill();
       c.stroke();
     }
+    c.restore();
+  }
+
+  // Brake light: a passenger on or off, an agbero, a pothole's jolt, LASTMA.
+  if ((s.pause ?? 0) > 0 || s.held > 0) {
+    c.save();
+    c.fillStyle = "#ff3a2a";
+    c.shadowColor = "#ff3a2a";
+    c.shadowBlur = 14;
+    c.beginPath();
+    c.arc(bx, BIKE_Y - 3, 4.5, 0, Math.PI * 2);
+    c.fill();
     c.restore();
   }
 
@@ -394,6 +406,12 @@ export function OkadaRush({ api }: { api: SoloApi<OkadaState> }) {
   const engine = useRef<LoopHandle | null>(null);
   const street = useRef<LoopHandle | null>(null);
   const [music, setMusic] = useState(true);
+  // The throttle: held with a thumb on the pedal (or the up arrow / space on a keyboard).
+  const [gas, setGas] = useState(false);
+  const gasOn = (on: boolean) => {
+    state.current = throttle(state.current, on);
+    setGas(on);
+  };
   useEffect(() => {
     const au = new GameAudio(api.soundOn);
     audio.current = au;
@@ -440,6 +458,8 @@ export function OkadaRush({ api }: { api: SoloApi<OkadaState> }) {
       case "pick":
         au?.sfx("ok-cash", { volume: 0.4 });
         au?.voice("ok-on", 3);
+        navigator.vibrate?.(15);
+        if (e.paid) pop(`+${naira(e.paid)}`, "#2e7d32", bx + 30, BIKE_Y - 96, true);
         pop(`${e.stop}, abeg!`, "#1c1416", bx, BIKE_Y - 70);
         setSaid(`Passenger on. Drop them at ${e.stop}.`);
         break;
@@ -449,7 +469,7 @@ export function OkadaRush({ api }: { api: SoloApi<OkadaState> }) {
         au?.voice("ok-paid", 2);
         navigator.vibrate?.(20);
         pop(`+${naira(e.paid + e.tip)}`, "#2e7d32", bx, BIKE_Y - 70, true);
-        if (e.tip) pop(`${naira(e.tip)} tip, smooth ride!`, "#b0730a", bx, BIKE_Y - 40);
+        if (e.tip) pop(`${naira(e.tip)} tip!`, "#b0730a", bx, BIKE_Y - 40);
         setSaid(`Dropped at ${e.stop}. ${naira(e.paid + e.tip)}.`);
         break;
       case "missed":
@@ -460,8 +480,8 @@ export function OkadaRush({ api }: { api: SoloApi<OkadaState> }) {
       case "bump":
         au?.sfx("ok-pothole");
         if (at.fare) setTimeout(() => audio.current?.voice("ok-bump", 6), 350);
-        navigator.vibrate?.(40);
-        shake.current = 0.3;
+        navigator.vibrate?.(50);
+        shake.current = 0.45;
         pop(e.saved ? "Spare tyre saved you!" : "Gbam!", "#b8261a", bx, BIKE_Y - 60);
         break;
       case "slow":
@@ -555,6 +575,10 @@ export function OkadaRush({ api }: { api: SoloApi<OkadaState> }) {
   }, []);
 
   useEffect(() => {
+    if (api.paused) gasOn(false);
+  }, [api.paused]);
+
+  useEffect(() => {
     audio.current?.pauseMusic(api.paused);
     street.current?.setVolume(api.paused ? 0 : 0.3);
   }, [api.paused]);
@@ -588,15 +612,26 @@ export function OkadaRush({ api }: { api: SoloApi<OkadaState> }) {
     state.current = steer(state.current, d);
   };
   useEffect(() => {
+    const isGas = (k: string) => k === "ArrowUp" || k === "w" || k === " ";
     const onKey = (e: KeyboardEvent) => {
+      if (isGas(e.key)) {
+        e.preventDefault();
+        if (!e.repeat && !apiRef.current.paused) gasOn(true);
+        return;
+      }
       const d = ({ ArrowLeft: -1, ArrowRight: 1, a: -1, d: 1 } as Record<string, -1 | 1>)[e.key];
       if (d) {
         e.preventDefault();
         go(d);
       }
     };
+    const onUp = (e: KeyboardEvent) => isGas(e.key) && gasOn(false);
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("keyup", onUp);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("keyup", onUp);
+    };
   }, []);
 
   const cur = state.current;
@@ -683,6 +718,33 @@ export function OkadaRush({ api }: { api: SoloApi<OkadaState> }) {
             {f.text}
           </span>
         ))}
+        {/* Holding the throttle: the road rushes past. */}
+        {gas && !cur.over ? (
+          <>
+            <div aria-hidden className="ok-rush pointer-events-none absolute inset-x-[18%] bottom-0 top-[10%]" />
+            <div aria-hidden className="pointer-events-none absolute right-3 top-11 rounded-full bg-[rgba(255,250,242,.94)] px-2.5 py-0.5 text-[0.8rem] font-extrabold text-[#1c1416] shadow">Fast × 1.5</div>
+          </>
+        ) : null}
+        {!cur.over ? (
+          <button
+            type="button"
+            data-tour="okada-gas"
+            aria-label="Throttle: hold to go faster"
+            aria-pressed={gas}
+            onPointerDown={(e) => {
+              e.currentTarget.setPointerCapture(e.pointerId);
+              if (!apiRef.current.paused && !holding.current) gasOn(true);
+            }}
+            onPointerUp={() => gasOn(false)}
+            onPointerCancel={() => gasOn(false)}
+            onLostPointerCapture={() => gasOn(false)}
+            onContextMenu={(e) => e.preventDefault()}
+            className={`absolute bottom-10 left-[1.5%] flex h-[60px] w-[60px] touch-none select-none flex-col items-center justify-center rounded-full border-[3px] text-center font-extrabold leading-none shadow-[0_8px_18px_-6px_rgba(0,0,0,.7)] transition-[transform,background-color] duration-100 ${gas ? "scale-[.94] border-[#fffaf0] bg-[#f2b705] text-[#1c1416] shadow-[0_0_0_8px_rgba(242,183,5,.35)]" : "border-[rgba(255,250,242,.85)] bg-[rgba(28,20,22,.72)] text-[#fffaf0]"}`}
+          >
+            <span className="text-[1.15rem]">»</span>
+            <span className="mt-0.5 text-[0.56rem] font-bold">{gas ? "Faster" : <>Hold to<br />go faster</>}</span>
+          </button>
+        ) : null}
         {count > 0 ? (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             <span className="display text-[4.5rem] text-white [text-shadow:0_4px_0_#1c1416]">{count === 1 ? "Go!" : count - 1}</span>
@@ -697,8 +759,8 @@ export function OkadaRush({ api }: { api: SoloApi<OkadaState> }) {
           ▶
         </button>
       </div>
-      <p className="mt-3 text-center text-[0.8rem] text-muted">Swipe or tap a side to change lane. Ride past a waving passenger in the kerb lane, then drop them at their stop.</p>
-      <style>{`.mp-float { animation: ok-float 1.3s ease-out both; } @keyframes ok-float { 0% { transform: translate(-50%, 6px) scale(.8); opacity: 0; } 15% { transform: translate(-50%, 0) scale(1.08); opacity: 1; } 70% { opacity: 1; } 100% { transform: translate(-50%, -34px); opacity: 0; } } @media (prefers-reduced-motion: reduce) { .mp-float { animation-duration: .01s; } }`}</style>
+      <p className="mt-3 text-center text-[0.8rem] text-muted">Swipe or tap a side to change lane, and hold the pedal to go faster. Ride past a waving passenger in the kerb lane, then drop them at their stop.</p>
+      <style>{`.ok-rush { background: repeating-linear-gradient(90deg, transparent 0 14%, rgba(255,250,242,.5) 14% 15%, transparent 15% 31%, rgba(255,250,242,.35) 31% 31.6%, transparent 31.6% 58%, rgba(255,250,242,.45) 58% 58.8%, transparent 58.8% 82%, rgba(255,250,242,.4) 82% 82.8%, transparent 82.8%); -webkit-mask: repeating-linear-gradient(180deg, #000 0 9%, transparent 9% 22%); mask: repeating-linear-gradient(180deg, #000 0 9%, transparent 9% 22%); animation: ok-rush .45s linear infinite; } @keyframes ok-rush { from { transform: translateY(-12%); } to { transform: translateY(10%); } } @media (prefers-reduced-motion: reduce) { .ok-rush { animation: none; opacity: .5; } } .mp-float { animation: ok-float 1.3s ease-out both; } @keyframes ok-float { 0% { transform: translate(-50%, 6px) scale(.8); opacity: 0; } 15% { transform: translate(-50%, 0) scale(1.08); opacity: 1; } 70% { opacity: 1; } 100% { transform: translate(-50%, -34px); opacity: 0; } } @media (prefers-reduced-motion: reduce) { .mp-float { animation-duration: .01s; } }`}</style>
     </div>
   );
 }

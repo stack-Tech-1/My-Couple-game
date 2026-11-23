@@ -126,22 +126,33 @@ const ROUTE_CFG: readonly Omit<RouteConfig, "stars">[] = [
 
 /**
  * Star targets per route, measured with the test player in okada.test (run it with
- * OKADA_CALIBRATE=1): three for a sharp rider, two for a good one, one for a slow one.
+ * OKADA_CALIBRATE=1): three for a sharp rider, two for a good one, one for a slow one. Riding
+ * without the throttle. A target only ever comes down: raising one would take stars (and opened
+ * routes) away from people who already earned them.
  */
+const FREE_STARS = [3000, 6000, 10000] as const;
 const ROUTE_STARS: readonly (readonly [number, number, number])[] = [
   [1100, 1800, 2300],
-  [1600, 2500, 3200],
+  [1400, 2300, 2900],
   [2100, 3300, 4200],
-  [3300, 5300, 6700],
-  [3600, 5700, 7200],
+  [3300, 5200, 6700],
+  [2900, 4600, 5800],
 ];
+
+/** A livelier start: every road starts a little quicker and reaches full speed sooner. */
+const lively = (c: Omit<RouteConfig, "stars">) => ({ ...c, v0: Math.min(c.vmax, c.v0 * START), accel: c.accel * RAMP });
+const START = 1.15;
+const RAMP = 1.6;
+/** Holding the throttle: up to half as fast again, building over a third of a second. */
+export const BOOST = 0.5;
+const BOOST_RATE = 3;
 
 export const routeConfig = (n: number): RouteConfig => {
   const i = Math.max(0, Math.min(ROUTES.length - 1, n - 1));
-  return { ...ROUTE_CFG[i]!, stars: ROUTE_STARS[i]! };
+  return { ...lively(ROUTE_CFG[i]!), stars: ROUTE_STARS[i]! };
 };
 /** Free Ride: Ikorodu Road's traffic, endless, getting busier the further you go. */
-export const FREE: RouteConfig = { ...ROUTE_CFG[1]!, length: 0, vmax: 14, accel: 0.04, stars: [3000, 6000, 10000] };
+export const FREE: RouteConfig = { ...lively({ ...ROUTE_CFG[1]!, vmax: 14, accel: 0.04 }), length: 0, stars: FREE_STARS };
 
 /** "route-1" … "route-5", or "free" (also the daily game). Gear only counts on routes. */
 export function okadaConfig(mode: string, gear: readonly string[] = []): RouteConfig {
@@ -169,7 +180,8 @@ export const rankFor = (km: number) => {
 
 /** Who's on the back: where they're going and when they got on. */
 /** `late`: seconds stuck behind traffic with them on the back (it eats the tip). */
-export type Fare = { stopId: number; stop: string; look: number; from: number; at: number; bumps: number; late: number };
+/** `paid`: the flag fare, handed over when they got on. */
+export type Fare = { stopId: number; stop: string; look: number; from: number; at: number; bumps: number; late: number; paid?: number };
 
 export type OkadaState = {
   cfg: RouteConfig;
@@ -193,6 +205,11 @@ export type OkadaState = {
   slow: number;
   /** Seconds stopped by LASTMA. */
   held: number;
+  /** A beat on the brakes: a passenger getting on or off, an agbero, a pothole's jolt. */
+  pause?: number;
+  /** The throttle held down, and how far the extra speed has built (0 to 1). */
+  throttle?: boolean;
+  boost?: number;
   spareUsed: boolean;
   over: boolean;
   /** How it ended: the route's end, or a crash. */
@@ -205,7 +222,7 @@ export type OkadaState = {
 
 /** What happened in a tick, for sounds and pop-ups. */
 export type OkadaEvent =
-  | { kind: "pick"; stop: string }
+  | { kind: "pick"; stop: string; paid: number }
   | { kind: "drop"; paid: number; tip: number; stop: string; stopId: number; look: number }
   | { kind: "missed"; paid: number; stop: string }
   | { kind: "bump"; deep: boolean; saved: boolean }
@@ -293,17 +310,31 @@ export function steer(s: OkadaState, d: -1 | 1): OkadaState {
 
 const overlaps = (a0: number, a1: number, b0: number, b1: number) => a0 < b1 && b0 < a1;
 
+/** Hold or let go of the throttle. */
+export function throttle(s: OkadaState, on: boolean): OkadaState {
+  return !!s.throttle === on ? s : { ...s, throttle: on };
+}
+
+/** Speed on this road right now, without the throttle. */
+const cruise = (s: OkadaState) => Math.min(s.cfg.vmax, s.cfg.v0 + s.cfg.accel * s.time);
+const round10 = (n: number) => Math.round(n / 10) * 10;
+
 /** Time passes: the road moves, traffic moves, things happen. */
 export function tick(seed: string, s0: OkadaState, dt: number): { state: OkadaState; events: OkadaEvent[] } {
   if (s0.over) return { state: s0, events: [] };
   const events: OkadaEvent[] = [];
   let s: OkadaState = { ...s0, time: s0.time + dt };
   const cfg = s.cfg;
-  // Speed: grows with time; a wobble slows you, LASTMA stops you.
-  const top = Math.min(cfg.vmax, cfg.v0 + cfg.accel * s.time);
+  // Speed: grows with time, more with the throttle held; a beat on the brakes nearly stops you,
+  // a wobble slows you, LASTMA stops you.
+  const want = s.throttle ? 1 : 0;
+  const b0 = s.boost ?? 0;
+  s.boost = Math.abs(want - b0) <= BOOST_RATE * dt ? want : b0 + Math.sign(want - b0) * BOOST_RATE * dt;
+  const top = cruise(s) * (1 + BOOST * s.boost);
   s.held = Math.max(0, s.held - dt);
   s.slow = Math.max(0, s.slow - dt);
-  s.v = s.held > 0 ? 0 : s.slow > 0 ? top * 0.6 : top;
+  s.pause = Math.max(0, (s.pause ?? 0) - dt);
+  s.v = s.held > 0 ? 0 : s.pause > 0 ? top * 0.12 : s.slow > 0 ? top * 0.6 : top;
   const y0 = s.y;
   s.y += s.v * dt;
   // Sliding between lanes. A lane with a vehicle right beside you can't be entered: the okada
@@ -367,22 +398,31 @@ export function tick(seed: string, s0: OkadaState, dt: number): { state: OkadaSt
       if (t.kind === "passenger" && !s.fare) {
         const stop = nextStopFor(s, t);
         if (stop) {
-          s.fare = { stopId: stop.id, stop: stopName(s, stop), look: t.look ?? 0, from: s.y, at: s.time, bumps: 0, late: 0 };
+          // The flag fare changes hands as they climb on.
+          const paid = round10(cfg.flag * (has(s, "mirrors") ? 1.1 : 1));
+          s.money += paid;
+          s.fare = { stopId: stop.id, stop: stopName(s, stop), look: t.look ?? 0, from: s.y, at: s.time, bumps: 0, late: 0, paid };
+          s.pause = 0.5;
           t.taken = true;
-          events.push({ kind: "pick", stop: s.fare.stop });
+          events.push({ kind: "pick", stop: s.fare.stop, paid });
         }
       } else if (t.kind === "stop" && s.fare?.stopId === t.id) {
         const f = s.fare;
-        const base = Math.round(((cfg.flag + ((s.y - f.from) / 100) * cfg.fare) * (has(s, "mirrors") ? 1.1 : 1)) / 10) * 10;
-        // A tip for a smooth, quick ride: no potholes, not stuck behind a danfo.
-        const tip = f.bumps === 0 ? Math.round((base * 0.25 * cfg.tips * Math.max(0, 1 - f.late / 4)) / 10) * 10 : 0;
-        s.money += base + tip;
+        const base = round10((cfg.flag + ((s.y - f.from) / 100) * cfg.fare) * (has(s, "mirrors") ? 1.1 : 1));
+        const rest = Math.max(0, base - (f.paid ?? 0));
+        // A tip for a smooth, quick ride: no potholes, not stuck behind a danfo, and more for
+        // getting there fast (the throttle pays).
+        const quick = Math.max(0.6, Math.min(1 + BOOST, (s.y - f.from) / Math.max(0.5, s.time - f.at) / cruise(s)));
+        const tip = f.bumps === 0 ? round10(base * 0.25 * cfg.tips * Math.max(0, 1 - f.late / 4) * quick) : 0;
+        s.money += rest + tip;
         s.served++;
         s.fare = null;
-        events.push({ kind: "drop", paid: base, tip, stop: f.stop, stopId: t.id, look: f.look });
+        s.pause = 0.5;
+        events.push({ kind: "drop", paid: rest, tip, stop: f.stop, stopId: t.id, look: f.look });
       } else if (t.kind === "agbero") {
         const paid = Math.min(s.money, 200);
         s.money -= paid;
+        s.pause = 0.5;
         events.push({ kind: "agbero", paid });
       } else if (t.kind === "lastma" && !has(s, "helmet")) {
         const paid = Math.min(s.money, 500);
@@ -403,10 +443,13 @@ export function tick(seed: string, s0: OkadaState, dt: number): { state: OkadaSt
     t.done = true;
     if (t.kind === "deep") {
       s.spareUsed = true;
+      s.pause = 0.35;
       s.slow = 2;
       events.push({ kind: "bump", deep: true, saved: true });
     } else if (t.kind === "pothole") {
-      s.slow = 1.2;
+      // A hard jolt, then a wobble while the speed builds back.
+      s.pause = 0.25;
+      s.slow = 1.4;
       if (s.fare) s.fare = { ...s.fare, bumps: s.fare.bumps + 1 };
       events.push({ kind: "bump", deep: false, saved: false });
     } else if (SLOWS.includes(t.kind) && !(t.kind === "puddle" && has(s, "raincoat"))) {
@@ -419,7 +462,8 @@ export function tick(seed: string, s0: OkadaState, dt: number): { state: OkadaSt
     while (s.paidTo + 100 <= s.y) {
       s.paidTo += 100;
       // Full pay at top speed: stuck behind a truck or wobbling pays less.
-      s.money += Math.round((cfg.perHundred * Math.max(0.4, Math.min(1, s.v / Math.min(cfg.vmax, cfg.v0 + cfg.accel * s.time)))) / 10) * 10;
+      // (The throttle pays here too: up to half as much again.)
+      s.money += round10(cfg.perHundred * Math.max(0.4, Math.min(1 + BOOST, s.v / cruise(s))));
       if (s.paidTo % 1000 === 0) {
         s.money += cfg.perHundred * 5;
         events.push({ kind: "km", paid: cfg.perHundred * 5 });
@@ -447,7 +491,8 @@ function closesRoad(s: OkadaState, d: Thing) {
 
 function missStop(s: OkadaState, t: Thing, events: OkadaEvent[]) {
   const f = s.fare!;
-  const half = Math.round((s.cfg.flag + ((s.y - f.from) / 100) * s.cfg.fare) / 2 / 10) * 10;
+  // Half the fare in all, and they've already handed over the flag.
+  const half = Math.max(0, round10((s.cfg.flag + ((s.y - f.from) / 100) * s.cfg.fare) / 2) - (f.paid ?? 0));
   s.money += half;
   s.missed++;
   s.fare = null;

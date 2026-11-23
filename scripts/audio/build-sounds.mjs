@@ -77,8 +77,18 @@ mkdirSync(OUT, { recursive: true });
 for (const f of readdirSync(OUT)) rmSync(path.join(OUT, f));
 const names = [];
 let total = 0;
-for (const file of readdirSync(SRC).filter((f) => /\.(mp3|wav|m4a|aac|ogg|flac|webm)$/i.test(f)).sort()) {
-  const name = path.parse(file).name.toLowerCase().trim().replace(/\s+/g, "-");
+// The same sound downloaded twice, in two formats ("ok-horn1.mp3" and "ok-horn2.wav"): a number
+// stuck straight onto the end of a name (no dash) is dropped, and the best format of each is kept.
+// (Voice takes keep their dashes: v-ok-wave-1 and v-ok-wave-2 are different lines.)
+const BEST = ["wav", "flac", "m4a", "aac", "ogg", "webm", "mp3"];
+const rank = (f) => BEST.indexOf(path.extname(f).slice(1).toLowerCase());
+const soundName = (file) => path.parse(file).name.toLowerCase().trim().replace(/\s+/g, "-").replace(/([a-z])\d+$/, "$1");
+const picked = new Map();
+for (const file of readdirSync(SRC).filter((f) => /\.(mp3|wav|m4a|aac|ogg|flac|webm)$/i.test(f))) {
+  const had = picked.get(soundName(file));
+  if (!had || rank(file) < rank(had)) picked.set(soundName(file), file);
+}
+for (const [name, file] of [...picked].sort(([a], [b]) => a.localeCompare(b))) {
   const src = path.join(SRC, file);
   const save = (samples, channels, kbps, as = name) => {
     const out = path.join(OUT, `${as}.mp3`);
