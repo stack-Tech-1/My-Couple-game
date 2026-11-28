@@ -16,6 +16,7 @@ import { PageBackdrop } from "@/components/room/HomeBackdrop";
 import { GamesPeek } from "@/components/room/GamesPeek";
 import { PAGE_LOOKS } from "@/games/look";
 import { SeatPrompt } from "@/components/plus/SeatPrompt";
+import { RoomPlusCard } from "@/components/plus/RoomPlusCard";
 import { SoloHomeCard } from "@/components/solo/SoloHomeCard";
 import { friendWeek } from "@/lib/engage/weekly";
 import { WeeklyTable } from "./WeeklyTable";
@@ -48,6 +49,7 @@ export async function FriendRoomHome({ roomId }: { roomId: string }) {
         <SeatPrompt />
       </div>
       {isOwner && bundle.members.length < FRIEND_ROOM_SIZE ? <InvitePanel /> : null}
+      <RoomPlusCard />
       {!isOwner && bundle.members.length < FRIEND_ROOM_SIZE ? (
         <p className="glass mt-4 rounded-[18px] p-4 text-muted">Want someone else in? {owner ? `${owner.profile.display_name} has the invite code.` : "The room's owner has the invite code."}</p>
       ) : null}

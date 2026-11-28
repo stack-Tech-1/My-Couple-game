@@ -27,6 +27,7 @@ import { WaitingPrompt } from "@/components/solo/WaitingPrompt";
 import { TodayCard } from "@/components/room/TodayCard";
 import { getToday } from "@/lib/engage/today";
 import { PlaceCard } from "@/components/place/PlaceCard";
+import { RoomPlusCard } from "@/components/plus/RoomPlusCard";
 
 export const metadata: Metadata = { title: "Your room" };
 
@@ -69,6 +70,7 @@ export default async function RoomHome({ params }: { params: Promise<{ roomId: s
           <SoloHomeCard big />
         </div>
       ) : null}
+      <RoomPlusCard />
       <GettingStarted roomId={roomId} items={checklist} />
       <WelcomeTour />
       <ActiveGames sessions={active} />
