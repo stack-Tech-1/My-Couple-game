@@ -6,7 +6,7 @@ import { Button } from "@/design/Button";
 import { toast } from "@/design/toast";
 import { cn } from "@/lib/cn";
 import { startCheckout, startTrial } from "@/lib/plus/actions";
-import { PLANS, TRIAL_DAYS, naira, type PlanId, type Period } from "@/lib/plus/plans";
+import { PAYMENTS_PAUSED, PLANS, TRIAL_DAYS, naira, type PlanId, type Period } from "@/lib/plus/plans";
 import { goldButton, goldStyle } from "./PlusTag";
 
 type Props = {
@@ -27,6 +27,7 @@ export function PlusPlans({ roomId, roomKind, partnerName, trialAvailable, giftT
   const [plan, setPlan] = useState<PlanId>(options[0]!);
   const [period, setPeriod] = useState<Period>("month");
   const [busy, setBusy] = useState<"trial" | "card" | "pass" | null>(null);
+  const [paused, setPaused] = useState(false);
   const price = PLANS[plan][period];
   const per = period === "month" ? "/mo" : "/yr";
 
@@ -35,7 +36,17 @@ export function PlusPlans({ roomId, roomKind, partnerName, trialAvailable, giftT
 
   async function pay(method: "card" | "pass") {
     setBusy(method);
-    const r = await startCheckout({ plan, period, method, roomId, ...(giftTo ? { giftTo: giftTo.id } : {}), ...(plan.startsWith("group") ? { includeMe: true } : {}) });
+    setPaused(false);
+    const [r] = await Promise.all([
+      startCheckout({ plan, period, method, roomId, ...(giftTo ? { giftTo: giftTo.id } : {}), ...(plan.startsWith("group") ? { includeMe: true } : {}) }),
+      // Long enough to read "Processing".
+      new Promise((done) => setTimeout(done, 1200)),
+    ]);
+    if (!r.ok && r.error === PAYMENTS_PAUSED) {
+      setPaused(true);
+      setBusy(null);
+      return;
+    }
     if (!r.ok) {
       toast.error(r.error);
       setBusy(null);
@@ -106,19 +117,26 @@ export function PlusPlans({ roomId, roomKind, partnerName, trialAvailable, giftT
         ) : null}
         {giftTo ? (
           <Button size="lg" loading={busy === "pass"} disabled={!!busy} onClick={() => void pay("pass")}>
-            Pay {naira(price)}
+            {busy === "pass" ? "Processing…" : `Pay ${naira(price)}`}
           </Button>
         ) : (
           <>
             <Button size="lg" loading={busy === "card"} disabled={!!busy} onClick={() => void pay("card")}>
-              Pay {naira(price)} by card
+              {busy === "card" ? "Processing…" : `Pay ${naira(price)} by card`}
             </Button>
             <Button size="lg" variant="outline" loading={busy === "pass"} disabled={!!busy} onClick={() => void pay("pass")}>
-              Pay once: transfer, USSD or card
+              {busy === "pass" ? "Processing…" : "Pay once: transfer, USSD or card"}
             </Button>
           </>
         )}
       </div>
+      {paused ? (
+        <div role="status" className="cut-sm mt-3 border border-[#d9a43a] bg-[rgba(246,210,106,.18)] px-4 py-3 text-[0.9rem]">
+          <p className="font-bold">Payments are opening very soon</p>
+          <p className="mt-1 text-muted">We&apos;re finishing verification with Paystack, our payment provider, so card and transfer payments aren&apos;t open yet. Nothing has been charged. You&apos;ll be able to pay right here as soon as it&apos;s done.</p>
+          {trialAvailable && !giftTo ? <p className="mt-1.5 font-semibold">Meanwhile, you can try Plus free for {TRIAL_DAYS} days.</p> : null}
+        </div>
+      ) : null}
       <p className="mt-3 text-center text-[0.8rem] leading-relaxed text-muted">
         {giftTo
           ? "Paid once by transfer, USSD or card. Nothing renews."

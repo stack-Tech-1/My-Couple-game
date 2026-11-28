@@ -11,8 +11,12 @@ export function paystackKey(): string | null {
   return process.env.PAYSTACK_SECRET_KEY || process.env.TEST_PAYSTACK_SECRET_KEY || null;
 }
 export const paystackConfigured = () => !!paystackKey();
-/** The production site holding a Paystack test key: payments must stay shut there. */
-export const testKeysOnLive = () => process.env.VERCEL_ENV === "production" && (paystackKey() ?? "").startsWith("sk_test_");
+/**
+ * Payments paused: the live site until it holds a live Paystack key (Paystack is still reviewing
+ * the business). Plus, its limits and its prices all show; paying explains why it can't go through
+ * yet. Test keys never take payments on the live site. PAYMENTS_PAUSED=1 shows the same on a test copy.
+ */
+export const paymentsPaused = () => process.env.PAYMENTS_PAUSED === "1" || (process.env.VERCEL_ENV === "production" && !(paystackKey() ?? "").startsWith("sk_live_"));
 
 export class PaystackError extends Error {}
 

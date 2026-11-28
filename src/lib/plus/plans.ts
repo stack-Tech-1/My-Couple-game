@@ -28,6 +28,9 @@ export const FREE_GAMES = new Set([
  */
 export const isPlusGame = (gameId: string, at = Date.now()) => !FREE_GAMES.has(gameId) && !isSoloGame(gameId) && freeGameOfWeek(at).gameId !== gameId;
 
+/** What checkout answers while payments are paused (Paystack still reviewing): the screens explain. */
+export const PAYMENTS_PAUSED = "payments-paused";
+
 /** Free limits (Plus has none). */
 export const FREE_LIMITS = { photos: 5, sealedNotes: 3, friendRooms: 1 } as const;
 

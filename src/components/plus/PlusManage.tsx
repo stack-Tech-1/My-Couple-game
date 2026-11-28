@@ -8,7 +8,7 @@ import { Avatar } from "@/design/Avatar";
 import { toast } from "@/design/toast";
 import { useRoom } from "@/lib/realtime/RoomProvider";
 import { cancelRenewal, changeCardLink, startCheckout } from "@/lib/plus/actions";
-import { PLANS, naira, type Period, type PlanId } from "@/lib/plus/plans";
+import { PAYMENTS_PAUSED, PLANS, naira, type Period, type PlanId } from "@/lib/plus/plans";
 import { PlusPlans } from "./PlusPlans";
 
 type Props = {
@@ -101,7 +101,7 @@ export function PlusManage({ roomId, roomKind, partnerName, renewing, hasPlus }:
                 const c = await cancelRenewal();
                 if (!c.ok) return void toast.error(c.error);
                 const r = await startCheckout({ plan: renewing.plan, period: "year", method: "card", roomId });
-                if (!r.ok) return void toast.error(r.error);
+                if (!r.ok) return void toast.error(r.error === PAYMENTS_PAUSED ? "Payments are opening very soon. Nothing has been charged." : r.error);
                 window.location.assign(r.data.url);
               })
             }
