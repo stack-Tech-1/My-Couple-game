@@ -16,10 +16,7 @@ import { TERMS_VERSION } from "@/lib/legal";
 import { unreadReplies } from "@/lib/feedback/server";
 import { Heartbeat } from "@/components/room/Heartbeat";
 import { TabBar } from "@/components/room/TabBar";
-import { currentSpotlight, mySpotlightAsks } from "@/lib/engage/spotlight";
-import { SpotlightTicker } from "@/components/spotlight/SpotlightTicker";
-import { themeOn } from "@/lib/engage/themes";
-import { lagosDate } from "@/lib/engage/rotation";
+import { mySpotlightAsks } from "@/lib/engage/spotlight";
 import { SpotlightAsk } from "@/components/spotlight/SpotlightAsk";
 import { GentleStop } from "@/components/room/GentleStop";
 
@@ -60,7 +57,7 @@ export default async function RoomLayout({ children, params }: { children: React
   after(async () => {
     await sb.from("profiles").update({ last_room_id: roomId }).eq("id", bundle.me.profile.id).or(`last_room_id.is.null,last_room_id.neq.${roomId}`);
   });
-  const [terms, feedbackUnread, winners, asks] = await Promise.all([termsStatus(bundle.me.profile.id), unreadReplies(), currentSpotlight(), mySpotlightAsks(bundle.me.profile.id)]);
+  const [terms, feedbackUnread, asks] = await Promise.all([termsStatus(bundle.me.profile.id), unreadReplies(), mySpotlightAsks(bundle.me.profile.id)]);
   const roomAsks = asks.filter((a) => a.roomId === roomId);
 
   return (
@@ -68,7 +65,6 @@ export default async function RoomLayout({ children, params }: { children: React
       <GameFlagsProvider flags={flags}>
         <div className="rail-pad">
           <RoomHeader feedbackUnread={feedbackUnread} />
-          <SpotlightTicker winners={winners} theme={themeOn(lagosDate())} />
           <ConnectionBanner />
           <AnnouncementBar items={forMe(announcements, bundle)} />
           <InviteListener />

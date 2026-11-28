@@ -1,11 +1,12 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 import { GAMES } from "@/games/catalog";
 import { SOLO_GAMES } from "@/lib/solo/catalog";
 import { friendlyError } from "@/lib/errors";
 import { gameFlagsSchema } from "@/lib/games/flags";
+import { TICKER_GAMES, TICKER_MAX, tickerSchema } from "@/lib/engage/ticker";
 import { purgeRoomMedia } from "@/lib/media/purge";
 import type { ActionResult } from "@/lib/room/types";
 import { supabaseAdmin } from "@/lib/supabase/server";
@@ -221,6 +222,27 @@ export async function emailAnnouncement(id: unknown): Promise<ActionResult<{ sen
     await audit(me, "announcement.email", aid, result);
     revalidatePath("/admin/announcements");
     return { ok: true, data: result };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+// ---- ticker ----------------------------------------------------------------------------------------
+
+/** The news strip: the admin's message, weekly winners on or off, and which games' bests run. */
+export async function saveTicker(input: unknown): Promise<ActionResult> {
+  try {
+    const me = await guard();
+    const parsed = tickerSchema.safeParse(input);
+    if (!parsed.success) return { ok: false, error: `Keep the message to ${TICKER_MAX} characters.` };
+    const known = new Set(TICKER_GAMES.map((g) => g.id));
+    const clean = { ...parsed.data, games: [...new Set(parsed.data.games.filter((id) => known.has(id)))] };
+    const { error } = await supabaseAdmin().from("app_config").upsert({ key: "ticker", value: clean, updated_at: new Date().toISOString(), updated_by: me.id });
+    if (error) return fail(error);
+    await audit(me, "ticker.save", null, clean);
+    revalidateTag("ticker");
+    revalidatePath("/", "layout");
+    return { ok: true, data: null };
   } catch (e) {
     return fail(e);
   }

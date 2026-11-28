@@ -1,5 +1,4 @@
 import { useId, type ReactNode } from "react";
-import { cn } from "@/lib/cn";
 
 /**
  * Wax print: Amah's cloth. Big, bold, several colours at once, the way ankara is printed.
@@ -168,18 +167,7 @@ export function WaxPrint({ print, scale = 1, className }: { print: Print; scale?
   );
 }
 
-/**
- * The selvedge: real wax cloth carries the maker's name printed along its edge. Ours runs under
- * each page's print. Decorative, so screen readers skip it.
- */
-export function Selvedge({ words = [], className }: { words?: string[]; className?: string }) {
-  const line = ["AMAH", ...words].join(" · ");
-  return (
-    <div aria-hidden className={cn("selvedge", className)}>
-      <span>{Array.from({ length: words.length ? 6 : 24 }, () => line).join(" · ")}</span>
-    </div>
-  );
-}
+export { Selvedge, NewsProvider } from "./Selvedge";
 
 /** The print each part of the app wears, and the solid colour cut from it. */
 export const SECTION_CLOTH = {
