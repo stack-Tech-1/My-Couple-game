@@ -6,7 +6,7 @@ import { NAIJA_WORDS } from "@/content/words/naija";
 import { SOLO_GAMES, isSoloGame } from "./catalog";
 import { isPlusGame } from "@/lib/plus/plans";
 import { canFitAnywhere, fits, isOver as blendOver, newBlend, place, SIZE } from "./games/blend";
-import { N, canMove, move, newAjo } from "./games/ajo";
+import { LESSON, N, canMove, move, newAjo, newAjoLesson } from "./games/ajo";
 import { fixScore, newFix, slide, solved } from "./games/fixam";
 import { BOT_ID, botMove, type BotBase } from "./bots";
 
@@ -72,6 +72,22 @@ describe("Blend Am", () => {
 });
 
 describe("Ajo", () => {
+  it("says where every note went, so the screen can glide them", () => {
+    const s0 = { ...newAjo("a"), tiles: [0, 1, 0, 1, ...Array(12).fill(0)] };
+    const r = move("a", s0, "left")!;
+    // Both ₦5s travel to the first square and join there.
+    expect(r.went).toEqual([{ from: 1, to: 0, joined: true }, { from: 3, to: 0, joined: true }]);
+    expect(r.state.tiles[0]).toBe(2);
+  });
+
+  it("the first game's lesson plays out as the coach says", () => {
+    let s0 = newAjoLesson();
+    for (const step of LESSON) s0 = move("x", s0, step.dir, step.spawn)!.state;
+    // Two ₦5s make ₦10, two more ₦5s make another ₦10, and the two ₦10s make ₦20.
+    expect(s0.tiles[0]).toBe(3);
+    expect(s0.tiles.filter((v) => v).sort()).toEqual([1, 1, 3]);
+  });
+
   it("merges two matching notes into the next one up", () => {
     const s = { ...newAjo("a"), tiles: [1, 1, 0, 0, ...Array(12).fill(0)] };
     const r = move("a", s, "left")!;
