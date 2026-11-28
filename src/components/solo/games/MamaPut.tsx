@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import {
   ITEM_NAME,
-  LEAVE_SECONDS,
   SPOTS,
+  WALK_SECONDS,
+  atCounter,
   add,
   bin,
   buyGas,
@@ -22,8 +23,8 @@ import {
   stars,
   tick,
   tutorialStep,
-  waiting,
   type Customer,
+  type Item,
   type MamaState,
 } from "@/lib/solo/games/mama";
 import type { SoloApi } from "../SoloShell";
@@ -87,8 +88,9 @@ function Pic({
 }
 
 
-function mood(c: Customer): "happy" | "wait" | "angry" {
+function mood(c: Customer, time: number): "happy" | "wait" | "angry" {
   if (c.leaving) return c.leaving.paid > 0 ? "happy" : "angry";
+  if (c.rejected != null && time - c.rejected < 1.4) return "angry";
   return c.patience / c.max > 0.3 ? "wait" : "angry";
 }
 
@@ -128,6 +130,16 @@ const CSS = `
   @keyframes mp-cheer { 0% { transform: scale(1); } 40% { transform: translateY(-10px) scale(1.06); } 100% { transform: scale(1); } }
   .mp-shake { animation: mp-shake .45s ease-in-out both; transform-box: fill-box; transform-origin: 50% 100%; }
   @keyframes mp-shake { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-3deg); } 75% { transform: rotate(3deg); } }
+  .mp-in-l { animation: mp-in-l ${WALK_SECONDS}s ease-out both; }
+  @keyframes mp-in-l { from { transform: translateX(-340px); } to { transform: none; } }
+  .mp-in-r { animation: mp-in-r ${WALK_SECONDS}s ease-out both; }
+  @keyframes mp-in-r { from { transform: translateX(340px); } to { transform: none; } }
+  .mp-out-l { animation: mp-out-l ${WALK_SECONDS}s ease-in both; }
+  @keyframes mp-out-l { to { transform: translateX(-360px); } }
+  .mp-out-r { animation: mp-out-r ${WALK_SECONDS}s ease-in both; }
+  @keyframes mp-out-r { to { transform: translateX(360px); } }
+  .mp-step { animation: mp-step .35s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 100%; }
+  @keyframes mp-step { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
   .mp-tap { animation: mp-tap .28s ease-out both; transform-box: fill-box; transform-origin: 50% 100%; }
   @keyframes mp-tap { 0% { transform: scale(1); } 35% { transform: scale(1.08, .92); } 100% { transform: scale(1); } }
   .mp-drop { animation: mp-drop .32s cubic-bezier(.3,1.5,.5,1) both; transform-box: fill-box; transform-origin: 50% 80%; }
@@ -148,7 +160,7 @@ const CSS = `
   @keyframes mp-point { 0%, 100% { opacity: 1; stroke-width: 4; } 50% { opacity: .45; stroke-width: 7; } }
   .mp-warn { animation: mp-warn .8s ease-in-out infinite alternate; }
   @keyframes mp-warn { from { opacity: .55; } to { opacity: 1; } }
-  @media (prefers-reduced-motion: reduce) { .mp-breathe, .mp-cheer, .mp-shake, .mp-tap, .mp-drop, .mp-steam path, .mp-sizzle circle, .mp-ready, .mp-sway, .mp-point, .mp-warn { animation: none; } .mp-float, .mp-coin { animation-duration: .01s; } }
+  @media (prefers-reduced-motion: reduce) { .mp-in-l, .mp-in-r, .mp-step { animation: none; } .mp-out-l, .mp-out-r { animation-duration: .01s; } .mp-breathe, .mp-cheer, .mp-shake, .mp-tap, .mp-drop, .mp-steam path, .mp-sizzle circle, .mp-ready, .mp-sway, .mp-point, .mp-warn { animation: none; } .mp-float, .mp-coin { animation-duration: .01s; } }
 `;
 
 const steam = (x: number, y: number) => (
@@ -303,6 +315,63 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
   const bump = (key: string) =>
     setTaps((t) => ({ ...t, [key]: (t[key] ?? 0) + 1 }));
 
+  // Dragging: hold a food and drag it onto any plate, or hold a plate and drag it to a customer
+  // (or the bin). What's under your finger is the portion as it sits on a plate. A plain tap still
+  // works as before: tap a plate, tap the foods, tap the customer.
+  type Drag = { kind: "food"; item: Item; from: Station[0] } | { kind: "plate"; plate: number };
+  const svgRef = useRef<SVGSVGElement>(null);
+  const press = useRef<{ drag: Drag; x0: number; y0: number; id: number; moved: boolean } | null>(null);
+  const [ghost, setGhost] = useState<{ drag: Drag; x: number; y: number } | null>(null);
+  const swallow = useRef(false);
+  const toSvg = (e: { clientX: number; clientY: number }) => {
+    const m = svgRef.current?.getScreenCTM();
+    if (!m) return null;
+    const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(m.inverse());
+    return { x: p.x, y: p.y };
+  };
+  const startPress = (drag: Drag) => (e: React.PointerEvent) => {
+    if (apiRef.current.paused || hold.current || state.current.over) return;
+    if (drag.kind === "food" && drag.from === "fry" && state.current.fry.stage !== "ready") return;
+    if (drag.kind === "plate" && !state.current.plates[drag.plate]?.length) return;
+    press.current = { drag, x0: e.clientX, y0: e.clientY, id: e.pointerId, moved: false };
+  };
+  const onMove = (e: React.PointerEvent<SVGSVGElement>) => {
+    const p = press.current;
+    if (!p || p.id !== e.pointerId) return;
+    if (!p.moved && Math.hypot(e.clientX - p.x0, e.clientY - p.y0) < 10) return;
+    if (!p.moved) {
+      p.moved = true;
+      svgRef.current?.setPointerCapture(e.pointerId);
+      audio.current?.wake();
+    }
+    const pt = toSvg(e);
+    if (pt) setGhost({ drag: p.drag, ...pt });
+  };
+  const onUp = (e: React.PointerEvent<SVGSVGElement>) => {
+    const p = press.current;
+    press.current = null;
+    if (!p || p.id !== e.pointerId || !p.moved) return;
+    // A drag isn't a tap: don't let the click that follows add or select anything.
+    swallow.current = true;
+    setTimeout(() => (swallow.current = false), 0);
+    setGhost(null);
+    const pt = toSvg(e);
+    if (!pt || apiRef.current.paused || hold.current) return;
+    if (p.drag.kind === "food") {
+      const i = L.spotX.findIndex((x) => Math.abs(pt.x - x) < 58 && Math.abs(pt.y - lookRef.current.plateY) < 48);
+      if (i >= 0) station(p.drag.from, i);
+      return;
+    }
+    const spot = L.spotX.findIndex((x) => Math.abs(pt.x - x) < 72 && pt.y < lookRef.current.plateY - 14);
+    if (spot >= 0) return hand(p.drag.plate, spot);
+    const b = lookRef.current.stations.find(([w]) => w === "bin");
+    if (b && Math.abs(pt.x - b[2]) < b[4] / 2 + 14 && pt.y > b[3] - 72 && pt.y < b[3] + 18) binPlate(p.drag.plate);
+  };
+  const onCancel = () => {
+    press.current = null;
+    setGhost(null);
+  };
+
   // The clock: ten updates a second is plenty for patience bars and the pan.
   useEffect(() => {
     let last = performance.now();
@@ -394,9 +463,10 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
   // Leaving the game mid-rush: let the phone go back to normal.
   useEffect(() => () => leaveFull(), []);
 
-  const use = (what: Station[0]) => {
+  const station = (what: Station[0], onto?: number) => {
     const a = apiRef.current;
     if (a.paused || hold.current || state.current.over) return;
+    if (onto === undefined && swallow.current) return;
     const cur = state.current;
     bump(what);
     if (what === "gas") {
@@ -440,7 +510,7 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
       return;
     }
     if (what === "fry") {
-      if (cur.fry.stage === "ready") return use(cook);
+      if (cur.fry.stage === "ready") return station(cook, onto ?? cur.selected);
       if (gasLeft(cur) <= 0) {
         audio.current?.sfx("tap");
         effect({
@@ -460,7 +530,8 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
       }
       return;
     }
-    const r = add(cur, what);
+    const plateNo = onto ?? cur.selected;
+    const r = add(cur, what, plateNo);
     if (!r.ok) {
       if (r.why === "fry")
         effect({
@@ -476,13 +547,21 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
     audio.current?.sfx(DRINKS.has(what) ? "mp-plate" : "mp-scoop", { volume: 0.8 });
     navigator.vibrate?.(10);
     commit(r.state);
-    setSaid(`${ITEM_NAME[what]} on plate ${cur.selected + 1}.`);
+    setSaid(`${ITEM_NAME[what]} on plate ${plateNo + 1}.`);
   };
 
-  const hand = (i: number) => {
+  const binPlate = (i: number) => {
+    const cur = state.current;
+    if (!cur.plates[i]?.length) return;
+    audio.current?.sfx("mp-bin");
+    commit(bin(cur, i));
+    setSaid(`Plate ${i + 1} cleared.`);
+  };
+
+  const hand = (plateIdx: number, i: number) => {
     const a = apiRef.current;
     if (a.paused || hold.current) return;
-    const r = serve(state.current, i);
+    const r = serve(state.current, plateIdx, i);
     if (r.state === state.current) return;
     commit(r.state);
     if (r.right) {
@@ -508,16 +587,18 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
       setSaid(
         `Served. ₦${r.paid + r.tip}${r.tip ? `, with a ₦${r.tip} tip` : ""}.`,
       );
-    } else {
+    } else if (r.rejected) {
       audio.current?.voice("mp-wrong", 1);
+      navigator.vibrate?.([30, 40, 30]);
       effect({
         kind: "word",
         x: L.spotX[i]!,
         y: 110,
-        text: "This no be wetin I order!",
+        text: "Not my order!",
         color: "#e8563a",
       });
-      setSaid("Wrong plate. They left without paying.");
+      bump(`plate-${plateIdx}`);
+      setSaid("Not their order, so they pushed it back. Fix the plate and try again.");
     }
   };
 
@@ -535,16 +616,34 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
         : null;
   const hint =
     step?.kind === "wait"
-      ? "Your first customer is coming. Their order shows in the bubble."
-      : step?.kind === "plate"
-        ? "Tap the plate in front of your customer. That's the plate you'll dish onto."
-        : step?.kind === "add"
-          ? `Your customer wants ${s.spots[0]!.order.map((x) => ITEM_NAME[x]).join(", ")}. Tap the ${ITEM_NAME[step.item].toLowerCase()} in the kitchen.`
-          : step?.kind === "bin"
-            ? "That's not what they ordered. Tap the bin to clear the plate."
-            : step?.kind === "serve"
-              ? "Everything they want is on the plate. Tap Serve!"
-              : null;
+      ? "Your first customer is walking in. Their order shows in the bubble."
+      : step?.kind === "add"
+        ? `They want ${s.spots[0]!.order.map((x) => ITEM_NAME[x]).join(", ")}. Hold the ${ITEM_NAME[step.item].toLowerCase()} and drag it onto the first plate (or just tap it).`
+        : step?.kind === "bin"
+          ? "That's not what they ordered. Drag the plate to the bin, or tap the bin."
+          : step?.kind === "serve"
+            ? "Everything they want is on the plate. Hold the plate and drag it up to them (or tap them)."
+            : null;
+  // A portion as it sits on a plate: what's on the plates, and what's under your finger.
+  const portionPic = (it: Item) => (it === "rice" && !look.pre ? "p-rice" : DRINKS.has(it) ? bubblePic(look, it) : platePic(look, it));
+  const SPOTS_ON_PLATE = [
+    [-14, -3],
+    [13, -4],
+    [-1, 5],
+    [18, 4],
+    [-18, 6],
+    [3, -10],
+  ];
+  const portions = (p: Item[], x: number, y: number, drop: boolean) =>
+    p.map((it, k) =>
+      it === "rice" && !look.pre ? (
+        <Pic key={it} name="p-rice" x={x + SPOTS_ON_PLATE[k]![0]!} bottom={y + SPOTS_ON_PLATE[k]![1]! + 14} w={38} className={drop ? "mp-drop" : undefined} />
+      ) : DRINKS.has(it) ? (
+        <Pic key={it} name={bubblePic(look, it)} x={x + 38} bottom={y + 18} w={fit(bubblePic(look, it), 22, 34)} className={drop ? "mp-drop" : undefined} />
+      ) : (
+        <Pic key={it} name={platePic(look, it)} x={x + SPOTS_ON_PLATE[k]![0]!} bottom={y + SPOTS_ON_PLATE[k]![1]! + 13} w={fit(platePic(look, it), 34, 30)} className={drop ? "mp-drop" : undefined} />
+      ),
+    );
 
   return (
     <div
@@ -568,8 +667,12 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
         style={full ? undefined : { aspectRatio: "2 / 1" }}
       >
         <svg
+          ref={svgRef}
           viewBox={`0 0 ${W} ${H}`}
-          className="absolute inset-0 block h-full w-full touch-manipulation select-none"
+          className="absolute inset-0 block h-full w-full touch-none select-none"
+          onPointerMove={onMove}
+          onPointerUp={onUp}
+          onPointerCancel={onCancel}
           role="group"
           aria-label="Mama Put. Customers at the counter at the top, the kitchen below."
         >
@@ -610,42 +713,40 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
             ),
           )}
 
-          {/* Customers: walk in, breathe while they wait, cheer or storm off. */}
+          {/* Customers: walk in from their side, breathe while they wait, walk back out. Tap one to
+              serve them the selected plate. */}
           {s.spots.map((c, i) => {
             if (!c) return null;
-            const inT = Math.min(1, (s.time - c.arrived) / 0.6);
-            const outT = c.leaving
-              ? Math.min(1, (s.time - c.leaving.at) / LEAVE_SECONDS)
-              : 0;
             const side = i < 2 ? -1 : 1;
-            const dx =
-              (1 - inT) * side * 260 +
-              outT * (c.leaving?.paid ? 1 : -1) * side * 260;
-            const m = mood(c);
+            const walking = !c.leaving && s.time - c.arrived < WALK_SECONDS;
+            const walk = c.leaving ? (side < 0 ? "mp-out-l" : "mp-out-r") : walking ? (side < 0 ? "mp-in-l" : "mp-in-r") : undefined;
+            const m = mood(c, s.time);
             const key = `${who[i]}-${m}`;
             const h = L.customerHeight;
             const w = h * (ratio(`cust-${key}`) || 0.7);
-            const cls = c.leaving
-              ? c.leaving.paid
-                ? "mp-cheer"
-                : "mp-shake"
-              : "mp-breathe";
+            const pushedBack = c.rejected != null && s.time - c.rejected < 0.6;
+            const cls = c.leaving || walking ? "mp-step" : pushedBack ? "mp-shake" : "mp-breathe";
             return (
               <g
                 key={c.id}
-                transform={`translate(${L.spotX[i]! + dx} 0)`}
-                opacity={1 - outT * 0.9}
+                transform={`translate(${L.spotX[i]!} 0)`}
+                role={atCounter(s, c) ? "button" : undefined}
+                aria-label={atCounter(s, c) ? `Serve plate ${s.selected + 1} to place ${i + 1}` : undefined}
+                onClick={() => !swallow.current && atCounter(state.current, state.current.spots[i]) && hand(state.current.selected, i)}
+                style={{ cursor: atCounter(s, c) ? "pointer" : undefined }}
               >
-                <image
-                  key={m}
-                  href={src(`cust-${key}`)}
-                  x={-w / 2}
-                  y={look.customerBottom - h}
-                  width={w}
-                  height={h}
-                  className={cls}
-                  style={{ animationDelay: `${(c.id % 5) * 0.37}s` }}
-                />
+                <g className={walk}>
+                  <image
+                    key={`${m}-${pushedBack ? c.rejected : ""}`}
+                    href={src(`cust-${key}`)}
+                    x={-w / 2}
+                    y={look.customerBottom - h}
+                    width={w}
+                    height={h}
+                    className={cls}
+                    style={{ animationDelay: cls === "mp-breathe" ? `${(c.id % 5) * 0.37}s` : undefined }}
+                  />
+                </g>
               </g>
             );
           })}
@@ -674,7 +775,7 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
 
           {/* What each customer wants, and how long they'll wait. */}
           {s.spots.map((c, i) => {
-            if (!waiting(c)) return null;
+            if (!atCounter(s, c)) return null;
             const f = c.patience / c.max;
             const cols = Math.min(3, c.order.length);
             const rows = Math.ceil(c.order.length / 3);
@@ -731,20 +832,13 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
             );
           })}
 
-          {/* Plates on the counter: tap one to choose which you're dishing onto. */}
+          {/* Plates on the counter, anyone's: tap one to dish onto it, hold one to drag it to a
+              customer or the bin. */}
           <g data-tour="mama-plates">
             {s.plates.map((p, i) => {
               const sel = s.selected === i;
-              const c = s.spots[i];
-              const spots = [
-                [-14, -3],
-                [13, -4],
-                [-1, 5],
-                [18, 4],
-                [-18, 6],
-                [3, -10],
-              ];
               const x = L.spotX[i]!;
+              const lifted = ghost?.drag.kind === "plate" && ghost.drag.plate === i;
               return (
                 <g key={i}>
                   <g
@@ -752,122 +846,20 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
                     tabIndex={0}
                     aria-pressed={sel}
                     aria-label={`Plate ${i + 1}${p.length ? `: ${p.map((it) => ITEM_NAME[it]).join(", ")}` : ", empty"}${sel ? ", dishing onto this one" : ""}`}
-                    onClick={() =>
-                      !hold.current && commit(select(state.current, i))
-                    }
-                    onKeyDown={(e) =>
-                      (e.key === "Enter" || e.key === " ") &&
-                      commit(select(state.current, i))
-                    }
-                    style={{ cursor: "pointer", outline: "none" }}
+                    onPointerDown={startPress({ kind: "plate", plate: i })}
+                    onClick={() => !hold.current && !swallow.current && commit(select(state.current, i))}
+                    onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && commit(select(state.current, i))}
+                    style={{ cursor: p.length ? "grab" : "pointer", outline: "none" }}
+                    opacity={lifted ? 0.3 : 1}
                   >
-                    <rect
-                      x={x - 50}
-                      y={look.plateY - 30}
-                      width="100"
-                      height="58"
-                      fill="transparent"
-                    />
-                    {sel ? (
-                      <ellipse
-                        cx={x}
-                        cy={look.plateY}
-                        rx="47"
-                        ry="21"
-                        fill="none"
-                        stroke="#f6c453"
-                        strokeWidth="3.5"
-                        strokeDasharray="7 4"
-                      />
-                    ) : null}
-                    <Pic name={`${look.pre}plate`} x={x} bottom={look.plateY + 27} w={80} />
-                    {p.map((it, k) =>
-                      it === "rice" && !look.pre ? (
-                        <Pic
-                          key={it}
-                          name="p-rice"
-                          x={x + spots[k]![0]!}
-                          bottom={look.plateY + spots[k]![1]! + 14}
-                          w={38}
-                          className="mp-drop"
-                        />
-                      ) : DRINKS.has(it) ? (
-                        <Pic
-                          key={it}
-                          name={bubblePic(look, it)}
-                          x={x + 38}
-                          bottom={look.plateY + 18}
-                          w={fit(bubblePic(look, it), 22, 34)}
-                          className="mp-drop"
-                        />
-                      ) : (
-                        <Pic
-                          key={it}
-                          name={platePic(look, it)}
-                          x={x + spots[k]![0]!}
-                          bottom={look.plateY + spots[k]![1]! + 13}
-                          w={fit(platePic(look, it), 34, 30)}
-                          className="mp-drop"
-                        />
-                      ),
-                    )}
-                    {step?.kind === "plate" && i === 0 ? (
-                      <ellipse
-                        cx={x}
-                        cy={look.plateY}
-                        rx="54"
-                        ry="27"
-                        fill="none"
-                        stroke="#2e9b57"
-                        className="mp-point"
-                      />
-                    ) : null}
-                  </g>
-                  {p.length && waiting(c) ? (
-                    <g
-                      role="button"
-                      tabIndex={0}
-                      aria-label={`Serve plate ${i + 1}`}
-                      onClick={() => hand(i)}
-                      onKeyDown={(e) =>
-                        (e.key === "Enter" || e.key === " ") && hand(i)
-                      }
-                      style={{ cursor: "pointer", outline: "none" }}
-                    >
-                      {/* On the counter, just right of the plate. */}
-                      <rect
-                        x={x + 42}
-                        y={look.plateY - 11}
-                        width="50"
-                        height="22"
-                        rx="11"
-                        fill="#1c1416"
-                      />
-                      <text
-                        x={x + 67}
-                        y={look.plateY + 4}
-                        textAnchor="middle"
-                        fontFamily="Manrope, sans-serif"
-                        fontWeight="800"
-                        fontSize="10.5"
-                        fill="#f6efe6"
-                      >
-                        Serve
-                      </text>
-                      {step?.kind === "serve" && i === 0 ? (
-                        <rect
-                          x={x + 36}
-                          y={look.plateY - 17}
-                          width="62"
-                          height="34"
-                          rx="17"
-                          fill="none"
-                          stroke="#2e9b57"
-                          className="mp-point"
-                        />
-                      ) : null}
+                    <rect x={x - 50} y={look.plateY - 30} width="100" height="58" fill="transparent" />
+                    {sel ? <ellipse cx={x} cy={look.plateY} rx="47" ry="21" fill="none" stroke="#f6c453" strokeWidth="3.5" strokeDasharray="7 4" /> : null}
+                    <g key={taps[`plate-${i}`] ?? 0} className={taps[`plate-${i}`] ? "mp-shake" : undefined}>
+                      <Pic name={`${look.pre}plate`} x={x} bottom={look.plateY + 27} w={80} />
+                      {portions(p, x, look.plateY, true)}
                     </g>
-                  ) : null}
+                    {step?.kind === "serve" && i === 0 ? <ellipse cx={x} cy={look.plateY} rx="54" ry="27" fill="none" stroke="#2e9b57" className="mp-point" /> : null}
+                  </g>
                 </g>
               );
             })}
@@ -1026,15 +1018,34 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
                         ? `${cap(fuel.name)}, ${Math.round(gas * 100)}% left. Buy a new ${fuel.unit} for ₦${gasPrice(s)}`
                         : `Add ${label}`
                 }
-                onClick={() => use(what)}
+                onClick={() => station(what)}
+                onPointerDown={what === "bin" || what === "gas" ? undefined : startPress({ kind: "food", item: what === "fry" ? cook : (what as Item), from: what })}
                 onKeyDown={(e) =>
-                  (e.key === "Enter" || e.key === " ") && use(what)
+                  (e.key === "Enter" || e.key === " ") && station(what)
                 }
                 style={{ cursor: "pointer", outline: "none" }}
                 className="focus-visible:fill-[rgba(233,177,60,.18)]"
               />
             );
           })}
+
+          {ghost ? (
+            <g pointerEvents="none" filter="url(#mp-ds)">
+              {ghost.drag.kind === "food" ? (
+                <Pic
+                  name={portionPic(ghost.drag.item)}
+                  x={ghost.x}
+                  bottom={ghost.y + 18}
+                  w={DRINKS.has(ghost.drag.item) ? fit(portionPic(ghost.drag.item), 28, 44) : ghost.drag.item === "rice" && !look.pre ? 50 : fit(portionPic(ghost.drag.item), 46, 40)}
+                />
+              ) : (
+                <g transform="scale(1.06)" style={{ transformBox: "fill-box", transformOrigin: "50% 50%" }}>
+                  <Pic name={`${look.pre}plate`} x={ghost.x} bottom={ghost.y + 27} w={80} />
+                  {portions(s.plates[ghost.drag.plate] ?? [], ghost.x, ghost.y, false)}
+                </g>
+              )}
+            </g>
+          ) : null}
 
           {/* The tutorial: Mama shows the way. */}
           {hint ? (
@@ -1266,8 +1277,8 @@ export function MamaPut({ api }: { api: SoloApi<MamaState> }) {
       ) : null}
       {!full ? (
         <p className="mt-2 text-center text-[0.8rem] text-muted">
-          Tap a plate, then the food to dish it. Serve it to the person in
-          front. {cap(look.verb)} the {cookName.toLowerCase()} before you need
+          Hold a food and drag it onto any plate, then drag the plate to whoever ordered it.
+          Tapping works too. {cap(look.verb)} the {cookName.toLowerCase()} before you need
           it, and watch the {fuel.name}.
         </p>
       ) : null}

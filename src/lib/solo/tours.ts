@@ -48,8 +48,8 @@ export const SOLO_TOURS: Record<string, TourStep[]> = {
   ],
   "mama-put": [
     { target: "mama-shop", title: "Lunch rush", body: ["Customers come to the counter. Their bubble shows what they want; the ring is their patience.", "You have 90 seconds. Make as much money as you can."] },
-    { target: "mama-plates", title: "Dish and serve", body: ["Tap a plate on the counter, then tap the food to dish it: rice, stew, meat, and so on.", "When it matches the order, tap Serve. The quicker you are, the bigger the tip."] },
-    { title: "Mind the dodo", body: ["Dodo has to be fried first: tap the pan, wait, then tap it again to dish.", "Leave it too long and it burns.", "Wrong plate? They leave without paying. Bin it and start again."] },
+    { target: "mama-plates", title: "Dish and serve", body: ["Hold a food in the kitchen and drag it onto any plate: rice, stew, meat, and so on.", "Then hold the plate and drag it to whoever ordered it. The quicker you are, the bigger the tip. Tapping works too."] },
+    { title: "Mind the dodo", body: ["Dodo has to be fried first: tap the pan, wait, then tap it again to dish.", "Leave it too long and it burns.", "Wrong or unfinished plate? They push it back and wait, a little less patient. Fix it, or drag it to the bin."] },
   ],
   reflex: [
     { target: "reflex-pad", title: "You're in goal", body: ["Tap to start a kick. The striker runs in to the ball.", "The moment he strikes it, tap to dive."] },

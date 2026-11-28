@@ -222,8 +222,8 @@ describe("Mama Put", () => {
     expect(s.lost).toBeGreaterThan(0);
   });
 
-  it("the right plate is paid with a tip; the wrong one isn't paid at all", () => {
-    let s = run(newMama("mp"), 2);
+  it("the right plate is paid with a tip; a wrong one is pushed back, and they stay", () => {
+    let s = run(newMama("mp"), 3);
     const i = s.spots.findIndex(Boolean);
     s = { ...s, selected: i, fry: { stage: "ready", t: 0 } };
     for (const item of s.spots[i]!.order) {
@@ -236,7 +236,7 @@ describe("Mama Put", () => {
     expect(r.tip).toBeGreaterThan(0);
     expect(r.state.money).toBe(r.paid + r.tip);
 
-    let w = run(newMama("mp2"), 2);
+    let w = run(newMama("mp2"), 3);
     const j = w.spots.findIndex(Boolean);
     w = { ...w, selected: j };
     w = add(w, "fish").state;
@@ -244,7 +244,29 @@ describe("Mama Put", () => {
     w = add(w, "drink").state;
     const bad = serve(w, j);
     expect(bad.right).toBe(false);
+    expect(bad.rejected).toBe(true);
     expect(bad.state.money).toBe(0);
+    // Still at the counter, a little less patient, and the plate as it was.
+    expect(bad.state.spots[j]!.leaving).toBeNull();
+    expect(bad.state.spots[j]!.patience).toBeLessThan(w.spots[j]!.patience);
+    expect(bad.state.plates[j]).toEqual(w.plates[j]);
+    expect(bad.state.lost).toBe(0);
+  });
+
+  it("any plate can go to any customer, and nobody is served before they reach the counter", () => {
+    let s = newMama("any");
+    s = run(s, 0.9);
+    const i = s.spots.findIndex(Boolean);
+    expect(i).toBeGreaterThanOrEqual(0);
+    // Just walked in: not at the counter yet.
+    expect(serve({ ...s, plates: s.plates.map((p, k) => (k === 3 ? [...s.spots[i]!.order] : p)) }, 3, i).right).toBe(false);
+    s = run(s, 2);
+    const order = s.spots[i]!.order;
+    s = { ...s, fry: { stage: "ready", t: 0, n: 9 }, plates: s.plates.map((p, k) => (k === 3 ? [...order] : p)) };
+    const r = serve(s, 3, i);
+    expect(r.right).toBe(true);
+    expect(r.state.plates[3]).toEqual([]);
+    expect(r.state.spots[i]!.leaving?.paid).toBeGreaterThan(0);
   });
 
   it("dodo must be fried, and burns if it's left", () => {

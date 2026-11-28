@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DAYS, FRY_SECONDS, KITCHENS, QUICK, cookOf, menuOf, upgradeFor, TUTORIAL_ORDER, UPGRADES, buyGas, gasLeft, rushTime, tutorialStep, areaIndex, dayOpen, upgradePrice, add, bin, careerDay, configFor, fry, newMama, newOnDay, select, serve, stars, tick, waiting, type MamaConfig, type MamaState } from "./mama";
+import { DAYS, FRY_SECONDS, KITCHENS, QUICK, cookOf, menuOf, upgradeFor, TUTORIAL_ORDER, UPGRADES, buyGas, gasLeft, rushTime, tutorialStep, areaIndex, dayOpen, upgradePrice, add, bin, careerDay, configFor, fry, newMama, newOnDay, select, serve, stars, tick, atCounter, type MamaConfig, type MamaState } from "./mama";
 
 /**
  * A test player that plays like a person who knows the game: it looks after whoever is closest
@@ -20,7 +20,7 @@ export function autoplay(seed: string, cfg: MamaConfig, react: number): MamaStat
     };
     const queue = s.spots
       .map((c, i) => ({ c, i }))
-      .filter((x) => waiting(x.c))
+      .filter((x) => atCounter(s, x.c))
       .sort((a, b) => a.c!.patience - b.c!.patience);
     const cook = cookOf(s);
     const wantsDodo = queue.some((x) => x.c!.order.includes(cook) && !s.plates[x.i]!.includes(cook));
@@ -207,10 +207,9 @@ describe("Mama Put career and difficulty", () => {
     expect(c.order).toEqual([...TUTORIAL_ORDER]);
     expect(c.patience).toBe(c.max);
     expect(tutorialStep(s)).toEqual({ kind: "add", item: "jollof" });
+    // Dragged onto the first plate (whatever is selected).
     s = select(s, 2);
-    expect(tutorialStep(s)).toEqual({ kind: "plate" });
-    s = select(s, 0);
-    for (const it of TUTORIAL_ORDER) s = add(s, it).state;
+    for (const it of TUTORIAL_ORDER) s = add(s, it, 0).state;
     expect(tutorialStep(s)).toEqual({ kind: "serve" });
     s = serve(s, 0).state;
     expect(s.tut).toBe(false);

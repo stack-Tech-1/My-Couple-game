@@ -17,7 +17,11 @@ export const SPOTS = 4;
 export const RUSH_SECONDS = 90;
 export const FRY_SECONDS = 3;
 export const BURN_AFTER = 7;
-export const LEAVE_SECONDS = 0.8;
+/** Customers walk in to the counter and back out again, at a gentle pace. */
+export const WALK_SECONDS = 1.4;
+export const LEAVE_SECONDS = WALK_SECONDS;
+/** A plate pushed back (wrong, or not finished) costs this much of a customer's patience. */
+export const REJECT_COST = 0.15;
 /** Seconds of flame in a full cylinder, and what a refill costs (Yaba prices). */
 export const GAS_SECONDS = 30;
 export const GAS_PRICE = 800;
@@ -282,19 +286,20 @@ export function careerDay(day: number): MamaConfig {
  * (run it with MAMA_CALIBRATE=1 to print a fresh table): one star for a slow player (1.3s a tap),
  * two for a good one (1s), three for a sharp one (0.7s), kept so two stars sit at 60 to 80% of
  * three and one star at 35 to 60%. Through Ikeja, one star is also in reach of a very slow player
- * (1.6s). Days 1 to 3 are learning days and ask 20% less. Re-measure if the rules above change.
+ * (1.6s). Days 1 to 3 are learning days and ask 20% less. Re-measure if the rules above change, and
+ * never raise a target: that would take stars (and opened days) away from people who earned them.
  */
 const DAY_STARS: readonly (readonly [number, number, number])[] = [
   // Yaba
-  [4400, 5800, 7300], [4000, 5400, 6700], [4200, 5500, 6900], [8200, 11000, 13800], [6400, 11600, 14500], [6300, 11600, 14600],
+  [4400, 5800, 7300], [4000, 5400, 6700], [4200, 5500, 6900], [5900, 11000, 13800], [6400, 10900, 14400], [6300, 11600, 14500],
   // Ikeja
-  [5800, 10800, 13500], [4900, 11100, 13900], [3600, 9400, 11800], [5500, 10900, 13700], [6700, 12300, 15400], [5300, 12200, 15300],
+  [5600, 10300, 13500], [4900, 10300, 13900], [3600, 8100, 11700], [4700, 8400, 13700], [4900, 10100, 15300], [5200, 10100, 15300],
   // Surulere
-  [20000, 26700, 33400], [20000, 26700, 33400], [16700, 27000, 33800], [19300, 26000, 32600], [20600, 26600, 34400], [17700, 24400, 34700],
+  [20000, 26700, 33400], [19700, 26300, 32900], [16600, 24200, 33600], [14200, 24100, 32300], [14000, 23800, 29800], [14200, 22700, 33000],
   // Lekki
-  [40700, 59200, 74100], [47500, 56900, 81600], [32700, 59100, 77600], [28500, 60000, 76700], [27500, 59900, 76600], [26300, 59700, 75200],
+  [39600, 55400, 71300], [43300, 56900, 77500], [28800, 51700, 68000], [27700, 49500, 69400], [27500, 54600, 75700], [26300, 49300, 75200],
   // Victoria Island
-  [62400, 93100, 126800], [53900, 91500, 114400], [55500, 100800, 140400], [49000, 105700, 140200], [52900, 103300, 151300], [53600, 95500, 153300],
+  [62400, 90000, 119200], [53900, 81500, 105900], [47200, 81300, 117700], [49000, 88200, 117500], [50200, 93600, 131300], [46200, 85900, 132000],
 ];
 
 /**
@@ -312,7 +317,8 @@ export function configFor(mode: string, owned: readonly string[] = [], opts: { t
 }
 
 export type Look = { skin: number; style: number; cloth: number };
-export type Customer = { id: number; order: Item[]; patience: number; max: number; look: Look; arrived: number; leaving: { at: number; paid: number } | null };
+/** `arrived`: when they walked in (they reach the counter WALK_SECONDS later). `rejected`: when they last pushed a plate back. */
+export type Customer = { id: number; order: Item[]; patience: number; max: number; look: Look; arrived: number; leaving: { at: number; paid: number } | null; rejected?: number };
 /** The cooker. `n`: plates the ready batch still serves (missing: one). */
 export type Fry = { stage: "idle" | "frying" | "ready" | "burnt"; t: number; n?: number };
 export type MamaState = {
@@ -368,11 +374,10 @@ export function buyGas(s: MamaState): { state: MamaState; ok: boolean } {
 }
 
 /** The tutorial's next step, for the hints: null once it's over. */
-export function tutorialStep(s: MamaState): { kind: "wait" } | { kind: "plate" } | { kind: "add"; item: Item } | { kind: "bin" } | { kind: "serve" } | null {
+export function tutorialStep(s: MamaState): { kind: "wait" } | { kind: "add"; item: Item } | { kind: "bin" } | { kind: "serve" } | null {
   if (!s.tut) return null;
   const c = s.spots[0];
-  if (!waiting(c)) return { kind: "wait" };
-  if (s.selected !== 0) return { kind: "plate" };
+  if (!atCounter(s, c)) return { kind: "wait" };
   const plate = s.plates[0]!;
   if (plate.some((it) => !c.order.includes(it))) return { kind: "bin" };
   const missing = c.order.find((it) => !plate.includes(it));
@@ -412,11 +417,11 @@ export function tick(seed: string, s0: MamaState, dt: number): MamaState {
       if (s.time - c.leaving.at >= LEAVE_SECONDS) s.spots[i] = null;
       continue;
     }
-    const patience = s.tut ? c.patience : c.patience - dt;
+    // Patience starts once they're at the counter, and not at all in the tutorial.
+    const patience = s.tut || !atCounter(s, c) ? c.patience : c.patience - dt;
     if (patience <= 0) {
       s.spots[i] = { ...c, patience: 0, leaving: { at: s.time, paid: 0 } };
       s.lost++;
-      s.plates = s.plates.map((pl, j) => (j === i ? [] : pl));
     } else s.spots[i] = { ...c, patience };
   }
   // The cooker: only moves while there's fuel for the flame.
@@ -448,15 +453,20 @@ export function tick(seed: string, s0: MamaState, dt: number): MamaState {
 }
 
 export const waiting = (c: Customer | null | undefined): c is Customer => !!c && !c.leaving;
+/** Walked all the way in: their order shows, and they can be served. */
+export const atCounter = (s: Pick<MamaState, "time">, c: Customer | null | undefined): c is Customer => waiting(c) && s.time - c.arrived >= WALK_SECONDS;
 
 export function select(s: MamaState, i: number): MamaState {
   return i >= 0 && i < SPOTS ? { ...s, selected: i } : s;
 }
 
-/** Put something on the selected plate. The cooked dish has to be ready. */
-export function add(s: MamaState, item: Item): { state: MamaState; ok: boolean; why?: "fry" | "full" | "twice" } {
-  if (s.over) return { state: s, ok: false };
-  const plate = s.plates[s.selected]!;
+/**
+ * Put something on a plate: the one dragged onto, or the selected one (tapping). The plates aren't
+ * anyone's: any plate can go to any customer. The cooked dish has to be ready.
+ */
+export function add(s: MamaState, item: Item, onto: number = s.selected): { state: MamaState; ok: boolean; why?: "fry" | "full" | "twice" } {
+  if (s.over || onto < 0 || onto >= s.plates.length) return { state: s, ok: false };
+  const plate = s.plates[onto]!;
   if (plate.includes(item)) return { state: s, ok: false, why: "twice" };
   if (plate.length >= 6) return { state: s, ok: false, why: "full" };
   let fry = s.fry;
@@ -465,8 +475,8 @@ export function add(s: MamaState, item: Item): { state: MamaState; ok: boolean; 
     // A big batch (a pot of amala) serves more than one plate.
     fry = (fry.n ?? 1) > 1 ? { ...fry, n: fry.n! - 1 } : { stage: "idle", t: 0 };
   }
-  const plates = s.plates.map((p, j) => (j === s.selected ? [...p, item] : p));
-  return { state: { ...s, plates, fry }, ok: true };
+  const plates = s.plates.map((p, j) => (j === onto ? [...p, item] : p));
+  return { state: { ...s, plates, fry, selected: onto }, ok: true };
 }
 
 /** Start cooking (a burnt batch goes in the bin first). Needs fuel. */
@@ -475,37 +485,44 @@ export function fry(s: MamaState): MamaState {
   return s;
 }
 
-export function bin(s: MamaState): MamaState {
-  return { ...s, plates: s.plates.map((p, j) => (j === s.selected ? [] : p)) };
+/** Clear a plate (the selected one, or the one dragged to the bin). */
+export function bin(s: MamaState, plate: number = s.selected): MamaState {
+  return { ...s, plates: s.plates.map((p, j) => (j === plate ? [] : p)) };
 }
 
-/** Hand plate i to the customer in front of it. Paid (with a tip for speed) only if it's right. */
-export function serve(s: MamaState, i: number): { state: MamaState; paid: number; tip: number; right: boolean } {
-  const c = s.spots[i];
-  const plate = s.plates[i]!;
-  if (!waiting(c) || !plate.length || s.over) return { state: s, paid: 0, tip: 0, right: false };
-  const right = sameOrder(plate, c.order);
-  const price = right ? orderPrice(c.order, rulesOf(s)) : 0;
-  const tip = right ? Math.round((price * 0.3 * (c.patience / c.max) * (rulesOf(s).tips ?? 1)) / 50) * 50 : 0;
-  const spots = s.spots.map((x, j) => (j === i ? { ...c, leaving: { at: s.time, paid: price + tip } } : x));
-  const plates = s.plates.map((p, j) => (j === i ? [] : p));
-  // Move the selection to someone still waiting.
-  const next = spots.findIndex((x, j) => j !== i && waiting(x));
+/**
+ * Hand a plate to a customer: any plate, to anyone at the counter (dragged there, or the selected
+ * plate when a customer is tapped). The right order is paid, with a tip for speed, and they walk
+ * out. A wrong or unfinished plate is pushed back: they stay, a little less patient, and the plate
+ * stays as it was so it can be fixed.
+ */
+export function serve(s: MamaState, plateIdx: number, spot: number = plateIdx): { state: MamaState; paid: number; tip: number; right: boolean; rejected: boolean } {
+  const c = s.spots[spot];
+  const plate = s.plates[plateIdx];
+  const none = { state: s, paid: 0, tip: 0, right: false, rejected: false };
+  if (!plate || !atCounter(s, c) || !plate.length || s.over) return none;
+  if (!sameOrder(plate, c.order)) {
+    const patience = s.tut ? c.patience : Math.max(0.5, c.patience - c.max * REJECT_COST);
+    return { ...none, state: { ...s, spots: s.spots.map((x, j) => (j === spot ? { ...c, patience, rejected: s.time } : x)) }, rejected: true };
+  }
+  const price = orderPrice(c.order, rulesOf(s));
+  const tip = Math.round((price * 0.3 * (c.patience / c.max) * (rulesOf(s).tips ?? 1)) / 50) * 50;
+  const spots = s.spots.map((x, j) => (j === spot ? { ...c, leaving: { at: s.time, paid: price + tip } } : x));
+  const plates = s.plates.map((p, j) => (j === plateIdx ? [] : p));
   return {
     state: {
       ...s,
       spots,
       plates,
       money: s.money + price + tip,
-      served: s.served + (right ? 1 : 0),
-      lost: s.lost + (right ? 0 : 1),
-      selected: next >= 0 ? next : s.selected,
+      served: s.served + 1,
       // The tutorial ends with the first right plate; the rush starts a moment later.
-      ...(s.tut && right ? { tut: false, nextArrival: s.time + 1.5 } : {}),
+      ...(s.tut ? { tut: false, nextArrival: s.time + 1.5 } : {}),
     },
     paid: price,
     tip,
-    right,
+    right: true,
+    rejected: false,
   };
 }
 
