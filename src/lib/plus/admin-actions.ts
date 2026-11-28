@@ -29,7 +29,7 @@ const done = () => {
  * a future date opens it then (the daily job hands out the month). Null switches Plus off:
  * everything is free again, and nobody's seats are touched.
  */
-export async function setPlusLaunch(at: unknown): Promise<ActionResult<{ early: number | null }>> {
+export async function setPlusLaunch(at: unknown, opts: { earlyMonth?: boolean } = {}): Promise<ActionResult<{ early: number | null }>> {
   try {
     const me = await guard();
     const cfg = await plusConfig();
@@ -53,8 +53,17 @@ export async function setPlusLaunch(at: unknown): Promise<ActionResult<{ early: 
       if (cfg.launched_at && cfg.launched_at !== next) await clearQueuedEarlyMonths();
       await savePlusConfig({ ...(await plusConfig()), launched_at: next }, me.id);
     }
+    // Launching without the early-user free month (Plus on while payments wait for Paystack):
+    // marking it as already handed out stops it ever being granted for this launch.
+    if (opts.earlyMonth === false) {
+      const c = await plusConfig();
+      if (!c.early_granted_at) {
+        await clearQueuedEarlyMonths();
+        await savePlusConfig({ ...(await plusConfig()), early_granted_at: new Date().toISOString(), early_count: 0 }, me.id);
+      }
+    }
     const early = await grantEarlyMonthIfDue();
-    await audit(me, "plus.launch", next, { early });
+    await audit(me, "plus.launch", next, { early, earlyMonth: opts.earlyMonth !== false });
     done();
     return { ok: true, data: { early } };
   } catch (e) {

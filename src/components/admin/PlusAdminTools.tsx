@@ -24,12 +24,13 @@ export function LaunchControl({ launchedAt, earlyCount, earlyDone }: { launchedA
   const [pending, start] = useTransition();
   const [value, setValue] = useState(launchedAt ? localInput(launchedAt) : "");
   const [confirm, setConfirm] = useState<"now" | "off" | null>(null);
+  const [earlyMonth, setEarlyMonth] = useState(true);
   const live = !!launchedAt && Date.parse(launchedAt) <= Date.now();
   const scheduled = !!launchedAt && !live;
 
   const run = (at: string | null, msg: string) =>
     start(async () => {
-      const r = await setPlusLaunch(at);
+      const r = await setPlusLaunch(at, { earlyMonth });
       setConfirm(null);
       if (!r.ok) return void toast.error(r.error);
       toast.success(msg, r.data.early != null ? `${r.data.early.toLocaleString()} early users have their free month.` : undefined);
@@ -59,6 +60,13 @@ export function LaunchControl({ launchedAt, earlyCount, earlyDone }: { launchedA
           : "Setting a launch date gives everyone who joined before it a free month, starting on launch day."}
       </p>
 
+      {!live && !earlyDone ? (
+        <label className="mt-3 flex items-center gap-2 text-[0.9rem] font-semibold">
+          <input type="checkbox" checked={earlyMonth} onChange={(e) => setEarlyMonth(e.target.checked)} className="h-4 w-4" />
+          Give everyone who joined before launch a free month
+        </label>
+      ) : null}
+
       <div className="mt-4 flex flex-wrap items-end gap-3">
         {!live ? (
           <>
@@ -79,7 +87,7 @@ export function LaunchControl({ launchedAt, earlyCount, earlyDone }: { launchedA
         ) : null}
       </div>
 
-      <Modal open={confirm === "now"} onClose={() => setConfirm(null)} title="Launch Amah Plus now?" description="Plus games lock for anyone without Plus. Everyone who joined before now gets a free month straight away.">
+      <Modal open={confirm === "now"} onClose={() => setConfirm(null)} title="Launch Amah Plus now?" description={earlyMonth ? "Plus games lock for anyone without Plus. Everyone who joined before now gets a free month straight away." : "Plus games and limits lock for anyone without Plus. No free month is given. Payments stay paused until the live Paystack keys are in."}>
         <div className="flex justify-end gap-3">
           <Button variant="ghost" onClick={() => setConfirm(null)}>Not yet</Button>
           <Button loading={pending} onClick={() => run(new Date().toISOString(), "Amah Plus is live.")}>Launch now</Button>
