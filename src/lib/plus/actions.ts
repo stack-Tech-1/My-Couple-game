@@ -34,12 +34,15 @@ export async function startCheckout(raw: unknown): Promise<ActionResult<{ url: s
   if (!paystackConfigured()) return { ok: false, error: "Payments aren't set up yet. Try again soon." };
   if (await limited(user.id, "plus_checkout", 10, 600)) return { ok: false, error: "Easy, tiger. Give it a minute and try again." };
 
-  const bundle = await getRoom(input.roomId);
-  if (!bundle) return { ok: false, error: "You need to be in that room." };
+  // Plus belongs to the person, so someone with no room (playing Solo) can buy it for themselves.
+  const bundle = input.roomId ? await getRoom(input.roomId) : null;
+  if (input.roomId && !bundle) return { ok: false, error: "You need to be in that room." };
   const me = user.id;
   const plan: PlanId = input.plan;
+  if (!bundle && plan !== "single") return { ok: false, error: "Without a room, Plus is just for you." };
   let recipients: string[] = [];
   if (plan === "single") recipients = [me];
+  else if (!bundle) return { ok: false, error: "Without a room, Plus is just for you." };
   else if (plan === "couple") {
     if (bundle.room.kind !== "couple" || !bundle.partner) return { ok: false, error: "The couple plan is for you and your partner. Invite them first." };
     recipients = [me, bundle.partner.profile.id];
@@ -66,7 +69,7 @@ export async function startCheckout(raw: unknown): Promise<ActionResult<{ url: s
   const { error } = await admin.from("plus_purchases").insert({
     reference,
     payer_id: me,
-    room_id: bundle.room.id,
+    room_id: bundle?.room.id ?? null,
     plan,
     period: input.period,
     method,
@@ -86,7 +89,7 @@ export async function startCheckout(raw: unknown): Promise<ActionResult<{ url: s
       callbackUrl: `${site}/room/plus/return`,
       plan: code,
       channels: method === "card" ? ["card"] : ["card", "bank_transfer", "ussd", "bank"],
-      metadata: { purchase: reference, plan, period: input.period, room_id: bundle.room.id, cancel_action: `${site}/room/${bundle.room.id}/settings/plus` },
+      metadata: { purchase: reference, plan, period: input.period, room_id: bundle?.room.id ?? null, cancel_action: bundle ? `${site}/room/${bundle.room.id}/settings/plus` : `${site}/solo/plus` },
     });
     return { ok: true, data: { url: init.authorization_url } };
   } catch {
@@ -122,6 +125,7 @@ export async function startTrial(): Promise<ActionResult> {
   const { error: seatErr } = await admin.rpc("plus_stack_seat", { p_user: user.id, p_purchase: null, p_source: "trial", p_length: `${TRIAL_DAYS} days`, p_given_by: null });
   if (seatErr) return { ok: false, error: "Couldn't start your trial. Try again?" };
   revalidatePath("/room", "layout");
+  revalidatePath("/solo", "layout");
   return { ok: true, data: null };
 }
 

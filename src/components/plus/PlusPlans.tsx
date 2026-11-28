@@ -10,8 +10,9 @@ import { PLANS, TRIAL_DAYS, naira, type PlanId, type Period } from "@/lib/plus/p
 import { goldButton, goldStyle } from "./PlusTag";
 
 type Props = {
-  roomId: string;
-  roomKind: "couple" | "friends";
+  /** None: bought from Solo with no room, so only "Just me". */
+  roomId?: string;
+  roomKind?: "couple" | "friends";
   /** Couple rooms: the partner's name, if they've joined. */
   partnerName?: string | null;
   trialAvailable: boolean;
@@ -22,7 +23,7 @@ type Props = {
 /** Pick a plan and pay, or start the free trial. Used in the upgrade sheet, Settings and gifting. */
 export function PlusPlans({ roomId, roomKind, partnerName, trialAvailable, giftTo }: Props) {
   const router = useRouter();
-  const options: PlanId[] = giftTo ? ["gift"] : roomKind === "couple" ? (partnerName ? ["couple", "single"] : ["single"]) : ["single", "group3", "group5", "group8"];
+  const options: PlanId[] = giftTo ? ["gift"] : !roomId ? ["single"] : roomKind === "couple" ? (partnerName ? ["couple", "single"] : ["single"]) : ["single", "group3", "group5", "group8"];
   const [plan, setPlan] = useState<PlanId>(options[0]!);
   const [period, setPeriod] = useState<Period>("month");
   const [busy, setBusy] = useState<"trial" | "card" | "pass" | null>(null);

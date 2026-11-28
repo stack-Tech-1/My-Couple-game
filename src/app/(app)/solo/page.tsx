@@ -42,10 +42,10 @@ export default async function SoloHome() {
             <span className="cut-sm bg-marigold px-2.5 py-0.5 text-[0.8rem] font-extrabold text-[#1b1519]">Free</span>
           </div>
           <p className="mt-1.5 font-semibold">Quick games, no partner needed. Beat your best, then beat your friends.</p>
-          {plays.limited ? <p className="mt-1 text-[0.85rem] text-muted">Most games are free twice a day, Zobo Sort gives one free level a day, and Bash Am and Mama Put let you try their first levels. Challenges and today&apos;s word are always open.</p> : null}
+          {plays.limited ? <p className="mt-1 text-[0.85rem] text-muted">Most games are free twice a day, Zobo Sort gives one free level a day, and Bash Am, Mama Put and Okada Rush let you try their first levels. Challenges and today&apos;s word are always open.</p> : null}
           {plays.limited ? (
-            // Plus belongs to a room, so someone with no room starts one first.
-            <Link prefetch={false} href={ctx.homeRoomId ? `/room/${ctx.homeRoomId}/settings/plus` : "/room/new"} className="cut-sm mt-3 inline-flex items-center gap-1.5 bg-fg px-4 py-2.5 text-[0.9rem] font-extrabold text-bg">
+            // Plus belongs to the person: with a room it's managed there, without one in Solo.
+            <Link prefetch={false} href={ctx.homeRoomId ? `/room/${ctx.homeRoomId}/settings/plus` : "/solo/plus"} className="cut-sm mt-3 inline-flex items-center gap-1.5 bg-fg px-4 py-2.5 text-[0.9rem] font-extrabold text-bg">
               Get Amah Plus: no daily limits <Icon name="arrowRight" size={16} />
             </Link>
           ) : null}

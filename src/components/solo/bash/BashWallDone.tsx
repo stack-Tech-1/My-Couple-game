@@ -55,7 +55,7 @@ function Done({ wall, score, totalBefore, totalAfter, again, share }: Props) {
           </svg>
         ) : <div className="h-14" />}
         <div className="mt-4 text-center">
-          <h2 id="solo-result-h" className="display text-[2.5rem] leading-none">{won ? "Wall don fall!" : "The wall won this one"}</h2>
+          <h2 id="solo-result-h" className="display text-[2.5rem] leading-none">{won ? "You win!" : "The wall won this one"}</h2>
           <p className="mx-auto mt-2 max-w-[22rem] text-[0.95rem]">{won ? `Wall ${wall} cleared.` : `You ran out of balls on wall ${wall}.`}</p>
         </div>
         {won ? (

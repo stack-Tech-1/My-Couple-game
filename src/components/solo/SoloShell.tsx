@@ -404,7 +404,7 @@ export function SoloShell<S>({
       {phase === "plus" ? (
         <div className="glass mt-6 rounded-[24px] p-6 text-center">
           <p className="display text-[1.6rem] leading-tight">The rest of {game.name} comes with Amah Plus</p>
-          <p className="mt-1 text-muted">{gameId === "mama-put" ? "Days 1 and 2 in Yaba are free. Join Plus for every day across Lagos and the quick rushes." : "Wall 1 is free to play twice a day. Join Plus to play every wall and build your street."} Try it free for 7 days.</p>
+          <p className="mt-1 text-muted">{gameId === "mama-put" ? "Days 1 and 2 in Yaba are free. Join Plus for every day across Lagos and the quick rushes." : gameId === "okada-rush" ? "Yaba streets is free to ride twice a day. Join Plus for every route and Free Ride." : "Wall 1 is free to play twice a day. Join Plus to play every wall and build your street."} Try it free for 7 days.</p>
           <div className="mt-5 flex flex-col items-center gap-2">
             {limits.plusHref ? (
               <Link prefetch={false} href={limits.plusHref} className="inline-flex h-12 items-center rounded-full bg-fg px-6 font-semibold text-bg">

@@ -521,7 +521,7 @@ export function BashWall({ api }: { api: SoloApi<WallState> }) {
           }
           if (r.ev.won) {
             au?.sfx("ba-clear");
-            banner.current = { text: "Wall don fall!", life: 3 };
+            banner.current = { text: "You win!", life: 3 };
             shake.current = 8;
             changed = true;
           }

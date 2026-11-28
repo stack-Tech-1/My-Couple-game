@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { Logo } from "@/design/Logo";
 import { ThemeToggle } from "./ThemeToggle";
+import { BackButton } from "@/design/BackButton";
 import { PageBackdrop } from "./room/HomeBackdrop";
 import { PAGE_LOOKS } from "@/games/look";
 
@@ -17,7 +18,8 @@ export function LegalPage({ title, updated, summary, children }: { title: string
         </Link>
         <ThemeToggle />
       </div>
-      <h1 className="display mt-16 text-[clamp(2.6rem,7vw,4rem)] max-sm:mt-12 max-sm:text-[#f6efe6]">{title}</h1>
+      <BackButton href="/" label="Home" className="mt-8 max-sm:mt-6" />
+      <h1 className="display mt-6 text-[clamp(2.6rem,7vw,4rem)] max-sm:mt-12 max-sm:text-[#f6efe6]">{title}</h1>
       <p className="mt-3 text-[0.9rem] text-muted max-sm:text-[#f6efe6]/80">Last updated {updated}</p>
       </div>
       {summary ? (

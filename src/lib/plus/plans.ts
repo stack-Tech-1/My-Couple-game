@@ -41,10 +41,11 @@ export const FREE_PLAYS_PER_DAY = 2;
  * Bash Am comes with Plus, apart from a free taste: its first wall, played like any other game
  * (twice a day, back at midnight). Every other wall, Endless Street and the street shop need Plus.
  */
-export const SOLO_TRIAL: Readonly<Record<string, readonly string[]>> = { "bash-am": ["wall-1"], "mama-put": FREE_CAREER_MODES };
+export const SOLO_TRIAL: Readonly<Record<string, readonly string[]>> = { "bash-am": ["wall-1"], "mama-put": FREE_CAREER_MODES, "okada-rush": ["route-1"] };
 /**
  * Does this game (or this mode of it) need Plus? Mama Put without Plus is its first two Yaba days
- * (free, as often as you like); Bash Am is its first wall. Without a mode: is the whole game Plus
+ * (free, as often as you like); Bash Am is its first wall and Okada Rush its first route (Yaba
+ * streets), each twice a day. Without a mode: is the whole game Plus
  * beyond a taste (Bash Am, for the Solo shelf's tag)?
  */
 export const isPlusOnlySolo = (gameId: string, mode?: string) => {
@@ -110,7 +111,8 @@ export const checkoutInput = z.object({
   period: z.enum(["month", "year"]),
   /** card: renews automatically. pass: pay once by transfer, USSD or card. */
   method: z.enum(["card", "pass"]),
-  roomId: z.uuid(),
+  /** The room it's bought from. None (Solo, no room yet): only "Just me". */
+  roomId: z.uuid().optional(),
   /** Gift seats: who it's for. */
   giftTo: z.uuid().optional(),
   /** Group plans: also give the payer a seat straight away. */

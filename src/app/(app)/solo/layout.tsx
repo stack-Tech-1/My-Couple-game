@@ -31,7 +31,8 @@ export default async function SoloLayout({ children }: { children: ReactNode }) 
         <SoloLimitsProvider
           value={{
             // Plus belongs to a room, so someone with no room starts one first.
-            plusHref: ctx.homeRoomId ? `/room/${ctx.homeRoomId}/settings/plus` : "/room/new",
+            // Plus belongs to the person: with a room it's managed there, without one in Solo.
+            plusHref: ctx.homeRoomId ? `/room/${ctx.homeRoomId}/settings/plus` : "/solo/plus",
             me: { name: ctx.profile.display_name, motif: ctx.profile.avatar_key ?? "fig", hue: ctx.profile.avatar_hue ?? 12 },
             openNow: [
               { label: "Ọ̀rọ̀ of the Day", hint: "Today's word. Never limited.", href: "/solo/oro" },

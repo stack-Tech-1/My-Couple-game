@@ -1,5 +1,6 @@
 import "server-only";
 import { supabaseAdmin } from "@/lib/supabase/server";
+import { soloFreePlays } from "@/lib/plus/limits";
 import { ROUTES, isGear, isSkin, routeStars, type GearId, type SkinId } from "./games/okada";
 
 /** Everything the Okada Rush home needs about one person. */
@@ -17,13 +18,18 @@ export type OkadaCareer = {
   skins: SkinId[];
   /** The bike colour in use. */
   skin: SkinId;
+  /** No Amah Plus: only Yaba streets, twice a day. */
+  locked: boolean;
+  trialLeft: number;
+  resetsAt: string;
 };
 
 export async function okadaCareer(userId: string): Promise<OkadaCareer> {
   const admin = supabaseAdmin();
-  const [{ data: scores }, { data: shop }] = await Promise.all([
+  const [{ data: scores }, { data: shop }, plays] = await Promise.all([
     admin.from("solo_scores").select("mode, score, meta").eq("user_id", userId).eq("game_id", "okada-rush").limit(10000),
     admin.from("solo_shop").select("item, price, bought_at").eq("user_id", userId).eq("game_id", "okada-rush").order("bought_at"),
+    soloFreePlays(userId, "okada-rush"),
   ]);
   const routeBest: (number | null)[] = ROUTES.map(() => null);
   let freeBest: number | null = null;
@@ -66,6 +72,9 @@ export async function okadaCareer(userId: string): Promise<OkadaCareer> {
     gear,
     skins,
     skin,
+    locked: plays.limited,
+    trialLeft: plays.left,
+    resetsAt: plays.resetsAt,
   };
 }
 

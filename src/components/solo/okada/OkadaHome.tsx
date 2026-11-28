@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { BackButton } from "@/design/BackButton";
+import { useSoloLimits } from "../SoloLimits";
+import { untilText } from "@/lib/plus/plans";
 import { useEffect, useState } from "react";
 import { Icon } from "@/design/icons";
 import { toast } from "@/design/toast";
@@ -58,7 +60,8 @@ export function OkadaHome({ career }: { career: OkadaCareer }) {
   }
 
   const best = (n: number) => career.routeBest[n - 1] ?? undefined;
-  const open = (n: number) => routeOpen(n, best);
+  // Without Plus, Yaba streets is the free taste (twice a day).
+  const open = (n: number) => (career.locked ? n === 1 : routeOpen(n, best));
   const rank = rankFor(career.km);
   const toNext = rank.next ? Math.min(1, (career.km - rank.km) / (rank.next.km - rank.km)) : 1;
   const next = [1, 2, 3, 4, 5].find((n) => open(n) && !career.routeStars[n - 1]) ?? [1, 2, 3, 4, 5].find((n) => open(n) && career.routeStars[n - 1]! < 3) ?? 1;
@@ -125,7 +128,7 @@ export function OkadaHome({ career }: { career: OkadaCareer }) {
                 <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-display text-[1.1rem] font-black", isOpen ? "bg-[#f2b705] text-[#1f1b1d]" : "bg-[rgba(28,20,22,.12)] text-muted")}>{isOpen ? n : <Icon name="lock" size={15} />}</span>
                 <span className="min-w-0 flex-1">
                   <b className="display block text-[1.05rem] leading-tight">{name}</b>
-                  <span className="block text-[0.75rem] leading-snug text-muted">{isOpen ? ROUTE_ABOUT[i] : `Get a star on ${ROUTES[i - 1]} first.`}</span>
+                  <span className="block text-[0.75rem] leading-snug text-muted">{isOpen ? ROUTE_ABOUT[i] : career.locked ? "Comes with Amah Plus." : `Get a star on ${ROUTES[i - 1]} first.`}</span>
                 </span>
                 {isOpen ? (
                   <span className="shrink-0 text-right">
@@ -153,8 +156,10 @@ export function OkadaHome({ career }: { career: OkadaCareer }) {
         </ol>
       </section>
 
+      {career.locked ? <OkadaPlus left={career.trialLeft} resetsAt={career.resetsAt} /> : null}
+
       {/* Free Ride */}
-      <section aria-labelledby="ok-free-h" className="mt-6">
+      <section aria-labelledby="ok-free-h" className={cn("mt-6", career.locked && "hidden")}>
         <Link prefetch={false} href={withSkin("/solo/okada-rush?mode=free")} className="flex items-center justify-between gap-3 rounded-[20px] bg-[#4a4144] px-4 py-3.5 text-white">
           <span>
             <b id="ok-free-h" className="display block text-[1.3rem] leading-tight">
@@ -231,6 +236,29 @@ export function OkadaHome({ career }: { career: OkadaCareer }) {
         </ul>
         <p className="mt-3 text-center text-[0.75rem] text-muted">Free Ride is the same bike for everyone, so its leaderboard stays fair. Colours show everywhere.</p>
       </section>
+    </div>
+  );
+}
+
+/** Without Plus: Yaba streets twice a day, and what the rest of Okada Rush holds. */
+function OkadaPlus({ left, resetsAt }: { left: number; resetsAt: string }) {
+  const { plusHref } = useSoloLimits();
+  return (
+    <div className="cloth mt-4 px-4 py-3.5 text-center">
+      <p className="font-bold">
+        {left > 0 ? `Yaba streets is free: ${left === 1 ? "1 ride" : `${left} rides`} left today.` : "That's today's free rides on Yaba streets."}
+      </p>
+      {left > 0 ? null : (
+        <p className="text-[0.88rem] text-muted" suppressHydrationWarning>
+          They&apos;re back {untilText(resetsAt)}.
+        </p>
+      )}
+      <p className="mt-1 text-[0.88rem] text-muted">The other routes and Free Ride come with Amah Plus.</p>
+      {plusHref ? (
+        <Link prefetch={false} href={plusHref} className="mt-2.5 inline-flex h-11 items-center rounded-full bg-[#1c1416] px-5 font-extrabold text-[#f6efe6]">
+          Try Amah Plus
+        </Link>
+      ) : null}
     </div>
   );
 }

@@ -428,7 +428,7 @@ export function OkadaRush({ api }: { api: SoloApi<OkadaState> }) {
     au.voice("rider-go", 0, 0.9);
     engine.current = au.loop("ok-engine", { volume: 0.5, rate: 0.8 });
     street.current = au.loop(road === 2 ? "ok-bridge" : road === 4 ? "ok-night" : "ok-street", { volume: 0.3 });
-    au.music("ok-music-ride", 0.16);
+    au.music("ok-music-ride", 0.24);
   }, [count, road]);
 
   // Ready, steady, go.

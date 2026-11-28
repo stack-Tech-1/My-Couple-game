@@ -1,5 +1,6 @@
 "use client";
 
+import { BackButton } from "@/design/BackButton";
 import { useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
@@ -45,7 +46,8 @@ export function Onboarding({ profile, startAt, next }: { profile: Profile; start
     <div className="relative isolate mx-auto flex min-h-dvh max-w-xl flex-col px-4 py-5 sm:px-8">
       {/* Phones: deep purple with iye feathers (reaching your goal quickly). */}
       <div className="relative z-[1] flex items-center justify-between max-sm:text-[#f6efe6]">
-        <Logo />
+        {/* Already set up and here to make a room (from Solo): the way back is Solo. */}
+        {startAt === "room" ? <BackButton href="/solo" label="Solo" /> : <Logo />}
         <span className="flex items-center gap-2">
           <span className="eyebrow tabular text-muted max-sm:text-[#ffd65c]">Step {step === "you" ? 1 : 2} of 2</span>
           <ThemeToggle />
@@ -104,7 +106,7 @@ export function Onboarding({ profile, startAt, next }: { profile: Profile; start
             <h1 className="display text-[clamp(2.6rem,9vw,3.8rem)] max-sm:text-[#f6efe6]">Now, your first room.</h1>
             <p className="mt-3 mb-10 text-muted max-sm:mb-0 max-sm:text-[#f6efe6]/85">A couple room is just for the two of you. A friend room fits up to eight. You can have one of each, and more friend rooms later.</p>
             </div>
-            <NewRoomForm name={name} hasCouple={false} friendRooms={0} initialMode={next?.startsWith("/join/") ? "join" : "couple"} onBack={() => setStep("you")} />
+            <NewRoomForm name={name} hasCouple={false} friendRooms={0} initialMode={next?.startsWith("/join/") ? "join" : "couple"} onBack={() => (startAt === "room" ? router.push("/solo") : setStep("you"))} />
             <div className="glass mt-8 flex flex-wrap items-center gap-4 rounded-[20px] p-4">
               <div className="min-w-0 flex-1">
                 <p className="font-bold">Just me for now</p>

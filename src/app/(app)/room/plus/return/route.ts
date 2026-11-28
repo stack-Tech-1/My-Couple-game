@@ -30,7 +30,8 @@ export async function GET(req: Request) {
       // Paystack slow to answer: the webhook will finish the job.
     }
   }
-  const to = new URL(data.room_id ? `/room/${data.room_id}/settings/plus` : "/room", url);
+  // Bought from Solo with no room: back to Solo's Plus page.
+  const to = new URL(data.room_id ? `/room/${data.room_id}/settings/plus` : "/solo/plus", url);
   to.searchParams.set("payment", result);
   return NextResponse.redirect(to);
 }

@@ -54,7 +54,7 @@ test("bash am: Plus clears a wall, gets paid, opens the next, and builds on the 
     await page.evaluate(([key, value]) => localStorage.setItem(key!, value!), ["amah:solo:bash-am:wall-1", JSON.stringify({ runId: run!.id, seed, target: null, elapsed: 30000, state, at: Date.now() })]);
     await page.goto("/solo/bash-am?mode=wall-1");
     await page.getByRole("button", { name: "Carry on" }).click();
-    await expect(page.getByRole("heading", { name: "Wall don fall!" })).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByRole("heading", { name: "You win!" })).toBeVisible({ timeout: 20_000 });
     await expect.poll(async () => (await admin.from("solo_scores").select("mode, score").eq("user_id", plus.id).eq("game_id", "bash-am")).data).toEqual([{ mode: "wall-1", score: takings(1, 0) }]);
 
     await page.getByRole("link", { name: "Back to the sites" }).click();

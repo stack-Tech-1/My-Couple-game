@@ -34,7 +34,11 @@ export default async function NewRoomPage() {
           <Link prefetch={false} href={`/room/${home}`} className="inline-flex items-center gap-1.5 text-[0.9rem] font-semibold text-muted hover:text-fg max-sm:text-[#f6efe6]/85">
             <Icon name="arrowLeft" size={16} /> Back
           </Link>
-        ) : null}
+        ) : (
+          <Link prefetch={false} href="/solo" className="inline-flex items-center gap-1.5 text-[0.9rem] font-semibold text-muted hover:text-fg max-sm:text-[#f6efe6]/85">
+            <Icon name="arrowLeft" size={16} /> Solo
+          </Link>
+        )}
         </span>
       </div>
       <div className="pt-12">

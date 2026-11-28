@@ -217,7 +217,7 @@ async function afterPaid(p: Purchase) {
   const nameOf = (id: string) => (profiles ?? []).find((x) => x.id === id)?.display_name as string | undefined;
   const payerName = nameOf(p.payer_id) ?? "there";
   const site = siteUrl();
-  const plusUrl = p.room_id ? `${site}/room/${p.room_id}/settings/plus` : `${site}/room`;
+  const plusUrl = p.room_id ? `${site}/room/${p.room_id}/settings/plus` : `${site}/solo/plus`;
 
   // Everyone who got a seat from someone else hears about it.
   for (const id of holders) {

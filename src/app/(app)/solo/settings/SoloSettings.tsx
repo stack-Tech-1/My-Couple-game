@@ -118,6 +118,13 @@ export function SoloSettings({
         </Card>
       ) : null}
 
+      <Card title="Amah Plus">
+        <p className="text-muted">Every game with no daily limits, in Solo and in every room.</p>
+        <Link prefetch={false} href={homeRoomId ? `/room/${homeRoomId}/settings/plus` : "/solo/plus"} className="mt-3 inline-flex items-center gap-1.5 font-semibold underline underline-offset-4">
+          Amah Plus <Icon name="arrowRight" size={16} />
+        </Link>
+      </Card>
+
       <Card title="Help & feedback">
         <p className="mb-5 text-muted">Found a bug, have an idea, or a question you think everyone should play? Tell us. A real person reads every message.</p>
         <FeedbackHub userId={profile.id} threads={feedback.threads} unread={feedback.unread} spicyOpen={false} />
