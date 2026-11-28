@@ -528,7 +528,7 @@ export function MosquitoWahala({ api }: { api: SoloApi<MosquitoState> }) {
                 marks.current.push({ x: h.x, y: h.y, r: 2 + Math.random() * 3 });
                 if (marks.current.length > 30) marks.current.shift();
               }
-              pops.current.push({ x: h.x, y: Math.max(40, h.y - 14), text: ["Kpa!", "Gbam!", "Ko si!", "Kpa!"][Math.floor(Math.random() * 4)]!, sub: `+${h.points}`, life: 1 });
+              pops.current.push({ x: h.x, y: Math.max(40, h.y - 14), text: ["Kpa!", "Gbam!"][Math.floor(Math.random() * 2)]!, sub: `+${h.points}`, life: 1 });
               changed = true;
             } else au?.sfx("mq-puff-hit", { volume: 0.6 });
           }

@@ -83,7 +83,7 @@ test("Solo and Play the bot: twice a day per game, per person; challenges stay o
     await expect(page.getByText("Every game is free twice a day.", { exact: false })).toBeVisible();
     await expect(page.getByRole("link", { name: /Whot/ }).filter({ hasText: "Back at midnight" }).first()).toBeVisible();
     await page.goto("/solo/bot-whot");
-    await page.getByRole("radio", { name: /Small pikin/ }).click();
+    await page.getByRole("radio", { name: /Beginner/ }).click();
     await expect(page.getByRole("heading", { name: "It opens again at midnight" })).toBeVisible();
     await expect(page.getByRole("link", { name: /Ọ̀rọ̀ of the Day/ })).toBeVisible();
   } finally {

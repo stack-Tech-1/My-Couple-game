@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { FREE_CAREER_MODES } from "@/lib/solo/games/mama";
 import { isSoloGame } from "@/lib/solo/catalog";
 import { freeGameOfWeek } from "@/lib/engage/rotation";
 
@@ -36,10 +37,23 @@ export const FREE_LIMITS = { photos: 5, sealedNotes: 3, friendRooms: 1 } as cons
  * where anyone has Plus has no limits; a free friend room plays two at a time.
  */
 export const FREE_PLAYS_PER_DAY = 2;
-/** Solo games with no free plays at all: they need Plus, even from a challenge link. */
-export const isPlusOnlySolo = (gameId: string) => gameId === "bash-am";
+/**
+ * Bash Am comes with Plus, apart from a free taste: its first wall, played like any other game
+ * (twice a day, back at midnight). Every other wall, Endless Street and the street shop need Plus.
+ */
+export const SOLO_TRIAL: Readonly<Record<string, readonly string[]>> = { "bash-am": ["wall-1"], "mama-put": FREE_CAREER_MODES };
+/**
+ * Does this game (or this mode of it) need Plus? Mama Put without Plus is its first two Yaba days
+ * (free, as often as you like); Bash Am is its first wall. Without a mode: is the whole game Plus
+ * beyond a taste (Bash Am, for the Solo shelf's tag)?
+ */
+export const isPlusOnlySolo = (gameId: string, mode?: string) => {
+  const free = SOLO_TRIAL[gameId];
+  if (!free) return false;
+  return mode === undefined ? gameId === "bash-am" : !free.includes(mode);
+};
 /** Zobo Sort is rationed by level: one new level a day without Plus, and retrying it is fine. */
-export const freePlaysFor = (gameId: string) => (isPlusOnlySolo(gameId) ? 0 : gameId === "zobo-sort" ? 1 : FREE_PLAYS_PER_DAY);
+export const freePlaysFor = (gameId: string) => (gameId === "zobo-sort" ? 1 : FREE_PLAYS_PER_DAY);
 export const FREE_MAX_PLAYERS = 2;
 /** Free and unlimited: these are daily rituals and keepsakes, not games to ration. */
 export const UNLIMITED_FREE = new Set(["daily-question", "love-notes", "memory-lane"]);

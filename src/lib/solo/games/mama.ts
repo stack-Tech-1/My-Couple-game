@@ -216,7 +216,8 @@ export const upgradePrice = (area: number, id: UpgradeId) => Math.round((UPGRADE
 const AREA_VIBE = [0.5, 0.75, 1, 1, 1] as const;
 export const vibeWeight = (day: number) => AREA_VIBE[areaIndex(day)] ?? 1;
 /** Career days that never use a free play: the whole of Yaba, so new players can get hooked. */
-export const FREE_CAREER_MODES = ["day-1", "day-2", "day-3", "day-4", "day-5", "day-6"] as const;
+/** Without Plus: the first two Yaba days, as often as you like. Everything else needs Plus. */
+export const FREE_CAREER_MODES = ["day-1", "day-2"] as const;
 /** A career day opens once the day before has at least one star. */
 export const dayOpen = (day: number, best: (day: number) => number | undefined) => day <= 1 || (best(day - 1) ?? 0) >= careerDay(day - 1).stars[0];
 

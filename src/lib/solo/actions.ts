@@ -92,8 +92,9 @@ export async function startRun(raw: unknown): Promise<StartResult> {
     const before = n > 1 ? await bashWallCleared(user.id, n - 1) : true;
     if (!wallOpen(n, () => before)) return { ok: false, error: `Clear wall ${n - 1} first.`, blocked: true };
   }
-  // Bash Am needs Plus for every way in, challenges included.
-  if (isPlusOnlySolo(p.data.gameId) && (await soloFreePlays(user.id, p.data.gameId)).limited) {
+  // Bash Am and Mama Put need Plus for every way in, challenges included, apart from their free
+  // taste (Bash Am's first wall, Mama Put's first two Yaba days).
+  if (isPlusOnlySolo(p.data.gameId, p.data.mode) && (await soloFreePlays(user.id, p.data.gameId)).limited) {
     return { ok: false, error: `${soloGame(p.data.gameId)!.name} comes with Amah Plus.`, plusOnly: true };
   }
   // Without Plus, each game twice a day (Zobo Sort, one level a day). Challenges are always open, and so is Mama Put's Yaba.

@@ -11,7 +11,7 @@ import type { BotLevel } from "./catalog";
 /**
  * Computer opponents for the free board and card games. They reuse each game's own rules: a bot
  * only ever picks a move the rules accept. Easy plays at random; Steady thinks one move ahead;
- * Agba searches deeper on the games where everything is on the table (no peeking at hidden cards).
+ * Boss searches deeper on the games where everything is on the table (no peeking at hidden cards).
  */
 type Any = unknown;
 type Base = "whot" | "ludo" | "ayo" | "draughts" | "tic-tac-toe" | "connect-four" | "box-am";
@@ -258,7 +258,7 @@ function giveaway(b: BoxState, m: BoxMove): number {
 
 /**
  * Box Am bot. Easy: often grabs a free box, otherwise anything. Steady: takes every free box and
- * never draws a third side if it can help it. Agba: the same, and when it must give boxes away it
+ * never draws a third side if it can help it. Boss: the same, and when it must give boxes away it
  * gives the fewest.
  */
 function boxBot(b: BoxState, moves: BoxMove[], level: BotLevel, rand: () => number): BoxMove {

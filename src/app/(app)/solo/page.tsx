@@ -14,8 +14,9 @@ export default async function SoloHome() {
   const ctx = await soloContext();
   const [bests, challenges, flags, plays] = await Promise.all([myBests(ctx.user.id), incomingChallenges(ctx.user.id), getGameFlags(), soloFreePlaysAll(ctx.user.id)]);
   // Without Plus: each game twice a day. A used-up game says so on its card.
-  const usedUp = (id: string) => plays.limited && id !== "oro" && !isPlusOnlySolo(id) && (plays.used[id] ?? 0) >= freePlaysFor(id);
-  const tagFor = (id: string, otherwise?: string) => (plays.limited && isPlusOnlySolo(id) ? "Plus" : usedUp(id) ? "Back at midnight" : otherwise);
+  const usedUp = (id: string) => plays.limited && id !== "oro" && (plays.used[id] ?? 0) >= freePlaysFor(id);
+  // Bash Am without Plus: its first wall is a free taste.
+  const tagFor = (id: string, otherwise?: string) => (usedUp(id) ? "Back at midnight" : plays.limited && isPlusOnlySolo(id) ? "Wall 1 free" : otherwise);
   const live = SOLO_GAMES.filter((g) => !flags.off.includes(g.id));
   const bestOf = (id: string, mode = "normal") => bests.find((b) => b.gameId === id && b.mode === mode);
   const note = (id: string) => {
@@ -41,7 +42,13 @@ export default async function SoloHome() {
             <span className="cut-sm bg-marigold px-2.5 py-0.5 text-[0.8rem] font-extrabold text-[#1b1519]">Free</span>
           </div>
           <p className="mt-1.5 font-semibold">Quick games, no partner needed. Beat your best, then beat your friends.</p>
-          {plays.limited ? <p className="mt-1 text-[0.85rem] text-muted">Most games are free twice a day, Zobo Sort gives one free level a day, and Bash Am comes with Amah Plus. Challenges and today&apos;s word are always open.</p> : null}
+          {plays.limited ? <p className="mt-1 text-[0.85rem] text-muted">Most games are free twice a day, Zobo Sort gives one free level a day, and Bash Am and Mama Put let you try their first levels. Challenges and today&apos;s word are always open.</p> : null}
+          {plays.limited ? (
+            // Plus belongs to a room, so someone with no room starts one first.
+            <Link prefetch={false} href={ctx.homeRoomId ? `/room/${ctx.homeRoomId}/settings/plus` : "/room/new"} className="cut-sm mt-3 inline-flex items-center gap-1.5 bg-fg px-4 py-2.5 text-[0.9rem] font-extrabold text-bg">
+              Get Amah Plus: no daily limits <Icon name="arrowRight" size={16} />
+            </Link>
+          ) : null}
         </div>
         </div>
         <Selvedge words={["ON YOUR OWN", `${live.length} GAMES`]} />

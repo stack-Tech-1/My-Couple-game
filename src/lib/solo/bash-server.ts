@@ -11,8 +11,11 @@ export type BashCareer = {
   /** Naira earned from walls, ever, minus what's been spent on the street. */
   savings: number;
   built: BuildingId[];
-  /** Bash Am needs Amah Plus, so this person can look but not play. */
+  /** No Amah Plus: only the first wall, as a free taste. */
   locked: boolean;
+  /** Free goes at the first wall left today, and when they're back (only when locked). */
+  trialLeft: number;
+  resetsAt: string;
 };
 
 export async function bashCareer(userId: string): Promise<BashCareer> {
@@ -37,7 +40,7 @@ export async function bashCareer(userId: string): Promise<BashCareer> {
     spent += r.price as number;
     if (isBuilding(r.item as string)) built.push(r.item as BuildingId);
   }
-  return { wallStars, totalStars: wallStars.reduce((a, b) => a + b, 0), savings: Math.max(0, earned - spent), built, locked: plays.limited };
+  return { wallStars, totalStars: wallStars.reduce((a, b) => a + b, 0), savings: Math.max(0, earned - spent), built, locked: plays.limited, trialLeft: plays.left, resetsAt: plays.resetsAt };
 }
 
 /** Has this wall been cleared? (For checking the next one is open.) */

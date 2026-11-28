@@ -130,7 +130,7 @@ test("solo: today's word, a bot game, and Fix Am with a picture from the admin",
 
     // X and O against the easy bot: you play, it answers.
     await page.goto("/solo/bot-tic-tac-toe");
-    await page.getByRole("radio", { name: /Small pikin/ }).click();
+    await page.getByRole("radio", { name: /Beginner/ }).click();
     const board = page.getByRole("grid", { name: /Noughts and crosses board/ });
     await expect(board).toBeVisible();
     // Whoever starts, keep tapping an empty square until both sides have played.

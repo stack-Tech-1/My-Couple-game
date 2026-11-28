@@ -2,7 +2,7 @@ import "server-only";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { soloGame } from "@/lib/solo/catalog";
 import { FREE_CAREER_MODES } from "@/lib/solo/games/mama";
-import { FREE_PLAYS_PER_DAY, countsAsPlay, freePlaysFor, isPlusOnlySolo, lagosDayBounds, type FreePlays } from "./plans";
+import { FREE_PLAYS_PER_DAY, countsAsPlay, freePlaysFor, lagosDayBounds, type FreePlays } from "./plans";
 import { lackingPlus, plusLive } from "./server";
 
 const open = (resetsAt: string): FreePlays => ({ limited: false, used: 0, left: Infinity, resetsAt });
@@ -36,7 +36,6 @@ export async function soloFreePlays(userId: string, gameId: string, at = Date.no
   const { start, end } = lagosDayBounds(at);
   const g = soloGame(gameId);
   if (!g || g.kind === "daily" || !(await plusLive()) || !(await lackingPlus([userId])).length) return open(end);
-  if (isPlusOnlySolo(gameId)) return { limited: true, used: 0, left: 0, resetsAt: end };
   const { data } = await supabaseAdmin()
     .from("solo_runs")
     .select("mode")

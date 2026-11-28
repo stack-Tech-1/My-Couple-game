@@ -10,6 +10,7 @@ import { cn } from "@/lib/cn";
 import { BOT_LEVELS, soloGame, type BotLevel } from "@/lib/solo/catalog";
 import { BOT_ID, botMove, type BotBase } from "@/lib/solo/bots";
 import { SoloShell, type SoloApi } from "./SoloShell";
+import { BackButton } from "@/design/BackButton";
 
 // Each game types its own saved state; the frame just stores it.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- boundary between the shared frame and each game
@@ -24,6 +25,7 @@ export function BotScreen({ gameId, base, myName, soundOn, toured }: { gameId: s
   if (!level)
     return (
       <div>
+        <BackButton href="/solo" label="Solo" />
         <h1 className="display mt-5 text-[2.2rem] leading-none">{game.name}</h1>
         <p className="mt-1.5 text-muted">{game.tagline}</p>
         <div role="radiogroup" aria-label="How good should the bot be?" className="mt-6 flex flex-col gap-2.5">

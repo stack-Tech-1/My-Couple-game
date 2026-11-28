@@ -187,9 +187,9 @@ export const isSoloGame = (id: string) => SOLO_GAMES.some((g) => g.id === id);
 
 /** Bot levels. */
 export const BOT_LEVELS = [
-  { id: "easy", label: "Small pikin" },
+  { id: "easy", label: "Beginner" },
   { id: "medium", label: "Steady" },
-  { id: "hard", label: "Agba" },
+  { id: "hard", label: "Boss" },
 ] as const;
 export type BotLevel = (typeof BOT_LEVELS)[number]["id"];
 

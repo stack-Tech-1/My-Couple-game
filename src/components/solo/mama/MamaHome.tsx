@@ -12,10 +12,11 @@ import { AREAS, DAYS, DIFFICULTIES, DIFFICULTY_NAME, FREE_CAREER_MODES, ITEM_NAM
 import type { MamaCareer } from "@/lib/solo/mama-server";
 import { buyMamaUpgrade } from "@/lib/solo/shop-actions";
 import { src, upgradePic } from "./looks";
+import { useSoloLimits } from "../SoloLimits";
 
 /** Each area's colour on the map. */
 const AREA_LOOK = ["#2f8a86", "#c08410", "#d9521f", "#6b4b9a", "#1c3f78"] as const;
-const AREA_NOTE = ["Free to play, as much as you like", "", "", "", "The big leagues"] as const;
+const AREA_NOTE = ["Days 1 and 2 free", "", "", "", "The big leagues"] as const;
 const naira = (n: number) => `₦${n.toLocaleString("en-NG")}`;
 const DIFF_ABOUT: Record<Difficulty, string> = { easy: "Patient customers, smaller orders", normal: "The lunch rush you know", hard: "Short tempers, big orders" };
 
@@ -27,7 +28,8 @@ export function MamaHome({ career }: { career: MamaCareer }) {
   const [bought, setBought] = useState<UpgradeId | null>(null);
 
   const best = (day: number) => career.dayBest[day - 1] ?? undefined;
-  const open = (day: number) => dayOpen(day, best);
+  // Without Plus, the first two Yaba days are the free taste.
+  const open = (day: number) => dayOpen(day, best) && (!career.locked || day <= FREE_CAREER_MODES.length);
   const totalStars = career.dayStars.reduce((a, b) => a + b, 0);
   // Next up: the first open day without a star, else the first open one short of three.
   const days = Array.from({ length: DAYS }, (_, i) => i + 1);
@@ -70,6 +72,7 @@ export function MamaHome({ career }: { career: MamaCareer }) {
             {totalStars} of {DAYS * 3} ★
           </span>
         </div>
+        {career.locked ? <PlusCard /> : null}
         <Link prefetch={false} href={`/solo/mama-put?mode=day-${next}`} className="mt-2 flex items-center justify-between gap-3 rounded-[20px] px-4 py-3.5 text-white shadow-[0_12px_24px_-16px_rgba(0,0,0,.6)]" style={{ background: AREA_LOOK[nextArea] }}>
           <span className="min-w-0">
             <b className="display block text-[1.3rem] leading-tight">
@@ -159,6 +162,9 @@ export function MamaHome({ career }: { career: MamaCareer }) {
             </button>
           ))}
         </div>
+        {career.locked ? (
+          <p className="mt-2.5 rounded-[18px] bg-[#2a1d17] px-4 py-3.5 text-center text-[0.9rem] text-white">Quick rushes come with Amah Plus.</p>
+        ) : (
         <Link prefetch={false} href={`/solo/mama-put?mode=${rush}`} className="mt-2.5 flex items-center justify-between rounded-[18px] bg-[#2a1d17] px-4 py-3.5 text-white">
           <span>
             <b className="display block text-[1.2rem]">{DIFFICULTY_NAME[rush]} rush</b>
@@ -166,6 +172,7 @@ export function MamaHome({ career }: { career: MamaCareer }) {
           </span>
           <span className="rounded-full bg-white px-4 py-2 font-extrabold text-[#2a1d17]">Play</span>
         </Link>
+        )}
       </section>
 
       {/* The shop */}
@@ -275,3 +282,19 @@ export function MamaHome({ career }: { career: MamaCareer }) {
 
 /** Stars a career day's takings earn (for the finish screen). */
 export const dayStarsFor = (day: number, money: number) => careerDay(day).stars.filter((x) => money >= x).length;
+
+/** Without Plus: what the rest of Mama Put holds. */
+function PlusCard() {
+  const { plusHref } = useSoloLimits();
+  return (
+    <div className="cloth mb-2.5 mt-2 px-4 py-3.5 text-center">
+      <p className="font-bold">Days 1 and 2 in Yaba are free, as often as you like.</p>
+      <p className="mt-0.5 text-[0.88rem] text-muted">Every other day across Lagos, and the quick rushes, come with Amah Plus.</p>
+      {plusHref ? (
+        <Link prefetch={false} href={plusHref} className="mt-2.5 inline-flex h-11 items-center rounded-full bg-[#1c1416] px-5 font-extrabold text-[#f6efe6]">
+          Try Amah Plus
+        </Link>
+      ) : null}
+    </div>
+  );
+}

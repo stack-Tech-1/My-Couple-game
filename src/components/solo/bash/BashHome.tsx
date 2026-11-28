@@ -11,6 +11,7 @@ import { YourStreet } from "./YourStreet";
 import { BUILDINGS, RANKS, SITES, WALLS, WALLS_PER_SITE, rankFor, siteOf, wallOpen } from "@/lib/solo/games/bashwall";
 import type { BashCareer } from "@/lib/solo/bash-server";
 import { buyBashBuilding } from "@/lib/solo/shop-actions";
+import { untilText } from "@/lib/plus/plans";
 
 const naira = (n: number) => `₦${n.toLocaleString("en-NG")}`;
 
@@ -22,7 +23,8 @@ export function BashHome({ career }: { career: BashCareer }) {
   const [buying, setBuying] = useState<string | null>(null);
 
   const cleared = (n: number) => career.wallStars[n - 1]! > 0;
-  const open = (n: number) => wallOpen(n, cleared);
+  // Without Plus, the first wall is the free taste; the rest wait for Plus.
+  const open = (n: number) => (career.locked ? n === 1 : wallOpen(n, cleared));
   const next = Array.from({ length: WALLS }, (_, i) => i + 1).find((n) => !cleared(n)) ?? WALLS;
   const rank = rankFor(career.totalStars);
   const toNext = rank.next ? Math.min(1, (career.totalStars - rank.stars) / (rank.next.stars - rank.stars)) : 1;
@@ -63,15 +65,28 @@ export function BashHome({ career }: { career: BashCareer }) {
       </section>
 
       {career.locked ? (
-        <div className="glass mt-4 rounded-[20px] px-4 py-4 text-center">
-          <p className="display text-[1.3rem] leading-tight">Bash Am comes with Amah Plus</p>
-          <p className="mt-1 text-[0.88rem] text-muted">Play every wall and build your street. Try it free for 7 days.</p>
-          {plusHref ? (
-            <Link prefetch={false} href={plusHref} className="mt-3 inline-flex h-12 items-center rounded-full bg-[#1c1416] px-6 font-extrabold text-[#f6efe6]">
-              Try Amah Plus
+        <>
+          {career.trialLeft > 0 ? (
+            <Link prefetch={false} href="/solo/bash-am?mode=wall-1" className="mt-4 flex h-14 flex-col items-center justify-center rounded-full bg-[#1c1416] text-[#f6efe6]">
+              <span className="text-[1.05rem] font-extrabold leading-tight">Play wall 1 free</span>
+              <span className="text-[0.75rem] font-semibold opacity-80">{career.trialLeft === 1 ? "1 free go left today" : `${career.trialLeft} free goes left today`}</span>
             </Link>
-          ) : null}
-        </div>
+          ) : (
+            <p className="cloth mt-4 px-4 py-3.5 text-center">
+              <b className="block">That&apos;s today&apos;s free goes at wall 1.</b>
+              <span className="text-[0.88rem] text-muted" suppressHydrationWarning>They&apos;re back {untilText(career.resetsAt)}.</span>
+            </p>
+          )}
+          <div className="cloth mt-3 px-4 py-4 text-center">
+            <p className="display text-[1.2rem] leading-tight">The other {WALLS - 1} walls come with Amah Plus</p>
+            <p className="mt-1 text-[0.88rem] text-muted">Play every wall, Endless Street, and build your street. Try it free for 7 days.</p>
+            {plusHref ? (
+              <Link prefetch={false} href={plusHref} className="mt-3 inline-flex h-12 items-center rounded-full bg-[#1c1416] px-6 font-extrabold text-[#f6efe6]">
+                Try Amah Plus
+              </Link>
+            ) : null}
+          </div>
+        </>
       ) : (
         <Link prefetch={false} href={`/solo/bash-am?mode=wall-${next}`} className="mt-4 flex h-14 items-center justify-center rounded-full bg-[#1c1416] text-[1.05rem] font-extrabold text-[#f6efe6]">
           Play wall {next}
@@ -85,7 +100,7 @@ export function BashHome({ career }: { career: BashCareer }) {
             const first = i * WALLS_PER_SITE + 1;
             const walls = Array.from({ length: WALLS_PER_SITE }, (_, k) => first + k);
             const got = walls.reduce((t, n) => t + career.wallStars[n - 1]!, 0);
-            if (!open(first) || career.locked)
+            if (!open(first))
               return (
                 <li key={site.name} className="flex items-center gap-3 rounded-[18px] bg-[rgba(28,20,22,.05)] px-3.5 py-3 opacity-80">
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[rgba(28,20,22,.12)] text-muted"><Icon name="lock" size={15} /></span>

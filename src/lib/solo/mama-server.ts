@@ -1,5 +1,6 @@
 import "server-only";
 import { supabaseAdmin } from "@/lib/supabase/server";
+import { soloFreePlays } from "@/lib/plus/limits";
 import { AREAS, DAYS, DIFFICULTIES, careerDay, isUpgrade, stars, type Difficulty, type UpgradeId } from "./games/mama";
 
 /** Everything the Mama Put home needs about one person, in two reads. */
@@ -14,13 +15,16 @@ export type MamaCareer = {
   savings: number;
   /** What each area's restaurant has (index 0 is Yaba). */
   owned: UpgradeId[][];
+  /** No Amah Plus: only the first two Yaba days. */
+  locked: boolean;
 };
 
 export async function mamaCareer(userId: string): Promise<MamaCareer> {
   const admin = supabaseAdmin();
-  const [{ data: scores }, { data: shop }] = await Promise.all([
+  const [{ data: scores }, { data: shop }, plays] = await Promise.all([
     admin.from("solo_scores").select("mode, score").eq("user_id", userId).eq("game_id", "mama-put").limit(10000),
     admin.from("solo_shop").select("area, item, price").eq("user_id", userId).eq("game_id", "mama-put"),
+    soloFreePlays(userId, "mama-put"),
   ]);
   const dayBest: (number | null)[] = Array.from({ length: DAYS }, () => null);
   const quickBest = Object.fromEntries(DIFFICULTIES.map((d) => [d, null])) as Record<Difficulty, number | null>;
@@ -51,6 +55,7 @@ export async function mamaCareer(userId: string): Promise<MamaCareer> {
     quickBest,
     savings: Math.max(0, earned - spent),
     owned,
+    locked: plays.limited,
   };
 }
 
