@@ -11,6 +11,8 @@ export function paystackKey(): string | null {
   return process.env.PAYSTACK_SECRET_KEY || process.env.TEST_PAYSTACK_SECRET_KEY || null;
 }
 export const paystackConfigured = () => !!paystackKey();
+/** The production site holding a Paystack test key: payments must stay shut there. */
+export const testKeysOnLive = () => process.env.VERCEL_ENV === "production" && (paystackKey() ?? "").startsWith("sk_test_");
 
 export class PaystackError extends Error {}
 

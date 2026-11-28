@@ -58,6 +58,9 @@ export default function Landing() {
         </Link>
         <nav className="flex items-center gap-2">
           <ThemeToggle />
+          <Link prefetch={false} href="/pricing" className="rounded-full px-3 py-2 text-[0.92rem] font-semibold hover:bg-sunk max-sm:hidden">
+            Prices
+          </Link>
           <Link prefetch={false} href="/sign-in" className="rounded-full px-4 py-2 text-[0.92rem] font-semibold hover:bg-sunk">
             Sign in
           </Link>
@@ -305,6 +308,7 @@ export default function Landing() {
             <LogoMark size={22} /> Made for two. © {new Date().getFullYear()} {APP_NAME}
           </span>
           <nav className="flex flex-wrap gap-5">
+            <Link prefetch={false} href="/pricing" className="hover:text-fg">Prices</Link>
             <Link prefetch={false} href="/terms" className="hover:text-fg">Terms</Link>
             <Link prefetch={false} href="/privacy" className="hover:text-fg">Privacy</Link>
             <Link prefetch={false} href="/adults" className="hover:text-fg">18+ notice</Link>

@@ -11,7 +11,7 @@ import { notify } from "@/lib/push/server";
 import type { ActionResult } from "@/lib/room/types";
 import { PLANS, LEAVE_REASONS, TRIAL_DAYS, checkoutInput, isGroupPlan, type PlanId } from "./plans";
 import { emailKey, lackingPlus, plusLive, planCode, type Purchase } from "./server";
-import { PaystackError, disableSubscription, fetchSubscription, initialize, manageLink, paystackConfigured } from "./paystack";
+import { PaystackError, disableSubscription, fetchSubscription, initialize, manageLink, paystackConfigured, testKeysOnLive } from "./paystack";
 
 async function limited(uid: string, action: string, max: number, windowSeconds: number) {
   const { data } = await supabaseAdmin().rpc("server_rate_limit", { uid, action, max_hits: max, window_seconds: windowSeconds });
@@ -32,6 +32,8 @@ export async function startCheckout(raw: unknown): Promise<ActionResult<{ url: s
   if (!user?.email) return { ok: false, error: "Sign in first." };
   if (!(await plusLive())) return { ok: false, error: "Amah Plus isn't open yet. Everything is free for now." };
   if (!paystackConfigured()) return { ok: false, error: "Payments aren't set up yet. Try again soon." };
+  // The live site never takes payments on Paystack test keys (test cards would buy real Plus).
+  if (testKeysOnLive()) return { ok: false, error: "Payments open very soon. Everything is free until then." };
   if (await limited(user.id, "plus_checkout", 10, 600)) return { ok: false, error: "Easy, tiger. Give it a minute and try again." };
 
   // Plus belongs to the person, so someone with no room (playing Solo) can buy it for themselves.
